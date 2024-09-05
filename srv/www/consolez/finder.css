@@ -1,0 +1,28 @@
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+
+tr:nth-of-type(odd) {
+  background-color:#ffee80;                /* odd rows light yellow */
+}
+
+tr:nth-of-type(even) {
+  background-color:#80bdff;                /* even rows light blue */
+}
+
+th, td {
+  overflow-wrap: break-word;
+  word-wrap: break-word; 
+  text-align: left;
+  padding: 8px;
+}
+
+th {
+  background-color: #006fe6;
+}
+
+h1 {
+  color: #0073e6;
+}
+

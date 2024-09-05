@@ -1,0 +1,509 @@
+#!/usr/bin/env python3
+#
+# vif - Resuscitation of the z/VM "Virtual Image Facility" originally released in 2000
+#
+import argparse
+import ply.lex as lex
+import ply.yacc as yacc
+import sys
+
+class Vif:
+  """
+  Proess all VIF commands 
+  """
+  tokens = (                               # VIF keywords and phrases
+    'active', 'all', 'collect', 'configuration', 'copy', 'create', 'delete', 'echo', 
+    'errors', 'export', 'help', 'hypervisor', 'image', 'image_create', 'image_delete', 
+    'image_help', 'image_network', 'image_set_storage', 'image_set_cpus', 'image_start', 
+    'image_stop', 'image_stopall', 'import', 'level', 'network', 'paging', 'partition', 
+    'performance', 'query', 'query_image', 'restart', 'service', 'share', 'shutdown', 
+    'to', 'verify', 'version', 'volume', 'with', 'MINIDISK_SIZE', 'MINIDISK'
+    )
+  t_active = r'active'                     # Regular expression rules
+  t_all = r'all'
+  t_collect = r'collect'
+  t_configuration = r'configuration'
+  t_copy = r'copy'
+  t_create = r'create'
+  t_delete = r'delete'
+  t_echo = r'echo'
+  t_errors = r'errors'
+  t_export = r'export'
+  t_help = r'help'
+  t_hypervisor = r'hypervisor'
+  t_image = r'image'
+  t_image_create = r'image\s+create\s+[a-zA-Z0-9#$@]{1,8}'
+  t_image_delete = r'image\s+delete\s+[a-zA-Z0-9#$@]{1,8}'
+  t_image_help = r'image\s+help'
+  t_image_network = r'image\s+network\s+[a-zA-Z0-9#$@]{1,8}\s+(add|del|delete)\s+[a-fA-F0-9]{1,4}'
+  t_image_set_cpus = r'image\s+set\s+[a-zA-Z0-9#$@]{1,8}\s+(cpus|cpu)\s+[0-9]*'
+  t_image_set_storage = r'image\s+set\s+[a-zA-Z0-9#$@]{1,8}\s+(storage|sto)\s+[0-9]*'
+  t_image_start = r'image\s+start\s+[a-zA-Z0-9#$@]{1,8}'
+  t_image_stop = r'image\s+stop\s+[a-zA-Z0-9#$@]{1,8}'
+  t_image_stopall = r'image\s+stopall'
+  t_import = r'import'
+  t_level = r'level'
+  t_network = r'network'
+  t_paging = r'paging'
+  t_partition = r'partition(s?)'           # partition or partitions
+  t_performance = r'performance'
+  t_query = r'query'
+  t_query_image = r'query\s+image\s+[a-zA-Z0-9#$@]{1,8}'
+  t_restart = r'restart'
+  t_service = r'service'
+  t_share = r'share(d?)'                   # share or shared
+  t_shutdown = r'shutdown'
+  t_to = r'to'
+  t_verify = r'verify'
+  t_version = r'version'
+  t_volume = r'volume(s?)'                 # volume or volumes
+  t_with = r'with'
+
+  def t_MINIDISK_SIZE(self, t):            # 'USERID VADDR SIZE' with Mega, Giga and Terabyte suffixes
+    r'(?!help|image|query\s+)[a-zA-Z0-9#$@]{1,8}\s+[a-fA-F0-9]{1,4}\s+[0-9]*(m|mb|M|MB|g|gb|G|GB|tb|TB)' 
+    # print(f"t_MINIDISK() t: {t}")
+    return t
+
+  def t_MINIDISK(self, t):                 # 'USERID VADDR' without preceding commands
+    r'(?!help|image|query\s+)[a-zA-Z0-9#$@]{1,8}\s+[a-fA-F0-9]{1,4}' 
+    print(f"t_MINIDISK() t: {t}")
+    return t
+  
+  t_ignore = ' \t' 
+
+  def t_error(self, t):
+    """
+    Error handling rule
+    """
+    print(f"Illegal character '{t.value[0]}'")
+    t.lexer.skip(1)
+
+  def __init__(self):
+    self.parser = argparse.ArgumentParser(description="The vif command-line interface")
+    self.parser.add_argument("cmd", type=str, help="The vif command to be executed", nargs=argparse.REMAINDER) # get all args
+    self.parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+    self.args = self.parser.parse_args()
+    # print(f"args.cmd: {self.args.cmd}")
+    self.lexer = lex.lex(module=self)
+    self.parser = yacc.yacc(module=self)
+
+  # Parsing rules
+  def p_command(self, p):
+    '''command : help_command
+               | hypervisor_command
+               | image_command
+               | partition_command
+               | query_command'''
+
+  def p_help_command(self, p):
+    '''help_command : help 
+                    | help help_action'''
+
+  # def p_help(self, p):
+  #  print(f"p_help() p: {p}")
+  
+  def p_help_action(self, p):
+    '''help_action : all
+                   | hypervisor 
+                   | image                                  
+                   | partition
+                   | query'''  
+    match p[1]:
+      case 'all':
+        self.handle_help_all()
+      case 'hypervisor':
+        self.handle_help_hypervisor()
+      case 'image':
+        self.handle_help_image()
+      case 'partition':
+        self.handle_help_partition()  
+      case 'query':
+        self.handle_help_query()
+      case _:                              # give basic help
+        self.handle_help() 
+
+  # 'vif help' command handlers
+  def handle_help_all(self):
+    self.handle_help()
+    print()
+    self.handle_help_hypervisor()
+    print()
+    self.handle_help_image()
+    print()
+    self.handle_help_partition()
+    print()
+    self.handle_help_query()
+
+  def handle_help_hypervisor(self):
+    print("vif hypervisor: manage and maintain z/VM")
+    print("  Subcommands:")
+    print("      collect: gather problem determination info - could this also send hardware errors?")
+    print("         echo: verify connectivity with vif - not needed with localhost, but perhaps cross LPAR")
+    print("       errors: report on hardware errors - could this also send problem determination info?")
+    print("       export: create a backup of configuration info")
+    print("       import: restore a backup of configuration info")
+    print("      restart: SHUTDOWN REIPL z/VM")
+    print("      service: install the latest VIF service (git pull?)")
+    print("     shutdown: SHUTDOWN z/VM")
+    print("       verify: performs consistency checks of vif")
+    print("       volume: add paging or image disk space TODO: add args if needed")
+
+  def handle_help_image(self):
+    print("vif image    : manage instances of Linux")
+    print("  Subcommands:")
+    print("       create: define a new Linux image")
+    print("               Syntax: vif image create <image>")
+    print("       delete: delete an existing Linux image")
+    print("               Syntax: vif image delete <image>")
+    print("      network: manage network connections for a Linux image")
+    print("               Syntax: vif image network <image> add|delete <device>")
+    print("          set: change memory size or number of CPUs of a Linux image")
+    print("               Syntax: vif image set <image> (storage <size>)|cpus <num>)")
+    print("        start: boot a Linux image")
+    print("               Syntax: vif image start <image>")
+    print("         stop: shutdown a Linux image")
+    print("               Syntax: vif image stop <image>")
+    print("      stopall: shutdown all Linux images on LPAR")
+    print("               Syntax: vif image stopall")
+
+  def handle_help_partition(self):
+    print("vif partition: manage disk partitions")
+    print("  Subcommands:")
+    print("         copy: copy source partition to newly added target partition")
+    print("               Syntax: vif partition copy <image1> <device1> [to] <image2> <device2>")
+    print("       create: add a new partition")
+    print("               Syntax: vif partition create <image> <device> <size>")
+    print("       delete: delete an existing partition")
+    print("               Syntax: vif partition delete <image1> <device1>")
+    print("        share: give read-only access to the partition of another Linux image")
+    print("               Syntax: vif partition share <image1> <device1> [with] <image2> <device2>")
+   
+  def handle_help_query(self):
+    print("vif query    : display many types of z/VM information")
+    print("  Subcommands:")
+    print("       active: report which Linux images are running")
+    print("          all: invoke all other query subcommands")
+    print("configuration: display current vif settings")
+    print("       errors: report on hardware errors")
+    print("        image: display configuration of a Linux image")
+    print("               Syntax: vif query <image>")
+    print("        level: report the vif level (version)")
+    print("      network: display network configuration")
+    print("       paging: report on amount of page space and how much is being used")
+    print("   partitions: display Linux image DASD utilization")
+    print("  performance: display current CPU, paging and I/O utilization")
+    print("       shared: display Linux images that share partitions")
+    print("      volumes: display image and paging DASD volumes")
+
+  def handle_help(self):
+    print(" vif commands:")
+    print("         help: give help")
+    print("   hypervisor: manage z/VM")
+    print("        image: manage instances of Linux")
+    print("    partition: manage disk partitions")
+    print("        query: display many types of z/VM information")
+
+  def p_hypervisor_command(self, p):
+    '''hypervisor_command : hypervisor hypervisor_action'''
+
+  def p_hypervisor_action(self, p):
+    '''hypervisor_action : collect
+                         | echo                                 
+                         | errors       
+                         | export
+                         | help       
+                         | import       
+                         | restart      
+                         | service      
+                         | shutdown     
+                         | verify       
+                         | volume'''
+    match p[1]:
+      case 'collect':
+        self.handle_hypervisor_collect()
+      case 'echo':
+        self.handle_hypervisor_echo()
+      case 'errors':
+        self.handle_hypervisor_errors()
+      case 'export':
+        self.handle_hypervisor_export()
+      case 'import':
+        self.handle_hypervisor_import()
+      case 'help':
+        self.handle_help_hypervisor()
+      case 'restart':
+        self.handle_hypervisor_restart()
+      case 'service':
+        self.handle_hypervisor_service()
+      case 'shutdown':
+        self.handle_hypervisor_shutdown()
+      case 'verify':
+        self.handle_hypervisor_verify()
+      case 'volume':
+        self.handle_hypervisor_volume()
+      case _:
+        print(f"p_hypervisor_action(): unexpected argument {p[1]}")
+        sys.exit(1)
+
+  # 'vif hypervisor' command handlers
+  def handle_hypervisor_collect(self):
+    print("handle_hypervisor_collect(): Write problem determination data to /var/log/vif/data.collect.YY-MM-DD-HH:MM:SS")
+
+  def handle_hypervisor_echo(self):
+    print("handle_hypervisor_echo(): verify connectivity with VIF")
+
+  def handle_hypervisor_errors(self):
+    print("handle_hypervisor_errors(): write hardware errors to /var/log/vif/ereprept.YY-MM-DD-HH:MM:SS")
+
+  def handle_hypervisor_export(self):
+    print("handle_hypervisor_export(): backup system configuration to /etc/vif/config.save")
+
+  def handle_hypervisor_import(self):
+    print("handle_hypervisor_import(): restore system configuration from /etc/vif/config.save")
+
+  def handle_hypervisor_restart(self):
+    print("handle_hypervisor_restart(): run 'CP SHUTDOWN REIPL'")
+
+  def handle_hypervisor_service(self):
+    print("handle_hypervisor_service(): how to service z/VM similar to 'apt update/apt upgrade'?")
+
+  def handle_hypervisor_shutdown(self):
+    print("handle_hypervisor_shutdown(): run 'CP SHUTDOWN'")
+
+  def handle_hypervisor_verify(self):
+    print("handle_hypervisor_verify(): do consistency checks, args FULL, BRIef, or NETwork <image>'")
+
+  def handle_hypervisor_volume(self):
+    print("handle_hypervisor_volume(): add PAGE and minidisk space (feilong?)")
+
+  def p_image_command(self, p):
+    '''image_command : image_create
+                     | image_delete
+                     | image_help
+                     | image_network                    
+                     | image_set_cpus
+                     | image_set_storage
+                     | image_start
+                     | image_stop
+                     | image_stopall'''
+    # print(f"p_image_command() p[1]: {p[1]}")
+    if p[1] == "image help":
+      self.handle_help_image() 
+      return
+    words = p[1].split()
+    subcommand = words[1]                  # second word is subcommand
+    print(f"p_image_command() words: {words}")
+    match subcommand:
+      case 'create':
+        image = words[2]        
+        self.handle_image_create(image)
+      case 'delete':
+        image = words[2]        
+        self.handle_image_delete(image)      
+      case 'help':
+        self.handle_help_image()
+      case 'network':
+        self.handle_image_network(words[2:]) # all remaining args  
+      case 'set':
+        self.handle_image_set(words[2:])   # all remaining args
+      case 'start':
+        image = words[2]        
+        self.handle_image_start(image)   
+      case 'stop':
+        image = words[2]        
+        self.handle_image_stop(image)   
+      case 'stopall':
+        self.handle_image_stopall()   
+      case _:
+        print(f"Unexpected: p[1]: {p[1]} subcommand: {subcommand}") 
+
+  # 'vif image' command handlers
+  def handle_image_create(self, image):
+    print(f"handle_image_create(): create user ID {image} (feilong?) and clone Linux to it")
+
+  def handle_image_delete(self, image):
+    print(f"handle_image_delete(): PURGE {image} (feilong?)")
+
+  def handle_image_network(self, args):
+    print(f"handle_image_network(): add/delete network adapters (feilong?) - args: {args}'")
+
+  def handle_image_set(self, args):
+    print(f"handle_image_set(): update user directory (feilong?) - args: {args}")
+
+  def handle_image_start(self, image):
+    print(f"handle_image_start(): CP XAUTOLOG {image}'")
+
+  def handle_image_stop(self, image):
+    print(f"handle_image_stop(): CP SIGNAL SHUTDOWN {image}")
+
+  def handle_image_stopall(self):
+    print("handle_image_stopall(): SIGNAL SHUTDOWN to all user IDs running Linux'")
+
+  def p_partition_command(self, p):
+    '''partition_command : partition partition_action'''
+
+  def p_partition_action(self, p):
+    '''partition_action : copy copy_qualifiers
+                        | create MINIDISK_SIZE
+                        | delete MINIDISK
+                        | help
+                        | share share_qualifiers'''
+    match p[1]:
+      case 'copy':
+        self.handle_partition_copy(p[2])
+      case 'create':
+        self.handle_partition_create(p[2])
+      case 'delete':
+        self.handle_partition_delete(p[2])
+      case 'help':
+        self.handle_help_partition()
+      case 'share':
+        self.handle_partition_share(p[2])
+
+  # 'vif partition' command handlers
+  def handle_partition_copy(self, args):
+    print(f"handle_partition_copy(): run 'partition copy' args: {args}")
+
+  def p_copy_qualifiers(self, p):
+    '''copy_qualifiers : MINIDISK MINIDISK 
+                       | MINIDISK to MINIDISK'''
+    if len(p) == 3:
+      p[0] = (p[1], p[2])
+    elif len(p) == 4:
+      p[0] = (p[1], p[3])
+
+  def handle_partition_create(self, args):
+    print(f"handle_partition_create(): run 'partition create' args: {args}")
+
+  def handle_partition_delete(self, args):
+    print(f"handle_partition_delete(): run 'partition delete' args: {args}")
+
+  def handle_partition_share(self, args):
+    print(f"handle_partition_share(): run 'partition share' with args: {args}")
+
+  def p_share_qualifiers(self, p):
+    '''share_qualifiers : MINIDISK MINIDISK 
+                        | MINIDISK with MINIDISK'''
+    if len(p) == 3:
+      p[0] = (p[1], p[2])
+    elif len(p) == 4:
+      p[0] = (p[1], p[3])
+
+  # vif query commands
+  def p_query_command(self, p):
+    '''query_command : query query_action
+                     | query_image'''
+    print(f"p_query_command() p[0]: {p[0]} p[1]: {p[1]}")    
+    words = p[1].split()
+    print(f"words[0]: {words[0]} ")
+    if words[0] == "image":                # arg is image name
+      print(f"query image: words[1]: {words[1]}")
+      self.handle_query_image(words[1])
+
+  def p_query_action(self, p):
+    '''query_action : active         
+                    | all                     
+                    | configuration  
+                    | errors  
+                    | help            
+                    | level          
+                    | network        
+                    | paging         
+                    | partition   
+                    | performance 
+                    | share     
+                    | version     
+                    | volume'''  
+    print(f"p_query_action() p[0]: {p[0]} p[1]: {p[1]}")                
+    match p[1]:
+      case 'active':
+        self.handle_query_active()
+      case 'all':
+        self.handle_query_all()
+      case 'configuration':
+        self.handle_query_configuration()
+      case 'errors':
+        self.handle_query_errors()
+      case 'image':
+        self.handle_query_image(p[2:])
+      case 'help':
+        self.handle_help_query()  
+      case 'level'|'version':
+        self.handle_query_level()
+      case 'network':
+        self.handle_query_network()
+      case 'paging':
+        self.handle_query_paging()
+      case 'partitions':
+        self.handle_query_partitions()
+      case 'performance':
+        self.handle_query_performance()
+      case 'shared':
+        self.handle_query_shared()
+      case 'volumes':
+        self.handle_query_volumes()
+      case _:
+        print(f"ERROR: Unexpected vif query target: {p[1]}")  
+        sys.exit(1)
+
+  # vif query command handlers
+  def handle_query_active(self):
+    print("handle_query_active(): display active Linuxes => mariacmdb API")
+
+  def handle_query_all(self):
+    print("handle_query_all(): run all other query commands")
+
+  def handle_query_configuration(self):
+    print("handle_query_configuration(): z/VM information, golden image(?) and Linux installation values")
+
+  def handle_query_errors(self):
+    print("handle_query_errors(): report hardware errors => HMC RESTful API?")
+
+  def handle_query_image(self, image):
+    print(f"handle_query_image(): query image {image}")
+
+  def handle_query_level(self):
+    print("handle_query_level(): vif version: 0.1")
+
+  def handle_query_network(self):
+    print("handle_query_network(): run 'query network'")
+
+  def handle_query_paging(self):
+    print("handle_query_paging(): run 'query paging'")
+
+  def handle_query_partitions(self):
+    print("handle_query_partitions(): run 'query partitions'")
+
+  def handle_query_performance(self):
+    print("handle_query_performance(): run 'query performance'")
+
+  def handle_query_shared(self):
+    print("handle_query_shared(): run 'query shared'")
+
+  def handle_query_volumes(self):
+    print("handle_query_volumes(): run 'query volumes'")
+
+  def p_error(self, p):                    # Rule for syntax errors
+    print("Vif.p_error(): Syntax error in input")
+    sys.exit(1)
+
+  def parse_command(self):                 # Parse a command
+    cmd =  " ".join(self.args.cmd)
+    print(f"\nvif {cmd}")
+    match cmd:                             # check for VIF commands with no args => give help on that command
+      case "help":
+        self.handle_help()
+      case "hypervisor":
+        self.handle_help_hypervisor()
+      case "image":
+        self.handle_help_image()
+      case "partition":
+        self.handle_help_partition()
+      case "query":
+        self.handle_help_query()
+      case _:                              # there are args - process command
+        result = self.parser.parse(cmd)
+
+if __name__ == "__main__":
+  vif = Vif()                              # create a singleton
+  vif.parse_command()

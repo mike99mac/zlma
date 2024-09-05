@@ -1,9 +1,9 @@
 # z/VM and Linux Modern Administration 
 z/VM and Linux Modern Administration (zlma, pronounced "zelma") enables Linux servers running under the z/VM hipervisor on IBM Mainframes to be managed in a more modern fashion. The priority of how servers should be managed is:
 
-1 Browser-based
-1 Linux command line
-1 3270 ("green screen")
+1. Browser-based
+1. Linux command line
+1. 3270 ("green screen")
 
 It consists of four main components:
 - A relational database 
@@ -19,7 +19,7 @@ TODO: make a new block diagram
 
 ## Source files
 
-There are five main source files:
+Following are main source files:
 | File | Language | Description |
 | ---- | -------- | ----------- |
 | ``bootstable.js`` | Javascript | Code for inline editing of metadata |
