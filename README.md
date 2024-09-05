@@ -1,14 +1,15 @@
-# zLinux Modern Administration 
-zLinux Modern Administration (zlma, pronounced "zelma") enables Linux servers on IBM Mainframes under z/VM to be managed in a more modern fashion. The priority of how servers should be managed is 
+# z/VM and Linux Modern Administration 
+z/VM and Linux Modern Administration (zlma, pronounced "zelma") enables Linux servers running under the z/VM hipervisor on IBM Mainframes to be managed in a more modern fashion. The priority of how servers should be managed is:
+
 1 Browser-based
 1 Linux command line
 1 3270 ("green screen")
 
 It consists of four main components:
+- A relational database 
 - Web browser interfaces
 - Linux line commands
 - A RESTful API 
-- A relational database with all the data 
 
 # Overview
 Following is a block diagram of zlma:
