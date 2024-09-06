@@ -14,7 +14,6 @@ It consists of four main components:
 # Overview
 Following is a block diagram of zlma:
 
-TODO: make a new block diagram 
 ![](zlma-block-diagram.png) 
 
 **zlma block diagram**
