@@ -1,5 +1,5 @@
 # z/VM and Linux Modern Administration 
-z/VM and Linux Modern Administration (zlma, pronounced "zelma") enables Linux servers running under the z/VM hipervisor on IBM Mainframes to be managed in a more modern fashion. The priority of how servers should be managed is:
+z/VM and Linux Modern Administration (zlma, pronounced "zelma") enables Linux servers running under the z/VM hipervisor on IBM Mainframes to be managed in a more modern fashion. The priority of how servers are managed is:
 
 1. Browser-based
 1. Linux command line
@@ -7,8 +7,13 @@ z/VM and Linux Modern Administration (zlma, pronounced "zelma") enables Linux se
 
 It consists of four main components:
 - A relational database 
+  - Containing pertinent up-to-date data about Linux servers on z
 - Web browser interfaces
+  - ``finder`` - view all z/VM and Linux data with search capabilities
+  - ``consolez`` - view z/VM console data 
 - Linux line commands
+  - ``zlma`` - manage DB of zLinux data 
+  - ``vif`` - manage many aspects of z/VM
 - A RESTful API 
 
 # Overview
@@ -17,17 +22,6 @@ Following is a block diagram of zlma:
 ![](zlma-block-diagram.png) 
 
 **zlma block diagram**
-
-## Source files
-
-Following are main source files:
-| File | Language | Description |
-| ---- | -------- | ----------- |
-| ``bootstable.js`` | Javascript | Code for inline editing of metadata |
-| ``mariacmdb``  | Python | Line command that maintains the database |
-| ``restapi.py``  | Python | RESTful API interfaced through Apache |
-| ``finder.py``  | Python | GUI search script with a browser interface |
-| ``serverinfo``  | Bash | Return data from managed servers |
 
 ## Set up SSH access
 Key-based authentication, or *Passwordless* SSH access is needed for one user from the mariacmdb server to all systems that will be managed.
@@ -52,7 +46,7 @@ model2000
 4 of 4 SSHed
 ```
 
-Here is ``sshall``: https://github.com/mike99mac/mariacmdb/blob/main/usr/local/sbin/sshall
+Here is ``sshall``: https://github.com/mike99mac/zlma/blob/main/usr/local/sbin/sshall
 
 Try to set this up first, then the following instructions can be followed. 
 
