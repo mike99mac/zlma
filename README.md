@@ -1,5 +1,5 @@
 # z/VM and Linux Modern Administration 
-z/VM and Linux Modern Administration (zlma, pronounced "zelma") enables Linux servers running under the z/VM hipervisor on IBM Mainframes to be managed in a more modern fashion. The priority of how servers are managed is:
+z/VM and Linux Modern Administration (**zlma**, pronounced "zelma") enables Linux servers running under the z/VM hipervisor on IBM Mainframes to be managed in a more modern fashion. The priority of how servers are managed is:
 
 1. Browser-based
 1. Linux command line
@@ -605,3 +605,5 @@ model800,192.168.12.176,4,4,aarch64,Linux,Ubuntu 22.04.4 LTS,5.15.0-1053-raspi #
 </body></html>
 ```
 
+# Colophon
+Zelma is a feminine given name that originated in the late 19th century in the United States. It's believed to be a variant of the German name Selma, which is derived from the Old Norse word "selmr," meaning "protection" or "shelter."
