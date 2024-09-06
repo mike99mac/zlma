@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# serverinfo - return hostname, IP addr, num CPUs, GB of memory, architecture, OS, OS version, kernel level 
+# zlmainfo - lpar userID IPaddr numCPUs memGB arch arch_com os distro kern_ver kern_rel rootfsFull last_ping created hostName 
 #
 hostName=`hostname -s`
 if [ -f /proc/sysinfo ]; then              # zLinux - TO DO: handle 2nd level VMs
@@ -53,5 +53,5 @@ fi
 kern_ver=`uname -v | sed -e 's/PREEMPT_DYNAMIC //g' -e 's/PREEMPT //g'` 
 kern_rel=`uname -r`                          
 rootfsFull=`df -h / | tail -1 | awk '{print $5}' | sed 's/%//g'`
-echo -n "$IPaddr,$lpar,$userID,numCPUs,$memGB,$arch,$arch_com,$os,$distro,$kern_ver,$kern_rel,$rootfsFull,$last_ping,$created,$hostName"
+echo -n "$lpar,$userID,$IPaddr,$numCPUs,$memGB,$arch,$arch_com,$os,$distro,$kern_ver,$kern_rel,$rootfsFull,$last_ping,$created,$hostName"
 
