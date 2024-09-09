@@ -184,7 +184,7 @@ exit
 
 ## Upgrade Python
 
-This step is optional.  Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements. AlmaLinux 9.4 ships with a base Python version of 3.9.
+This step is optional.  Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. AlmaLinux 9.4 ships with a base Python version of 3.9.
 
 To install Python 3.11, perform the following steps.
 
