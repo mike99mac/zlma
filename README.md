@@ -24,8 +24,8 @@ Following is a block diagram of zlma:
 **zlma block diagram**
 
 ## Set up SSH access
-Key-based authentication, or *Passwordless* SSH access is needed for one user from the mariacmdb server to all systems that will be managed.
-``mariacmdb`` commands must be run by that user and they must have ``sudo`` access.
+Key-based authentication, or *Passwordless* SSH access is needed for one user from the zlma server to all systems that will be managed.
+``zlma`` commands must be run by that user and they must have ``sudo`` access.
 
 Following is an example of a script that SSH's to each managed server and runs the ``hostname`` command:
 
@@ -55,7 +55,7 @@ These steps set up a virtual environment under ``/srv/venv``. The python files r
 
 This code has been installed on Debian and RHEL bases Linuxes.  When there are differences, separate steps are given for each.
 
-To install mariacmdb, perform the following steps.
+To install zlma, perform the following steps.
 
 - Login as a non-root user with sudo privileges. Add the group which will be running apache to that user.  
 
@@ -133,28 +133,28 @@ uid=1000(mikemac) gid=1000(mikemac) groups=1000(mikemac),48(apache)
     sudo dnf install mariadb-server
     ```
 
-- Create a directory for mariacmdb to log to:
+- Create a directory for zlma to log to:
 
 ```
-sudo mkdir /var/log/mariacmdb
+sudo mkdir /var/log/zlma
 ```
 
 - Change the group of that directory to the group that Apache runs as.
  
   - For Debian based:
     ```
-    sudo chgrp www-data /var/log/mariacmdb
+    sudo chgrp www-data /var/log/zlma
     ```
 
   - For RHEL based:
     ```
-    sudo chgrp apache /var/log/mariacmdb
+    sudo chgrp apache /var/log/zlma
     ```
 
 - Set the group write bit of the new directory:
 
 ```
-sudo chmod g+w /var/log/mariacmdb
+sudo chmod g+w /var/log/zlma
 ```
 
 - Set mariadb to start at boot time:
@@ -184,7 +184,7 @@ exit
 
 ## Upgrade Python
 
-This step is optional.  Python must be at level 3.10 or greater because mariacmdb code uses ``match/case`` statements. AlmaLinux 9.4 ships with a base Python version of 3.9.
+This step is optional.  Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements. AlmaLinux 9.4 ships with a base Python version of 3.9.
 
 To install Python 3.11, perform the following steps.
 
@@ -218,7 +218,7 @@ cd /srv
     sudo python3 -m venv venv
     ```
 
-  - Where another Python version was added:
+  - Where Python 3.11 was added:
 
     ```
     sudo python3.11 -m venv venv
@@ -270,9 +270,17 @@ You should see the text ``(venv)`` prefixed on the command prompt.
 
 - Upgrade pip:
 
-```
-/srv/venv/bin/python3 -m pip install --upgrade pip
-```
+  - On systems where the base Python version is 3.10 or greater:
+
+    ```
+    /srv/venv/bin/python3 -m pip install --upgrade pip
+    ```
+
+  - On systems where Python 3.11 was added:
+
+    ```
+    /srv/venv/bin/python3.11 -m pip install --upgrade pip
+    ```
 
 - Install Mariadb and the Python connector:
 
@@ -290,19 +298,19 @@ mysql_secure_installation
 
 ```
 cd;
-git clone https://github.com/mike99mac/mariacmdb
+git clone https://github.com/mike99mac/zlma
 ```
 
-- Run the ``install`` script. It copies files to ``/usr/local/sbin``, ``/srv/www/mariacmdb`` and your home directory.
+- Run the ``install`` script. It copies files to ``/usr/local/sbin``, ``/srv/www/zlma`` and your home directory.
 
 ```
-./mariacmdb/install
+./zlma/install
 ```
 
 - For reference, following is an Apache configuration file for a **Debian-based Linux**:
 
 ```
-# cat /etc/apache2/sites-available/mariacmdb.conf
+# cat /etc/apache2/sites-available/zlma.conf
 ```
 
 ```
@@ -313,7 +321,7 @@ User pi
 Group pi
 <VirtualHost *:80>
   ServerAdmin mmacisaac@example.com 
-  DocumentRoot /srv/www/mariacmdb
+  DocumentRoot /srv/www/zlma
   ServerName model1500
   LogLevel error
   LoadModule cgi_module /usr/lib/apache2/modules/mod_cgi.so
@@ -324,7 +332,7 @@ Group pi
     Require all granted
   </Directory>
 
-  <Directory /srv/www/mariacmdb>
+  <Directory /srv/www/zlma>
     Options +ExecCGI
     DirectoryIndex restapi.py
     Require all granted
@@ -344,7 +352,7 @@ Group pi
 
 ```
 #
-# Apache configuration file for mariacmdb
+# Apache configuration file for zlma
 #
 LoadModule access_compat_module /usr/lib64/httpd/modules/mod_access_compat.so
 LoadModule alias_module         /usr/lib64/httpd/modules/mod_alias.so
@@ -360,7 +368,7 @@ Group apache
 ServerName mmac01
 Listen *:80
 ServerAdmin mmacisaac@sinenomine.net
-DocumentRoot /srv/www/mariacmdb
+DocumentRoot /srv/www/zlma
 LogLevel error
 
 <Directory "/srv/www/html">
@@ -370,8 +378,8 @@ LogLevel error
 </Directory>
 
 AddHandler cgi-script .py
-Alias /mariacmdb /srv/www/mariacmdb
-<Directory /srv/www/mariacmdb>
+Alias /zlma /srv/www/zlma
+<Directory /srv/www/zlma>
   Options +ExecCGI
   Require all granted
 </Directory>
@@ -383,7 +391,7 @@ CustomLog /var/log/httpd/access.log combined
 - Enable the site for Debian-based Linuxes:
 
 ```
-sudo a2ensite mariacmdb.conf
+sudo a2ensite zlma.conf
 ```
 
 - Following is the systemd ``service`` file. 
@@ -436,20 +444,20 @@ WantedBy=multi-user.target
     ```
 
 ## Create a configuration file
-The mariacmdb configuration file allows you to set local values such as the database credentials, the home directory and the logging level.
+The zlma configuration file allows you to set local values such as the database credentials, the home directory and the logging level.
 
-There is a sample configuration file named ``mariacmdb.conf`` in the repo.  The code expects it to be in ``/etc/``.
+There is a sample configuration file named ``zlma.conf`` in the repo.  The code expects it to be in ``/etc/``.
 
 - Copy it to ``/etc/``:
 
 ```
-sudo cp ~/mariacmdb/mariacmdb.conf /etc
+sudo cp ~/zlma/zlma.conf /etc
 ```
 
 - Modify the values if desired. Set the root password to the value used earlier in mariadb.
 
 ```
-sudo vi /etc/mariacmdb.conf
+sudo vi /etc/zlma.conf
 {
   "DBuser": "root",
   "DBpw": "pi",
@@ -464,11 +472,11 @@ sudo vi /etc/mariacmdb.conf
 - ``logLevel``, in order of severity, are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR`` and ``CRITICAL``.
 
 
-# Using mariacmdb
+# Using zlma
 The following sections describe the line command, the Web interface and the RESTful API.
 
-## The mariacmdb line command
-The ``mariacmdb`` line command must include one *subcommand*: 
+## The zlma line command
+The ``zlma`` line command must include one *subcommand*: 
 
 - ``add       `` Add a server to be managed - if it already exists, it will be updated.  
 - ``describe  `` Show the metadata of the ``servers`` table.
@@ -477,13 +485,13 @@ The ``mariacmdb`` line command must include one *subcommand*:
 - ``remove    `` Remove a managed server.
 - ``update    `` Update all rows in table.
 
-Following is the help output for ``mariacmdb``:
+Following is the help output for ``zlma``:
 
 ```
-mariacmdb -h
-usage: mariacmdb [-h] [-v] [-C] [-c COLUMN] [-p PATTERN] [-s SERVER] subcommand
+zlma -h
+usage: zlma [-h] [-v] [-C] [-c COLUMN] [-p PATTERN] [-s SERVER] subcommand
 
-mariacmdb - A simple Configuration Management Database
+zlma - A simple Configuration Management Database
 
 positional arguments:
   subcommand            Can be 'add', 'describe', 'init', 'query', 'remove' or 'update'
@@ -505,10 +513,10 @@ options:
 ## Creating a database
 To create and populate a new database, perform the following steps:
 
-- Create a database with the ``init`` subcommand.  This should create a database and a table in mariacmdb.
+- Create a database with the ``init`` subcommand.  This should create a database and a table in zlma.
 
 ``` 
-$ mariacmdb init
+$ zlma init
 ```
 
 - Check that the database was created. Use the ``desc`` subcommand to list the attributes of the ``servers`` table: 
@@ -536,28 +544,28 @@ owner,varchar(50),YES,,None,
 
 - Use the ``add`` subcommand to insert rows into the database.  
 
-The mariacmdb server must be able to **``ssh``** to all servers using key-based authentication.  Following is an example of adding four severs to be managed:
+The zlma server must be able to **``ssh``** to all servers using key-based authentication.  Following is an example of adding four severs to be managed:
  
 ```
-mariacmdb add --server model800
+zlma add --server model800
 Added or updated server model800
 
-mariacmdb add --server model1000
+zlma add --server model1000
 Added or updated server model1000
 
-mariacmdb add --server model1500
+zlma add --server model1500
 Added or updated server model1500
 
-mariacmdb add --server model2000
+zlma add --server model2000
 Added or updated server model12000
 ```
 
 - Use the ``query`` subcommand to show all rows in the table:
 
 ```
-mariacmdb query 
+zlma query 
 model1000,192.168.1.229,4,4,aarch64,arm,Linux,AlmaLinux 9.4,#1 SMP Mon Jun 24 08:28:31 EDT 2024,6.6.31-20240529.v8.2.el9,4,24-08-21 06:58:42,2024-06-25,bkupgit,boomboxes,Mike Mac
-model1500,192.168.1.147,4,4,aarch64,arm,Linux,Ubuntu 22.04,#63-Ubuntu SMP Wed Jul 17 11:18:43 UTC 2024,5.15.0-1060-raspi,51,24-08-21 06:58:43,2023-08-07,mariacmdb,boomboxes,Mike Mac
+model1500,192.168.1.147,4,4,aarch64,arm,Linux,Ubuntu 22.04,#63-Ubuntu SMP Wed Jul 17 11:18:43 UTC 2024,5.15.0-1060-raspi,51,24-08-21 06:58:43,2023-08-07,zlma,boomboxes,Mike Mac
 model2000,192.168.1.103,4,8,aarch64,arm,Linux,Debian GNU/Linux 12,#1 SMP Debian 1:6.6.31-1+rpt1 (2024-05-29),6.6.31+rpt-rpi-2712,14,24-08-21 06:58:43,2024-03-15,Minimy,boomboxes,Mike                 Mac
 model800,192.168.1.35,4,4,aarch64,arm,Linux,Debian GNU/Linux 12,#1 SMP Debian 1:6.6.31-1+rpt1 (2024-05-29),6.6.31+rpt-rpi-v8,11,24-08-21 06:58:44,2024-07-03,Server speak,boomboxes,Mi                ke Mac
 ```
@@ -565,7 +573,7 @@ model800,192.168.1.35,4,4,aarch64,arm,Linux,Debian GNU/Linux 12,#1 SMP Debian 1:
 - Use the ``update`` subcommand to update all rows in the ``servers`` table.  There must be the ability to use key-based authentication to ``ssh`` to all managed servers. 
 
 ```
-mariacmdb update 
+zlma update 
 __main__    : INFO     replace_row(): replaced row for server model1000
 __main__    : INFO     replace_row(): replaced row for server model1500
 __main__    : INFO     replace_row(): replaced row for server model2000
@@ -596,7 +604,7 @@ Following is an example of using the RESTful API to search for servers that have
 curl "http://model1500/restapi.py?cpus=4&mem_gb=4"
 <html><head>
 </head><body>
-<h1>This is the mariacmdb RESTful API!</h1>
+<h1>This is the zlma RESTful API!</h1>
 <pre>
 model1000,192.168.12.233,4,4,aarch64,Linux,Debian GNU/Linux 12 (bookworm),6.6.28+rpt-rpi-v8 #1 SMP PREEMPT Debian 1:6.6.28-1+rpt1 (2024-04-22),29,2024-05-06 14:01:22
 model1500,192.168.12.239,4,4,aarch64,Linux,Ubuntu 22.04.4 LTS,5.15.0-1053-raspi #56-Ubuntu SMP PREEMPT Mon Apr 15 18:50:10 UTC 2024,24,2024-05-06 14:02:01
