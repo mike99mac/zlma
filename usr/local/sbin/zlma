@@ -1,4 +1,4 @@
-#!/usr/bin/python3.11
+#!/srv/venv/bin/python3.11
 """
 zlma (z/VM and Linux modern administration) is a CMDB based on mariadb, designed to make administering z/VM and zLinux easier.
 The data is stored in a mariadb database named 'zlma' in a table named 'servers'. The table has these columns:
@@ -50,26 +50,23 @@ import mariadb
 import os
 import subprocess
 import sys
+from zlma_conf import Zlma_conf
 
 class Zlma:
   def __init__(self):
     # create a logger that writes both to stdout and the file /var/log/zlma/zlma.log - must be R/W by Apache
+    self.conf = Zlma_conf()                # configuration variables 
+    self.conf.load_config_file()           # read the config file                    
     logging.basicConfig(filename='/var/log/zlma/zlma.log',
                         format='%(asctime)s %(levelname)s %(message)s',
                         level=logging.INFO)
-    self.console = logging.StreamHandler()          # set up logging to console
+    self.console = logging.StreamHandler() # set up logging to console
     self.console.setLevel(logging.INFO)
     self.formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')  # format is simpler for console use
     self.console.setFormatter(self.formatter)
     logging.getLogger('').addHandler(self.console) # add the handler to the root logger
     self.log = logging.getLogger(__name__)
-    self.db_user = "root"                   # default database user
-    self.db_pw = "pi"                       # default database password
-    self.db_host = "127.0.0.1"              # default database host
-    self.db_name = "zlma"                   # default database name
     self.log_level = "INFO"
-    self.script_dir = None
-    self.load_config_file()                # read the config file                    
     self.parser = argparse.ArgumentParser(description = "zlma - A simple Configuration Management Database")
     self.log.setLevel(self.log_level)
     self.console.setLevel(self.log_level)
@@ -84,7 +81,7 @@ class Zlma:
     self.conn = None                       # mariadb connection
     self.cursor = None                     # mariadb cursor
     self.log.debug(f"Zlma.__init__(): self.args = {str(self.args)}")
-    self.create_db_cmd = f"CREATE DATABASE {self.db_name};"
+    self.create_db_cmd = f"CREATE DATABASE {self.conf.db_name};"
     self.describe_cmd = "DESC servers;"
     self.delete_cmd = "DELETE FROM servers WHERE host_name = pattern;"
     self.create_table_cmd = """
@@ -142,32 +139,15 @@ class Zlma:
     self.select_all_cmd = "SELECT * FROM servers"
     self.select_host_names_cmd = "SELECT host_name FROM servers"
     self.server_data = []
-    self.use_cmd = f"USE {self.db_name}" 
+    self.use_cmd = f"USE {self.conf.db_name}" 
     self.version = "24.08.21"
-
-  def load_config_file(self):
-    """
-    read the JSON config file /etc/zlma.conf
-    """
-    try:
-      conf_file = open("/etc/zlma.conf", 'r')
-    except Exception as e:
-      self.log.error("load_config_file(): could not open configuration file /etc/zlma.conf - using defaults")
-      return
-    confJSON = json.loads(conf_file.read())
-    self.db_user = confJSON['db_user']
-    self.db_pw = confJSON['db_pw']
-    self.db_host = confJSON['db_host']
-    self.db_name = confJSON['db_name']
-    self.log_level = confJSON['log_level'].upper()
-    self.script_dir = confJSON['home_dir']
 
   def connect_to_zlma(self):   
     """
     Connect to mariadb, use datase 'zlma' and establish a cursor 
     """  
     try:
-      self.conn = mariadb.connect(user=self.db_user, password=self.db_pw, host=self.db_host, database=self.db_name)   
+      self.conn = mariadb.connect(user=self.conf.db_user, password=self.conf.db_pw, host=self.conf.db_host, database=self.conf.db_name)   
       self.cursor = self.conn.cursor()       # open cursor
     except mariadb.Error as e:
       self.log.error(f"connect_to_zlma(): Exception creating database: {e}")
@@ -236,7 +216,7 @@ class Zlma:
       CREATE TABLE 'servers'
     """
     try:
-      self.conn = mariadb.connect(user=self.db_user, password=self.db_pw, host=self.db_host)   
+      self.conn = mariadb.connect(user=self.conf.db_user, password=self.conf.db_pw, host=self.conf.db_host)   
       self.cursor = self.conn.cursor()     # open cursor
     except mariadb.Error as e:
       self.log.error(f"initialize(): Exception creating database: {e}")
@@ -247,7 +227,7 @@ class Zlma:
       self.log.warning(f"initialize(): Exception creating database: {e}")
     try:   
       self.cursor.execute(self.use_cmd)   
-      self.log.debug(f"initialize(): changed to database {self.db_name}")
+      self.log.debug(f"initialize(): changed to database {self.conf.db_name}")
     except mariadb.Error as e:
       self.log.error(f"initialize(): ERROR changing database: {e}")
       self.conn.close()                    # cannot continue
@@ -289,13 +269,13 @@ class Zlma:
     """
     self.log.debug(f"find_server(): server = {server}")
     if self.args.copyscript:               # copy script first
-      scp_cmd = f"scp {self.script_dir}/zlmainfo {server}:{self.script_dir}" 
+      scp_cmd = f"scp {self.conf.home_dir}/zlmainfo {server}:{self.conf.home_dir}" 
       proc = subprocess.run(scp_cmd, shell=True, capture_output=True, text=True) 
       if proc.returncode != 0:             # just give warning
         self.log.warning(f"find_server(): command {scp_cmd} returned {proc.returncode}")
       else:
         self.log.debug(f"find_server(): command {scp_cmd} returned {proc.returncode}")
-    ssh_cmd = f"ssh -o ConnectTimeout=5 {server} {self.script_dir}/zlmainfo"  # run script 'zlmainfo' and get output
+    ssh_cmd = f"ssh -o ConnectTimeout=5 {server} {self.conf.home_dir}/zlmainfo"  # run script 'zlmainfo' and get output
     proc = subprocess.run(ssh_cmd, shell=True, capture_output=True, text=True)
     if proc.returncode != 0:               # call to 'zlmainfo' failed
       self.log.error(f"find_server(): command {ssh_cmd} returned {proc.returncode}")
