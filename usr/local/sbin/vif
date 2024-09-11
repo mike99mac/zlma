@@ -3,9 +3,11 @@
 # vif - Resuscitation of the z/VM "Virtual Image Facility" originally released in 2000
 #
 import argparse
+import logging
 import ply.lex as lex
 import ply.yacc as yacc
 import sys
+from zlma_conf import Zlma_conf
 
 class Vif:
   """
@@ -75,17 +77,31 @@ class Vif:
     """
     Error handling rule
     """
-    print(f"Illegal character '{t.value[0]}'")
+    self.log.error(f"t_error() user: {self.conf.user} Illegal character '{t.value[0]}'")
     t.lexer.skip(1)
 
   def __init__(self):
-    self.parser = argparse.ArgumentParser(description="The vif command-line interface")
+    self.conf = Zlma_conf()                # configuration variables
+    self.conf.load_config_file()           # read the config file
+    logging.basicConfig(filename='/var/log/zlma/vif.log', format='%(asctime)s %(levelname)s %(message)s')
+    self.console = logging.StreamHandler() # set up logging to console
+    self.formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s') # format is simpler for console use
+    self.console.setFormatter(self.formatter)
+    logging.getLogger('').addHandler(self.console) # add the handler to the root logger
+    self.log = logging.getLogger(__name__)
+
+    # set log level on the console and to log files
+    self.log.debug(f"__init__() user:{self.conf.user} setting log level to {self.conf.log_level}")
+    self.console.setLevel(self.conf.log_level)
+    self.log.setLevel(self.conf.log_level)
+
+    # parse args passed in
+    self.parser = argparse.ArgumentParser(description="The vif command line interface")
     self.parser.add_argument("cmd", type=str, help="The vif command to be executed", nargs=argparse.REMAINDER) # get all args
     self.parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
     self.args = self.parser.parse_args()
-    # print(f"args.cmd: {self.args.cmd}")
     self.lexer = lex.lex(module=self)
-    self.parser = yacc.yacc(module=self)
+    self.parser = yacc.yacc(module=self, debug=True, outputdir='/tmp') # write intermediate code to /tmp
 
   # Parsing rules
   def p_command(self, p):
@@ -99,9 +115,6 @@ class Vif:
     '''help_command : help 
                     | help help_action'''
 
-  # def p_help(self, p):
-  #  print(f"p_help() p: {p}")
-  
   def p_help_action(self, p):
     '''help_action : all
                    | hypervisor 
@@ -124,6 +137,7 @@ class Vif:
 
   # 'vif help' command handlers
   def handle_help_all(self):
+    self.log.debug(f"handle_help_all(): user: {self.conf.user}")
     self.handle_help()
     print()
     self.handle_help_hypervisor()
@@ -135,6 +149,7 @@ class Vif:
     self.handle_help_query()
 
   def handle_help_hypervisor(self):
+    self.log.debug(f"handle_help_hypervisor(): user: {self.conf.user}")
     print("vif hypervisor: manage and maintain z/VM")
     print("  Subcommands:")
     print("      collect: gather problem determination info - could this also send hardware errors?")
@@ -146,9 +161,10 @@ class Vif:
     print("      service: install the latest VIF service (git pull?)")
     print("     shutdown: SHUTDOWN z/VM")
     print("       verify: performs consistency checks of vif")
-    print("       volume: add paging or image disk space TODO: add args if needed")
+    print("       volume: add paging or image disk space ")
 
   def handle_help_image(self):
+    self.log.debug(f"handle_help_image(): user: {self.conf.user}")
     print("vif image    : manage instances of Linux")
     print("  Subcommands:")
     print("       create: define a new Linux image")
@@ -167,6 +183,7 @@ class Vif:
     print("               Syntax: vif image stopall")
 
   def handle_help_partition(self):
+    self.log.debug(f"handle_help_partition(): user: {self.conf.user}")
     print("vif partition: manage disk partitions")
     print("  Subcommands:")
     print("         copy: copy source partition to newly added target partition")
@@ -179,6 +196,7 @@ class Vif:
     print("               Syntax: vif partition share <image1> <device1> [with] <image2> <device2>")
    
   def handle_help_query(self):
+    self.log.debug(f"handle_help_query(): user: {self.conf.user}")
     print("vif query    : display many types of z/VM information")
     print("  Subcommands:")
     print("       active: report which Linux images are running")
@@ -196,6 +214,7 @@ class Vif:
     print("      volumes: display image and paging DASD volumes")
 
   def handle_help(self):
+    self.log.debug(f"handle_help(): user: {self.conf.user}")
     print(" vif commands:")
     print("         help: give help")
     print("   hypervisor: manage z/VM")
@@ -247,34 +266,34 @@ class Vif:
 
   # 'vif hypervisor' command handlers
   def handle_hypervisor_collect(self):
-    print("handle_hypervisor_collect(): Write problem determination data to /var/log/vif/data.collect.YY-MM-DD-HH:MM:SS")
+    self.log.debug(f"handle_hypervisor_collect(): user: {self.conf.user}  Write problem determination data to /var/log/vif/data.collect.YY-MM-DD-HH:MM:SS`")
 
   def handle_hypervisor_echo(self):
-    print("handle_hypervisor_echo(): verify connectivity with VIF")
+    self.log.debug(f"handle_hypervisor_echo(): user: {self.conf.user} verify connectivity with VIF")
 
   def handle_hypervisor_errors(self):
-    print("handle_hypervisor_errors(): write hardware errors to /var/log/vif/ereprept.YY-MM-DD-HH:MM:SS")
+    self.log.debug(f"handle_hypervisor_errors(): user: {self.conf.user} write hardware errors to /var/log/vif/ereprept.YY-MM-DD-HH:MM:SS")
 
   def handle_hypervisor_export(self):
-    print("handle_hypervisor_export(): backup system configuration to /etc/vif/config.save")
+    self.log.debug(f"handle_hypervisor_export(): user: {self.conf.user} backup system configuration to /etc/vif/config.save")
 
   def handle_hypervisor_import(self):
-    print("handle_hypervisor_import(): restore system configuration from /etc/vif/config.save")
+    self.log.debug(f"handle_hypervisor_import(): user: {self.conf.user} restore system configuration from /etc/vif/config.save")
 
   def handle_hypervisor_restart(self):
-    print("handle_hypervisor_restart(): run 'CP SHUTDOWN REIPL'")
+    self.log.debug(f"handle_hypervisor_restart(): user: {self.conf.user} run 'CP SHUTDOWN REIPL'")
 
   def handle_hypervisor_service(self):
-    print("handle_hypervisor_service(): how to service z/VM similar to 'apt update/apt upgrade'?")
+    self.log.debug(f"handle_hypervisor_service(): user: {self.conf.user} how to service z/VM similar to 'apt update/apt upgrade'?")
 
   def handle_hypervisor_shutdown(self):
-    print("handle_hypervisor_shutdown(): run 'CP SHUTDOWN'")
+    self.log.debug(f"handle_hypervisor_shutdown(): user: {self.conf.user} run 'CP SHUTDOWN'")
 
   def handle_hypervisor_verify(self):
-    print("handle_hypervisor_verify(): do consistency checks, args FULL, BRIef, or NETwork <image>'")
+    self.log.debug(f"handle_hypervisor_verify(): user: {self.conf.user} do consistency checks, args FULL, BRIef, or NETwork <image>'")
 
   def handle_hypervisor_volume(self):
-    print("handle_hypervisor_volume(): add PAGE and minidisk space (feilong?)")
+    self.log.debug(f"handle_hypervisor_volume(): user: {self.conf.user} add PAGE and minidisk space (feilong?)")
 
   def p_image_command(self, p):
     '''image_command : image_create
@@ -319,25 +338,25 @@ class Vif:
 
   # 'vif image' command handlers
   def handle_image_create(self, image):
-    print(f"handle_image_create(): create user ID {image} (feilong?) and clone Linux to it")
+    self.log.debug(f"handle_image_create(): user: {self.conf.user} create user ID {image} and clone Linux to it")
 
   def handle_image_delete(self, image):
-    print(f"handle_image_delete(): PURGE {image} (feilong?)")
+    self.log.debug(f"handle_image_delete(): user: {self.conf.user} PURGE {image} (feilong?)")
 
   def handle_image_network(self, args):
-    print(f"handle_image_network(): add/delete network adapters (feilong?) - args: {args}'")
+    self.log.debug(f"handle_image_network(): user: {self.conf.user} add/delete network adapters - args: {args}'")
 
   def handle_image_set(self, args):
-    print(f"handle_image_set(): update user directory (feilong?) - args: {args}")
+    self.log.debug(f"handle_image_set(): user: {self.conf.user} update user directory - args: {args}")
 
   def handle_image_start(self, image):
-    print(f"handle_image_start(): CP XAUTOLOG {image}'")
+    self.log.debug(f"handle_image_start(): user: {self.conf.user} CP XAUTOLOG {image}'")
 
   def handle_image_stop(self, image):
-    print(f"handle_image_stop(): CP SIGNAL SHUTDOWN {image}")
+    self.log.debug(f"handle_image_stop(): user: {self.conf.user} CP SIGNAL SHUTDOWN {image}")
 
   def handle_image_stopall(self):
-    print("handle_image_stopall(): SIGNAL SHUTDOWN to all user IDs running Linux'")
+    self.log.debug(f"handle_image_stopall(): user: {self.conf.user} SIGNAL SHUTDOWN to all user IDs running Linux'")
 
   def p_partition_command(self, p):
     '''partition_command : partition partition_action'''
@@ -362,7 +381,7 @@ class Vif:
 
   # 'vif partition' command handlers
   def handle_partition_copy(self, args):
-    print(f"handle_partition_copy(): run 'partition copy' args: {args}")
+    self.log.debug(f"handle_partition_copy(): user: {self.conf.user} run 'partition copy' args: {args}")
 
   def p_copy_qualifiers(self, p):
     '''copy_qualifiers : MINIDISK MINIDISK 
@@ -373,13 +392,13 @@ class Vif:
       p[0] = (p[1], p[3])
 
   def handle_partition_create(self, args):
-    print(f"handle_partition_create(): run 'partition create' args: {args}")
+    self.log.debug(f"handle_partition_create(): user: {self.conf.user} run 'partition create' args: {args}")
 
   def handle_partition_delete(self, args):
-    print(f"handle_partition_delete(): run 'partition delete' args: {args}")
+    self.log.debug(f"handle_partition_delete(): user: {self.conf.user} run 'partition delete' args: {args}")
 
   def handle_partition_share(self, args):
-    print(f"handle_partition_share(): run 'partition share' with args: {args}")
+    self.log.debug(f"handle_partition_share(): user: {self.conf.user} run 'partition share' with args: {args}")
 
   def p_share_qualifiers(self, p):
     '''share_qualifiers : MINIDISK MINIDISK 
@@ -393,9 +412,7 @@ class Vif:
   def p_query_command(self, p):
     '''query_command : query query_action
                      | query_image'''
-    print(f"p_query_command() p[0]: {p[0]} p[1]: {p[1]}")    
     words = p[1].split()
-    print(f"words[0]: {words[0]} ")
     if words[0] == "image":                # arg is image name
       print(f"query image: words[1]: {words[1]}")
       self.handle_query_image(words[1])
@@ -414,7 +431,6 @@ class Vif:
                     | share     
                     | version     
                     | volume'''  
-    print(f"p_query_action() p[0]: {p[0]} p[1]: {p[1]}")                
     match p[1]:
       case 'active':
         self.handle_query_active()
@@ -443,53 +459,57 @@ class Vif:
       case 'volumes':
         self.handle_query_volumes()
       case _:
-        print(f"ERROR: Unexpected vif query target: {p[1]}")  
+        self.log.error(f" user: {self.conf.user} ERROR: Unexpected vif query target: {p[1]}")  
         sys.exit(1)
 
   # vif query command handlers
   def handle_query_active(self):
-    print("handle_query_active(): display active Linuxes => mariacmdb API")
+    self.log.debug(f"handle_query_active() user: {self.conf.user} display active Linuxes => zlma API")
 
   def handle_query_all(self):
-    print("handle_query_all(): run all other query commands")
+    self.log.debug(f"handle_query_all() user: {self.conf.user} run all other query commands")
 
   def handle_query_configuration(self):
-    print("handle_query_configuration(): z/VM information, golden image(?) and Linux installation values")
+    self.log.debug(f"handle_query_configuration() user: {self.conf.user} z/VM information, golden image(?) and Linux installation values")
 
   def handle_query_errors(self):
-    print("handle_query_errors(): report hardware errors => HMC RESTful API?")
+    self.log.debug(f"handle_query_errors() user: {self.conf.user} report hardware errors => HMC RESTful API?")
 
   def handle_query_image(self, image):
-    print(f"handle_query_image(): query image {image}")
+    self.log.debug(f"handle_query_image() user: {self.conf.user} query image {image}")
 
   def handle_query_level(self):
-    print("handle_query_level(): vif version: 0.1")
+    self.log.debug(f"handle_query_level() user: {self.conf.user} vif version: 0.1")
 
   def handle_query_network(self):
-    print("handle_query_network(): run 'query network'")
+    self.log.debug(f"handle_query_network() user: {self.conf.user} run 'query network'")
 
   def handle_query_paging(self):
-    print("handle_query_paging(): run 'query paging'")
+    self.log.debug(f"handle_query_paging() user: {self.conf.user} run 'query paging'")
 
   def handle_query_partitions(self):
-    print("handle_query_partitions(): run 'query partitions'")
+    self.log.debug(f"handle_query_partitions() user: {self.conf.user} run 'query partitions'")
 
   def handle_query_performance(self):
-    print("handle_query_performance(): run 'query performance'")
+    self.log.debug(f"vif.handle_query_performance(): user: {self.conf.user} run 'query performance'")
 
   def handle_query_shared(self):
-    print("handle_query_shared(): run 'query shared'")
+    self.log.debug(f"handle_query_shared(): user: {self.conf.user} run 'query shared'")
 
   def handle_query_volumes(self):
-    print("handle_query_volumes(): run 'query volumes'")
+    self.log.debug(f"handle_query_volumes(): user: {self.conf.user} run 'query volumes'")
 
   def p_error(self, p):                    # Rule for syntax errors
-    print("Vif.p_error(): Syntax error in input")
+    self.log.error(f"p_error(): user: {self.conf.user} Syntax error in input")
     sys.exit(1)
 
   def parse_command(self):                 # Parse a command
+    if self.args.verbose:                  # set log level to DEBUG for log file and stdout
+      self.log.setLevel(logging.DEBUG)
+      self.console.setLevel(logging.DEBUG)
+      self.log.debug("vif.parse_command() user: {self.conf.user} set log level to verbose")
     cmd =  " ".join(self.args.cmd)
-    print(f"\nvif {cmd}")
+    self.log.debug(f"parse_command(): user: {self.conf.user} cmd: {cmd}")
     match cmd:                             # check for VIF commands with no args => give help on that command
       case "help":
         self.handle_help()
@@ -504,6 +524,7 @@ class Vif:
       case _:                              # there are args - process command
         result = self.parser.parse(cmd)
 
+# main()
 if __name__ == "__main__":
   vif = Vif()                              # create a singleton
-  vif.parse_command()
+  vif.parse_command()                      # process all commands

@@ -1,5 +1,5 @@
 # z/VM and Linux Modern Administration 
-z/VM and Linux Modern Administration (**zlma**, pronounced "zelma") enables Linux servers running under the z/VM hipervisor on IBM Mainframes to be managed in a more modern fashion. The priority of how servers are managed is:
+z/VM and Linux Modern Administration (**zlma**, pronounced "zelma") enables Linux servers running under the z/VM hypervisor on IBM Mainframes to be managed in a more modern fashion. The priority of how servers are managed is:
 
 1. Browser-based
 1. Linux command line
@@ -282,11 +282,10 @@ You should see the text ``(venv)`` prefixed on the command prompt.
     /srv/venv/bin/python3.11 -m pip install --upgrade pip
     ```
 
-- Install Mariadb and the Python connector:
-
+- Install Mariadb, the Python connector and the Lex-Yacc library:
 
 ```
-python3 -m pip install mariadb mysql-connector-python
+python3 -m pip install mariadb mysql-connector-python ply
 ```
 
 - Issue the following command and answer the many security questions:
@@ -612,6 +611,91 @@ model800,192.168.12.176,4,4,aarch64,Linux,Ubuntu 22.04.4 LTS,5.15.0-1053-raspi #
 </pre>
 </body></html>
 ```
+
+# vif 
+The Virtual Image Facility (VIF) is a product that IBM offered in 2000, but then quickly withdrew.  Perhaps the main reason was that there was no ability to log on to 3270 sessions to user IDs such as ``OPERATOR`` or ``MAINT``.  However, the syntax of VIF both abstracted the function of z/VM as a hypervisor and allows commands to be issued from the Linux command line thus alleviating the need for *green screen* access to z/VM.
+
+## vif commands
+``vif`` has the following main commands:
+
+```
+         help: give help
+   hypervisor: manage z/VM
+        image: manage instances of Linux
+    partition: manage disk partitions
+        query: display many types of z/VM information
+```
+
+## vif hypervisor commands
+
+The ``vif hypervisor`` command allows management and maintaintence of z/VM. It has the following subcommands:
+
+```
+      collect: gather problem determination info - could this also send hardware errors?
+         echo: verify connectivity with vif - not needed with localhost, but perhaps cross LPAR
+       errors: report on hardware errors - could this also send problem determination info?
+       export: create a backup of configuration info
+       import: restore a backup of configuration info
+      restart: SHUTDOWN REIPL z/VM
+      service: install the latest VIF service (git pull?)
+     shutdown: SHUTDOWN z/VM
+       verify: performs consistency checks of vif
+       volume: add paging or image disk space 
+```
+
+## vif image commands
+The ``vif image`` commands allow instances of Linux to be managed and modified.  It has the following subcommands:
+
+```
+       create: define a new Linux image
+               Syntax: vif image create <image>
+       delete: delete an existing Linux image
+               Syntax: vif image delete <image>
+      network: manage network connections for a Linux image
+               Syntax: vif image network <image> add|delete <device>
+          set: change memory size or number of CPUs of a Linux image
+               Syntax: vif image set <image> (storage <size>)|cpus <num>)
+        start: boot a Linux image
+               Syntax: vif image start <image>
+         stop: shutdown a Linux image
+               Syntax: vif image stop <image>
+      stopall: shutdown all Linux images on LPAR
+               Syntax: vif image stopall
+```
+
+## vif partition: manage disk partitions
+  Subcommands:
+```
+         copy: copy source partition to newly added target partition
+               Syntax: vif partition copy <image1> <device1> [to] <image2> <device2>
+       create: add a new partition
+               Syntax: vif partition create <image> <device> <size>
+       delete: delete an existing partition
+               Syntax: vif partition delete <image1> <device1>
+        share: give read-only access to the partition of another Linux image
+               Syntax: vif partition share <image1> <device1> [with] <image2> <device2>
+```
+
+## vif query    
+The ``vif query`` command displays many types of z/VM information. It has the following subcommands:
+
+```
+       active: report which Linux images are running
+          all: invoke all other query subcommands
+configuration: display current vif settings
+       errors: report on hardware errors
+        image: display configuration of a Linux image
+               Syntax: vif query <image>
+        level: report the vif level (version)
+      network: display network configuration
+       paging: report on amount of page space and how much is being used
+   partitions: display Linux image DASD utilization
+  performance: display current CPU, paging and I/O utilization
+       shared: display Linux images that share partitions
+      volumes: display image and paging DASD volumes
+```
+# consolez 
+consolez is an open-source package that allows browser access to z/VM console data and to issue CP commands. It helps alleviate the need for *green screen* access to z/VM.
 
 # Colophon
 Zelma is a feminine given name that originated in the late 19th century in the United States. It's believed to be a variant of the German name Selma, which is derived from the Old Norse word "selmr," meaning "protection" or "shelter."

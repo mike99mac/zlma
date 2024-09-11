@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# zlmaloc - count the lines of code in the zlma code
+#
+python="/srv/www/zlma/finder.py /srv/www/zlma/restapi.py /usr/local/sbin/zlma /usr/local/sbin/zlma_conf.py /usr/local/sbin/vif"
+javascript="/srv/www/zlma/bootstable.js"
+bash="$HOME/zlmainfo /usr/local/sbin/testrestapi /usr/local/sbin/testvif"
+css="/srv/www/zlma/finder.css" 
+ 
+echo
+echo "Lines of code in zlma:"
+echo
+echo "Python:"
+wc -l $python
+echo
+echo "Javascript:"
+wc -l $javascript
+echo
+echo "Bash:"
+wc -l $bash
+echo
+echo "CSS:"
+wc -l $css
+echo
+total=`wc -l $python $javascript $bash $css | tail -1`
+echo "$total"
