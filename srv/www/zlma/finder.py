@@ -9,7 +9,8 @@ class Finder:
     """
     self.pattern = ""                      # search pattern
     self.rows = []                         # resulting rows
-    self.headers = ['Host name', 'IP address', 'CPUs', 'GB Mem', 'Arch', 'Common arch', 'OS', 'OS ver', 'Kernel ver', 'Kernel rel', 'RootFS % full', 'Last ping', 'Created', 'App', 'Group', 'Owner']
+    self.headers = ['Host name', 'LPAR', 'User ID', 'IP address', 'CPUs', 'GB Mem', 'Arch', 'Common arch', 'OS', 'OS ver', 'Kernel ver', 'Kernel rel', 'RootFS % full', 'Last ping', 'Created', 'Env', 'App', 'Group', 'Owner']
+
 
     # start the HTML page
     print('Content-Type: text/html')
@@ -21,6 +22,7 @@ class Finder:
     print('<script type="text/javascript" src="/jquery-3.7.1.slim.min.js"></script>')
     print('<script type="text/javascript" src="/popper.min.js"></script>')
     print('<script type="text/javascript" src="/bootstrap.min.js"></script>')
+    # TO DO: minimize bootstable when is stable
     # print('<script type="text/javascript" src="/bootstable.min.js"></script>')
     print('<script type="text/javascript" src="/bootstable.js"></script>')
     print('<link rel="icon" type="image/png" href="/finder.ico">')
@@ -47,15 +49,16 @@ class Finder:
 
   def search_cmdb(self):
     """
-    Search mariacmdb for pattern if included, else get all records
+    Search zlma for pattern if included, else get all records
     """
-    cmd = "/usr/local/sbin/mariacmdb.py query"
+    cmd = "/usr/local/sbin/zlma query"
     if len(self.pattern) > 1:              # search pattern specified
       cmd = f"{cmd} -p {self.pattern}"     # add -p <pattern> flag
+    # print(f"search_cmdb() cmd: {cmd}<br>")
     try:
       proc = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     except Exception as e: 
-      print(f"search_cmdb(): Exception calling mariacmdb.py: {e}")
+      print(f"search_cmdb(): Exception calling zlma: {e}")
       exit(3)
     rc = proc.returncode
     self.rows = []
@@ -83,13 +86,13 @@ class Finder:
 
   def update_all(self):
     """
-    Update all mariacmdb records 
+    Update all zlma records 
     """
-    cmd = "/usr/local/sbin/mariacmdb.py update"
+    cmd = "/usr/local/sbin/zlma update"
     try:
       proc = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     except Exception as e: 
-      print(f"search_cmdb(): Exception calling mariacmdb.py: {e}")
+      print(f"search_cmdb(): Exception calling zlma: {e}")
       exit(3)
 
   def process_query(self):
@@ -138,7 +141,7 @@ class Finder:
 
     # make the table editable
     print('<script>')
-    print('$("#server-table").SetEditable({columnsEd: "13,14,15", onEdit:function(){}})')
+    print('$("#server-table").SetEditable({columnsEd: "15,16,17,18", onEdit:function(){}})')
     print('</script>')
     print('</body></html>')                # end page
 
