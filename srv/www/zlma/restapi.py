@@ -103,11 +103,9 @@ class ZlmaAPI():
     try:   
       self.cursor.execute(cmd)             # query the cmdb
       rows = self.cursor.fetchall()
-      print(f"rows: {rows}")
-      # if rows == []:                       # no match
-      #   self.log.info(f"ZlmaAPI.run_sql_query(): no matching rows") 
     except mariadb.Error as e:
       self.log.error(f"ZlmaAPI.run_sql_query(): ERROR! e: {e}")  
+    # print(f"rows: {rows}")
     json_out = json.dumps(rows, indent=2)
     return json_out  
 
@@ -139,7 +137,9 @@ class ZlmaAPI():
     ping specified servers and return how many servers ping out of how many found 
     """
     sql_cmd = f"SELECT host_name FROM servers {where_clause}"
-    sql_out = self.run_sql_query(sql_cmd)    # list of server host names
+    sql_out = self.run_sql_query(sql_cmd)  # list of server host names
+    sql_json = json.loads(sql_out)
+    self.log.debug(f"ping_servers() sql_json: {sql_json}")
     self.close_conn()
     self.log.info(f"ZlmaAPI.ping_servers(): sql_out = {sql_out} type(sql_out) = {type(sql_out)}")
     up_servers = 0
@@ -147,10 +147,8 @@ class ZlmaAPI():
     if sql_out == "":                      # no records found
       self.log.debug(f"ZlmaAPI.ping_servers(): no records found")
     else:                                  # ping servers
-      sql_out = sql_out.replace('"', "").replace("[", "").replace("]", "").replace(",", "") # remove SQL fluff
-      sql_list = sql_out.split()           # convert to list
-      self.log.debug(f"ZlmaAPI.ping_servers(): sql_list = {sql_list} type(sql_list) = {type(sql_list)}")
-      for next_server in sql_list:
+      for entry in sql_json:
+        next_server = entry["host_name"]
         self.log.debug(f"ZlmaAPI.ping_servers(): next_server = {next_server}")
         num_servers += 1 
         proc = subprocess.run(f"ping -c1 -w1 {next_server}", shell=True, capture_output=True, text=True)     
@@ -177,9 +175,9 @@ class ZlmaAPI():
       if len(next_list) == 2:            # '=' found
         attr = next_list[0]
         # if column is a string, escape with double quotes
-        if attr == "os" or attr == "arch" or attr == "lpar" or attr == "userid": 
+        if attr != "cpus" and attr != "mem_gb": 
           value = next_list[1]
-          next_word = f"{attr}=\"{value}\""
+          next_word = f"{attr} LIKE \"%{value}%\""
       where_clause = f"{where_clause} AND {next_word}"
     self.log.debug(f"ZlmaAPI.mk_where_clause(): where_clause: {where_clause}")
     return where_clause
@@ -192,11 +190,9 @@ class ZlmaAPI():
     sql_cmd = f"SELECT COUNT(host_name) FROM servers {where_clause}"
     self.log.debug(f"ZlmaAPI.count_servers(): sql_cmd: {sql_cmd}")
     sql_out = self.run_sql_query(sql_cmd)
+    self.log.debug(f"count_servers() sql_out: {sql_out}")
     self.close_conn()
-    sql_out = str(sql_out).replace("[", "").replace("]", "")
-    if not sql_out:                    # no hits
-      sql_out = "0"
-    return '{"num_servers": '+sql_out+'}'
+    return sql_out
 
   def get_host_names(self, where_clause: str) -> str:
     """
@@ -207,9 +203,8 @@ class ZlmaAPI():
     self.log.debug(f"ZlmaAPI.get_host_names(): hostname sql_cmd = {sql_cmd}")
     sql_out = self.run_sql_query(sql_cmd)
     self.close_conn()
-    ret_val = '{"servers": ['+sql_out+']}' # convert to JSON
-    self.log.debug(f"ZlmaAPI.get_host_names(): ret_val = {ret_val}")
-    return ret_val
+    self.log.debug(f"ZlmaAPI.get_host_names(): sql_out = {sql_out}")
+    return sql_out
 
   def get_linux_ips(self, where_clause: str) -> str:
     """
@@ -220,9 +215,8 @@ class ZlmaAPI():
     self.log.debug(f"ZlmaAPI.get_linux_ips(): hostname sql_cmd = {sql_cmd}")
     sql_out = self.run_sql_query(sql_cmd) 
     self.close_conn()
-    ret_val = '{"servers": ['+sql_out+']}' # convert to JSON
-    self.log.debug(f"ZlmaAPI.get_linux_ips(): sql_out: {sql_out} ret_val = {ret_val}")
-    return ret_val
+    self.log.debug(f"ZlmaAPI.get_linux_ips(): sql_out: {sql_out}")
+    return sql_out
 
   def get_records(self, where_clause: str) -> str:
     """
@@ -233,7 +227,8 @@ class ZlmaAPI():
     self.log.debug(f"ZlmaAPI.get_records(): query sql_cmd = {sql_cmd}")
     sql_out = self.run_sql_query(sql_cmd) 
     self.close_conn()
-    return '{"servers": '+'"'+str(sql_out)+'"}'  
+    #return '{"servers": '+'"'+str(sql_out)+'"}'  
+    return sql_out  
 
   def update_record(self, query_str: str):
     """
