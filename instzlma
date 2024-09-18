@@ -1,0 +1,318 @@
+#!/bin/bash
+#
+# instzlma - install zlma onto a Linux on s390x (mainframe) architecture 
+#            user running this must have sudo access
+#
+#+--------------------------------------------------------------------------+
+function usage()
+# Give help to the user
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  echo "instzlma - install zlma onto s390x Linux" 
+  echo "Usage: instzlma [OPTIONS]" 
+  echo ""
+  echo "OPTIONS:"
+  echo "  -h|--help         Give help (this screen)"
+  echo "  -p|--python PYTHON_CMD Where PYTHON_CMD is the python level to use (ex: python3.11)"
+  echo "  -v|--verbose      Increase verbosity"
+  echo "  -x|--debug        Print commands and arguments as they are executed"
+  echo ""
+  exit 51
+ }                                         # usage()
+
+#+--------------------------------------------------------------------------+
+function parseArgs()
+# Parse arguments
+# Args: All arguments passed into script
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  while [ -n "$1" ]                        # loop through args passed in
+  do
+    case "$1" in
+      -h|--help)
+        usage
+        ;;
+      -p|--python)
+        shift
+        if [ $# = 0 ]; then                # PYTHON_CMD not supplied
+          echo "ERROR: PYTHON_CMD not supplied"
+          usage
+        fi 
+        flags="-v"
+        pythonCmd=$1
+        which $pythonCmd >/dev/null 2>&1
+        if [ $? != 0 ]; then               # command not found
+          echo "ERROR: $pythonCmd not found"
+          usage
+        fi
+        ;;
+      -v|--verbose)
+        verbose=2
+        flags="-v"
+        ;;
+      -x|--debug)                          # turn trace on
+         set -vx
+         ;;
+      *)
+        echo "ERROR: Too many arguments: $1"
+        usage
+        ;;
+    esac
+    shift
+  done
+ }                                         # parseArgs()
+
+#+--------------------------------------------------------------------------+
+function checkBase
+# Check that:
+# - We are running on s390x (zLinux) 
+# - The zlma repo is cloned
+# - Either 'apache' or 'www-data' user exists
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  if [ ! -f /proc/sysinfo ]; then          # not zLinux
+    echo "ERROR: /proc/sysinfo not found - not running on s390x?" 
+    exit 1
+  fi
+  if [ ! -d $HOME/zlma ]; then
+    echo 'ERROR: zlma repo not found under $HOME' 
+    echo "Try:   cd; git clone https://github.com/mike99mac/zlma"
+    exit 2
+  fi
+  id apache > /dev/null 2>&1
+  if [ $? = 0 ]; then                      # user exists
+    webUser="apache"
+  else
+    id www-data > /dev/null 2>&1
+    if [ $? = 0 ]; then                    # user exists
+      webUser="www-data"
+    else
+      echo "ERROR: neither user 'apache' nor 'www-data' found" 
+      exit 3
+    fi
+  fi
+ }                                         # checkBase()
+
+#+--------------------------------------------------------------------------+
+function verboseMsg
+# Write message to stdout when -v|--verbose is set 
+# Args: message to write
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  if [ "$verbose" -gt 1 ]; then            # verbose 
+    echo -e "$@"
+  fi
+ }                                         # verboseMsg()
+
+#+--------------------------------------------------------------------------+
+function runCmd
+# Run a command and exit if it fails
+# Args: command to run
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  cmd="$@"                                 # all args
+
+  echo "  Running: $cmd" 
+  eval $cmd 2>&1 
+  rc=$?
+  if [ "$rc" != 0 ]; then                  # it failed
+    echo "ERROR: $cmd returned $rc" 
+    exit 4
+  fi
+ }                                         # runCmd()
+
+#+--------------------------------------------------------------------------+
+function mkDir
+# Make specified directory, set owner and group to webUser, set group write bit 
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  local theDir=$1
+  local rc
+  
+  if [ -d $theDir ]; then                  # directory exists
+    echo "  directory $theDir already exists"
+  else                                     # create directory and set attributes
+    runCmd sudo mkdir -p $theDir
+    runCmd sudo chown $webUser.$webUser $theDir
+    runCmd sudo chmod g+w $theDir
+  fi 
+ }                                         # mkDir
+
+#+--------------------------------------------------------------------------+
+function copyAllFiles 
+# Copy all files from repo directories to new ones
+# Arg 1: source dir
+# Arg 2: target dir
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  local sourceDir=$1
+  local targetDir=$2
+
+  if [ ! -d $theDir ]; then                  # directory exists
+    echo "ERROR: Unexpected - source directory $sourceDir does not exist"
+    exit 5
+  fi
+  runCmd cd $sourceDir
+  runCmd "sudo cp * $targetDir"
+  runCmd cd $targetDir
+  runCmd "sudo chown $webUser.$webUser *"
+ }                                         # mkDir
+
+#+--------------------------------------------------------------------------+
+function copyOneFile
+# Copy one file and set ownership to webUser
+# Arg 1: source dir
+# Arg 2: source file
+# Arg 3: target dir
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  local sourceDir=$1
+  local sourceFile=$2
+  local targetDir=$3
+
+  runCmd sudo cp $sourceDir/$sourceFile $targetDir
+  runCmd sudo chown $webUser.$webUser $targetDir/$sourceFile
+ }                                         # copyOneFile()
+
+#+--------------------------------------------------------------------------+
+function instPackages
+# Install packages with either 'apt' or 'dnf' 
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  local cmd
+
+  echo; echo "Step 1): installing packages ..."
+  which apt >/dev/null 2>&1
+  if [ $? = 0 ]; then                      # use apt
+    cmd="sudo apt install -y cifs-utils curl gcc git  make mlocate net-tools pandoc python3 python3-dev python3-pip"
+    runCmd $cmd
+    runCmd sudo systemctl enable apache2   # set Apache to start at boot
+  else                                     # no apt, check for dnf
+    which dnf >/dev/null 2>&1
+    if [ $? = 0 ]; then                    # use dnf
+      cmd="sudo dnf install -y bzip2-devel cifs-utils curl gcc git libffi-devel make mlocate net-tools openssl-devel" 
+      local morePkgs="python3 python3-devel python3-pip vim wget zlib-devel"
+      runCmd $cmd $morePkgs
+      runCmd sudo systemctl enable httpd   # set Apache to start at boot
+    else
+      echo "ERROR: did not find 'apt' nor 'dnf' - don't know how to install"
+      exit 6
+    fi
+  fi
+  runCmd sudo systemctl enable mariadb     # set mariadb to start at boot 
+ }                                         # instPackages()
+
+#+--------------------------------------------------------------------------+
+function mkVenv
+# Make a virtual environment under /srv/venv/ 
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  cd /srv/
+  echo; echo "Step 5): creating virtual environment ..."
+  runCmd sudo $pythonCmd -m venv venv
+  runCmd source venv/bin/activate
+
+  echo; echo "Step 6): upgrading pip ..."
+  runCmd "$pythonCmd -m pip install --upgrade pip"
+ }                                         # mkVenv()
+
+#+--------------------------------------------------------------------------+
+function instZlma
+# Do the work to install and configure zlma 
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  instPackages                             # install packages
+
+  # make 2 CGI dirs, a log file dir and a directory for console data
+  echo; echo "Step 2): creating directories ..."
+  mkDir /srv/www/zlma
+  mkDir /srv/www/zlmarw
+  mkDir /var/log/zlma
+  mkDir /srv/consolez 
+
+  # copy all files from CGI dirs in repo to new dirs
+  echo; echo "Step 3): copying files from repo ..."
+  copyAllFiles $repoDir/srv/www/zlma   /srv/www/zlma
+  copyAllFiles $repoDir/srv/www/zlmarw /srv/www/zlmarw
+
+  # copy files one at a time to /usr/local/sbin
+  cd $repoDir/usr/local/sbin
+  local nextFile
+  for nextFile in *; do                    # copy each file to /usr/local/sbin
+    copyOneFile $repoDir/usr/local/sbin $nextFile /usr/local/sbin
+  done  
+ 
+  # create symlinks for additional console scripts
+  echo; echo "Step 4): creating symbolic links ..."
+  cd /usr/local/sbin
+  if [ ! -h catcons ]; then
+    runCmd sudo ln -s spoolcons catcons
+  fi
+  if [ ! -h grepcons ]; then
+    runCmd sudo ln -s spoolcons grepcons 
+  fi
+  if [ ! -h lscons ]; then
+    runCmd sudo ln -s spoolcons lscons 
+  fi
+  if [ ! -h rmcons ]; then
+    runCmd sudo ln -s spoolcons rmcons 
+  fi
+
+  # make a virtual environment
+  mkVenv                                   
+ }                                         # instZlma()
+
+# main()
+repoDir="$HOME/zlma"                       # directory with zlma repo 
+outFile="$HOME/$timeStamp-instzlma.out"    # output file
+pythonCmd="python3"                        # can be another version
+timeStamp=`date +"%y-%m-%d-%H-%M-%S"`   
+verbose=0                                  # verbosity
+webUser="unknown"                          # either 'apache' or 'www-data'
+
+parseArgs $@
+checkBase                                  # verify this is s390x
+echo "Running instzlma to install zlma at $timeStamp ..." > $outFile # create a new log file
+instZlma | tee -a $outFile                 # do the work
+let min=$SECONDS/60
+let sec=$SECONDS%60
+if [ $sec -lt 10 ]; then                   # add a leading 0
+  sec="0$sec"
+fi
+echo
+echo "Successfully installed zlma co-reqs in $min:$sec" | tee -a $outFile
+echo "Log file: $outFile"
+

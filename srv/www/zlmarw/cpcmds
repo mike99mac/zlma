@@ -1,0 +1,337 @@
+#!/bin/bash
+#
+# This code is shipped under the Artistic License 2.0. See the file
+# Artistic-License-2.0.txt or http://opensource.org/licenses/Artistic-2.0
+#
+#+--------------------------------------------------------------------------+
+#
+# cpcmds - For admins run any CP command specified.  
+#          For netadmins allow the following commands to be run:
+#          Command                Keyword
+#          Q VSWITCH              QVSW
+#          Q VSWITCH DETAILS      QVSWDET
+#          Q CONTROLLER           QCONT
+#          Q IUCV                 QIUCV
+#          Q VMLAN                QVMLAN
+#          Q PORT GROUP           QPORTG
+#
+#+--------------------------------------------------------------------------+
+function drawLPARchooser
+# Draw a table that enables the user to choose which LPARs to run the CP commands on 
+# Args: none
+# Global variables:
+#   allLPARs: list of env:systemID pairs is set
+#+--------------------------------------------------------------------------+
+ {
+  local curCol="none"                      # current column
+  local env                                # current environment
+  local lastEnv="none"                     # previous environment
+  local nextLPAR 
+  local systemID
+  local thisColor
+
+  startTable
+  echo "<h3>Choose LPARs</h3>"
+  allLPARs=`/usr/local/sbin/lscons | awk '{print $1}'`
+  for nextLPAR in $allLPARs; do
+    env=`echo $nextLPAR | awk -F: '{print $1}'`
+    CEC=`echo $nextLPAR | awk -F: '{print $2}'`
+    systemID=`echo $nextLPAR | awk -F: '{print $3}'`
+    if [ "$env" != "$lastEnv" ]; then      # this is a new environment
+      if [ "$evenOdd" = even ]; then       # toggle
+        evenOdd=odd
+      else
+        evenOdd=even
+      fi
+      if [ "$lastEnv" != none -a "$curCol" != 1 ]; then  
+        for i in `seq $curCol $numCols`; do # fill up empty cells
+          echo "<td style=\"background-color:$color1;\">&nbsp;</td>" # empty cell
+        done
+      fi
+      echo "</tr>"                         # end current row
+      echo "<tr>"                          # start row for environment
+      echo "<td colspan=\"$numCols\" style=\"background-color:$color1;\">"
+      echo "<input type='checkbox' name='e' value='$env'>Environment: $env"
+      echo "</tr>"                         # end row
+
+      # get all CECs in env and add a checkbox for each
+      CECs=`echo "$allLPARs" | grep $env | awk -F: '{print $2}' | sort | uniq`
+      CEClist=`echo "$CECs" | xargs`       # CECs with no newlines
+      echo "<td style=\"background-color:$color1;\">CECs:</td>"
+      local nextCEC
+      local newIndex                       # either the index or the inverse
+      local i=0                            # counter
+      for nextCEC in $CEClist; do          # loop through each CEC
+        if [ "$evenOdd" = odd ]; then      # forward colors
+          newIndex=$i
+        else                               # reverse colors
+          let newIndex=7-$i
+        fi
+        thisColor="${colors[$newIndex]}"
+        echo "<td style=\"background-color:$thisColor;\">"
+        echo "<input type='checkbox' name='c' value=\"$env:$nextCEC\">$nextCEC"
+        echo "</td>"                       # end cell
+        let i=$i+1                         # increment counter
+      done
+      local j                              # counter
+      local endCell
+      let endCell=$numCols-2
+      for j in `seq $i $endCell`; do       # fill in empty cells
+        echo "<td style=\"background-color:$color1;\">&nbsp;</td>"
+      done
+      echo "</td></tr>"                    # end cell and row
+      lastEnv=$env                         # save last env
+      curCol=1                             # reset counter
+    fi
+
+    # add a check box and the LPAR
+    local colorIndex
+    colorIndex=`echo "$CECs" | grep -n $CEC | awk -F: '{print $1}'`
+    let colorIndex=$colorIndex-1           # arrays start at 0
+    if [ "$evenOdd" = odd ]; then          # forward colors
+      newIndex=$colorIndex
+    else                                   # reverse colors
+      let newIndex=7-$colorIndex
+    fi
+    thisColor="${colors[$newIndex]}"
+    echo "<td style=\"background-color:$thisColor;\">&nbsp;&nbsp<input type='checkbox' name='l' value='$systemID'>$systemID"
+    echo "</td>"                           # end cell
+    let curCol=$curCol+1                   # increment counter
+    if [ "$curCol" -gt "$numCols" ]; then  # row is full
+      local i
+      echo "</tr>"                         # end current row
+      echo "<tr>"                          # start new row
+      curCol=1                             # reset counter
+    fi
+  done
+  for i in `seq $curCol $numCols`; do # fill up empty cells
+    echo "<td style=\"background-color:$color1;\">&nbsp;</td>" # empty cell
+  done
+  echo "</table><br>"                      # end table, leave room
+ }                                         # drawLPARchooser()
+
+#+--------------------------------------------------------------------------+
+function addOneLPAR
+# Add an LPAR to LPARlist if not already there
+# Arg 1: LPAR to add
+# Global variables:
+#   LPARlist: space separated list of LPARs
+#+--------------------------------------------------------------------------+
+ {
+  local LPARtoAdd=$1
+  if [ ${#LPARtoAdd} = 0 ]; then            # arg not passed
+    echo "INTERNAL ERROR - no LPAR passed to addOneLPAR<br>"
+    exit 3
+  fi
+  echo "$LPARlist" | grep $LPARtoAdd >/dev/null
+  if [ $? != 0 ]; then                     # not already in list
+    LPARlist="$LPARlist $LPARtoAdd"        # add to list
+  fi  
+ }                                         # addOneLPAR()
+
+#+--------------------------------------------------------------------------+
+function addToLPARlist
+# Add an environments worth of LPARs to LPARlist 
+# Arg 1: Group type: 'env' or 'CEC'
+# Arg 2: environment or CEC to add
+# Global variables:
+#   allLPARs: all envs and LPARs in org of the form <env>:<LPAR>
+#   LPARlist: space separated list of LPARs
+#+--------------------------------------------------------------------------+
+ {
+  local groupType=$1
+  local groupToAdd=$2
+  if [ ${#groupToAdd} = 0 ]; then            # arg not passed
+    echo "INTERNAL ERROR - no env passed to addToLPARlist<br>"
+    exit 3
+  fi
+  local nextGroup                          # environment or CEC name to add
+  local nextLPAR
+  local nextSystemID
+
+  for nextLPAR in $allLPARs; do            # loop through all env:systemID pairs
+    if [ "$groupType" = env ]; then 
+      nextGroup=`echo $nextLPAR | awk -F: '{print $1}'` # get env
+    else                                   # assume CEC
+      nextGroup=`echo $nextLPAR | awk -F: '{print $1 ":" $2}'` # get env:CEC
+    fi
+    if [ "$nextGroup" = "$groupToAdd" ]; then  # there is a hit 
+      nextSystemID=`echo $nextLPAR | awk -F: '{print $3}'` # get system ID
+      addOneLPAR $nextSystemID             # add if not already there
+    fi
+  done
+ }                                         # addToLPARlist()
+
+#+--------------------------------------------------------------------------+
+function setLPARlist
+# Set the global variable nodeList based on the userID numbers
+# Args: none
+# Global variables:
+#   QUERY_STRING: can have multiple '&l=<name>' values where <name> is an LPAR
+#                      and multiple '&e=<name>' values where <name> is an environment          
+#   nodeList: is set with a comma-delimited list
+#+--------------------------------------------------------------------------+
+ {
+  local lineSep=`echo "$QUERY_STRING" | sed 's/&/\n/g'`    # inject newlines into list
+  LPARlist=`echo "$lineSep" | grep '^l=' | sed 's/l=/ /g'`
+  CEClist=`echo "$lineSep" | grep '^c=' | sed 's/c=/ /g'`
+  CEClist=`uudecode $CEClist`
+  local envs=`echo "$lineSep" | grep '^e=' | sed 's/e=/ /g'`
+  if [ ${#adminCmd} != 0 -o ${#netadminCmd} != 0 ]; then # there is a command to run
+    if [ ${#LPARlist} = 0 -a ${#CEClist} = 0 -a ${#envs} = 0 ]; then # nothing was selected
+      echo "<h2>Whoops! You need to check at least one box</h2>"
+      return
+    fi
+  fi
+  # loop through environments checked
+  local nextEnv
+  for nextEnv in $envs; do                 # loop through selected env's
+    addToLPARlist env $nextEnv             # add a set of LPARs
+  done
+
+  # loop through CECs checked
+  local nextCEC
+  for nextCEC in $CEClist; do              # loop through selected env's
+    addToLPARlist CEC $nextCEC             # add a CEC of LPARs
+  done
+ }                                         # setLPARlist()
+
+#+--------------------------------------------------------------------------+
+function drawCPcmdButtons
+# Draw navigation buttons specifically for this page
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  local greenStyle="style=\"background-color:#8CFF66\""
+  local yellowStyle="style=\"background-color:#FFDB4D\""
+
+  # start a table for either type of user
+  echo "<table align=center><tr><td>"    # leave room, start table, row and cell
+  echo "<p><b>CP command:</b></p>"
+  echo "</td></tr>"
+  echo "<tr><td>"
+
+  # For netadmins add a radio group of CP commands 
+  if [ "$role" = netadmin ]; then 
+    echo '<input type="radio" id="QCONT"   name="netadminCmd" value="QCONT">Q CONTROLLER<br>'
+    echo '<input type="radio" id="QIUCV"   name="netadminCmd" value="QIUCV">Q IUCV<br>'
+    echo '<input type="radio" id="QPORTG"  name="netadminCmd" value="QPORTG">Q PORTG<br>'
+    echo '<input type="radio" id="QVMLAN"  name="netadminCmd" value="QVMLAN">Q VMLAN<br>'
+    echo '<input type="radio" id="QVSW"    name="netadminCmd" value="QVSW" checked>Q VSWITCH<br>'
+    echo '<input type="radio" id="QVSWDET" name="netadminCmd" value="QVSWDET">Q VSWITCH DETAILS<br>'
+    echo "</td></tr>"
+  elif [ "$role" = admin ]; then
+    echo "<input type=text style=\"width: 300px;\" id=adminCmd name=adminCmd>"
+  fi
+
+  # finish the table for either type of user
+  echo "<tr><td><br>"
+  echo "<input class=button $greenStyle <font size=\"+2\" type=submit value=\"RUN COMMAND\">&nbsp;"
+  echo "</td></tr></table>"                # end cell, row, table 
+  echo "<br><br>"                          # leave some room
+ }                                         # drawCPcmdButtons()
+
+#+--------------------------------------------------------------------------+
+function runCommand
+# Draw a table with all guests that have saved console data - $numCols per row 
+# Args: none 
+#+--------------------------------------------------------------------------+
+ {
+  local CPcmd                              # the CP command to run 
+  local cmd                                # a command
+  local rc                                 # a return code
+
+  if [ "$role" = admin ]; then             # user is a full admin 
+    if [ ${#adminCmd} = 0 ]; then          # no command has yet been specified
+      return                               # all done
+    fi
+    CPcmd=`uudecode $adminCmd`             # UU-decode the command
+  elif [ "$role" = netadmin ]; then        # user is a network administrator
+    if [ ${#netadminCmd} = 0 ]; then       # no command has yet been specified
+      return                               # all done
+    fi
+    case $netadminCmd in
+      QVSW)
+        CPcmd="QUERY VSWITCH"
+        ;;      
+      QVSWDET)
+        CPcmd="QUERY VSWITCH DETAILS"
+        ;;      
+      QCONT)
+        CPcmd="QUERY CONTROLLER"
+        ;;      
+      QIUCV)
+        CPcmd="QUERY IUCV"
+        ;;      
+      QVMLAN)
+        CPcmd="QUERY VMLAN"
+        ;;      
+      QPORTG)
+        CPcmd="QUERY PORT GROUP"
+        ;;      
+      *)
+        echo "Internal server error: Unexpected netadminCmd: $netadminCmd"
+        return
+        ;;
+    esac
+  fi 
+
+  # button not working:
+  # addScrollButton                          # add a 'Scroll to bottom' button
+  echo '<table class="greenScreenTable">'  # start a 'green screen' table 
+  echo "<tr><td><pre>"                     # start row, cell, preformatted text
+
+  # run CP commands on each LPAR selected
+  local nextLPAR
+  for nextLPAR in $LPARlist; do            # loop through each LPAR
+    cmd="/usr/local/sbin/cpcommand -w $nextLPAR $CPcmd" # command to send
+    echo "calling: $cmd"
+    eval $cmd | sed "s/^/${nextLPAR}: /g"  # run command prefixing each line with LPAR:
+    echo                                   # leave some room
+  done
+  echo "</td></tr></table>"                # end cell, row, table
+ }                                         # runCommand()
+
+#+--------------------------------------------------------------------------+
+function doTheWork 
+# Draw the entire page 
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  if [ ${#systemID} = 0 ]; then            # no LPAR ID passed in
+    title="Run CP commands"
+  else                                     # include LPAR ID
+    title="Run CP commands on $systemID"
+  fi
+  startPage $title                         # start the Web page
+  cat consolez.css                         # inline cascading style sheets
+  echo "<h2>$title</h2>"                   # draw title
+  echo "<form action=\"/ldap/cpcmds\" method=\"GET\">" # rerun this script
+  drawLPARchooser                          # if no system ID passed in, allow choosing of LPARs
+  setLPARlist                              # set which LPAR/environments have been set
+  drawCPcmdButtons                         # add custom navigation buttons
+  runCommand                               # run CP command and show output
+  echo "</form><table>"                    # end form and table
+  drawButtons                              # add navigation buttons
+  echo "</body></html>"                    # end the page
+ }                                         # doTheWork()
+
+#+--------------------------------------------------------------------------+
+# global variables
+adminCmd=`echo "$QUERY_STRING" | sed -n 's/^.*adminCmd=\([^&]*\).*$/\1/p'`
+netadminCmd=`echo "$QUERY_STRING" | sed -n 's/^.*netadminCmd=\([^&]*\).*$/\1/p'`
+systemID=`echo "$QUERY_STRING" | sed -n 's/^.*systemID=\([^&]*\).*$/\1/p'`
+allLPARs=""                                # all z/VM LPARs in org
+CEClist=""                                 # all CECs chosen
+colors=("#F6D9ED" "#FBF5E6" "#FEF0C9" "#F1EDC2" "#FEE0C9" "#DED0C6" "#FFEECA" "#EEF3E2") # to color-code CECs
+evenOdd="even"                             # even or odd environment
+LPARlist=""                                # all z/VM LPARs chosen
+
+# main()
+source /usr/local/sbin/consfuncs           # import common line command functions
+source consuifuncs                         # import common Web UI functions
+setWebUIvars                               # override defaults with user's preferences
+setRole                                    # set user's role based on login credentials
+doTheWork                                  # draw the page 
+
+

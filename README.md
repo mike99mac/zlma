@@ -15,6 +15,7 @@ It consists of four main components:
   - ``zlma`` - manage DB of zLinux data 
   - ``vif`` - manage many aspects of z/VM
 - A RESTful API 
+  - So other apps can get to the data
 
 # Overview
 Following is a block diagram of zlma:
@@ -26,6 +27,7 @@ Following is a block diagram of zlma:
 ## Set up SSH access
 Key-based authentication, or *Passwordless* SSH access is needed for one user from the zlma server to all systems that will be managed.
 ``zlma`` commands must be run by that user and they must have ``sudo`` access.
+Details on how to accomplish this are outside the scope of this document (TODO: add another document?) 
 
 Following is an example of a script that SSH's to each managed server and runs the ``hostname`` command:
 
@@ -58,12 +60,13 @@ This code has been installed on Debian and RHEL bases Linuxes.  When there are d
 To install zlma, perform the following steps.
 
 - Login as a non-root user with sudo privileges. Add the group which will be running apache to that user.  
+  In this exmple the user is ``youruser`` and the group is ``apache``, which is common for Red Hat-based distros. For Debian, the group ``www-data`` is common.
 
 ```
-sudo usermod -aG apache mikemac
-su - mikemac
+sudo usermod -aG apache youruser
+su - youruser
 id
-uid=1000(mikemac) gid=1000(mikemac) groups=1000(mikemac),48(apache)
+uid=1000(youruser) gid=1000(youruser) groups=1000(youruser),48(apache)
 ```
 
 - Update your system.
@@ -86,9 +89,9 @@ uid=1000(mikemac) gid=1000(mikemac) groups=1000(mikemac),48(apache)
 
 This step is optional.  
 
-Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. AlmaLinux 9.4 ships with a base Python version of 3.9 which will not run this code.
+Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. AlmaLinux 9.4 (the distro often used to write this document) ships with a base Python version of 3.9 which will not run this code.
 
-To install Python 3.11, perform the following steps.
+To install Python 3.11 on a RHEL based distro, perform the following steps.
 
 - Install Python 3.11
 
@@ -117,7 +120,7 @@ git clone https://github.com/mike99mac/zlma
 Choose either to install manually or use the install script 
 
 ### Install manually
-If you will use the install script, skip this section.
+If you want to/automaticall use the install script, skip this section and [go to](#Install-automatically).
 
 To install zlma and co-req packages, perform the following steps.
 
@@ -183,12 +186,16 @@ sudo systemctl start mariadb
 ```
 
 ### Install automatically
-The script ``instzlma`` is provided to save time. To run it, perform the following step
+The script ``instzlma`` is provided to save time. To run it if your system has a Python base of 3.10 or greater, perform the following step:
 
 ```
-cd 
-cd zlma
-./instzlma 
+$HOME/zlma/instzlma 
+```
+
+If your system required Python to be upgraded, include the python command of the upgraded version:
+
+```
+$HOME/zlma/instzlma python3.11
 ```
 
 The output will be written to your home directory in a file of the form ``<yr-mon-day-hr-min-sec>-instzlma.out``.
@@ -291,7 +298,7 @@ For reference,
   "db_pw":          "pi",
   "db_host":        "127.0.0.1",
   "db_name":        "zlma",
-  "home_dir":       "/home/mikemac",
+  "home_dir":       "/home/youruser",
   "log_level":      "debug",
   "user_directory": "vmsecure"
 }

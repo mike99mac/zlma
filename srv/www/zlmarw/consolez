@@ -1,0 +1,145 @@
+#!/bin/bash
+#
+# This code is shipped under the Artistic License 2.0. See the file
+# Artistic-License-2.0.txt or http://opensource.org/licenses/Artistic-2.0
+#
+#+--------------------------------------------------------------------------+
+#
+# consolez - draw one Web page summarizing the health of all z/VM systems 
+#
+#+--------------------------------------------------------------------------+
+function drawUserIDcell
+# Draw a userID with hot link or an empty cell 
+# Arg 1: system ID it runs on
+# Arg 2: user ID to draw 
+#+--------------------------------------------------------------------------+
+ {
+  local systemID=$1                
+  local userID=$2                 
+ 
+  if [ ${#userID} = 0 ]; then              # no more saved consoles
+    echo "<td>&nbsp;</td>"                 # empty cell 
+  else                                     # show user ID as a hot link
+    echo "<td><a style=\"color:$color;\" href=onecons?$userID&amp;$systemID>$userID</a></td>"
+  fi
+ }                                         # drawUserIDcell()
+
+#+--------------------------------------------------------------------------+
+function drawOneRow
+# Draw one table row for one z/VM LPAR - each row gets max of 10 user IDs
+#   Arg 1    : Environment:CEC:LPAR 
+#   Args 2-n : User IDs that have console data saved
+#+--------------------------------------------------------------------------+
+ {
+  local env=`echo $1 | awk -F: '{print $1}'`
+  local CEC=`echo $1 | awk -F: '{print $2}'`
+  local systemID=`echo $1 | awk -F: '{print $3}'`
+  shift                                    # skip arg 1
+  local userIDs="$@"                       # remaining user IDs
+  
+  # check if need to draw divider row for new environment
+  if [ "$curEnv" != "$env" ]; then         # this is a new environment
+    curEnv="$env"                          # new current environment
+    echo "<tr><th style=\"background-color:$headerColor;\" colspan=\"$numCols\">"
+    echo "$env</th></tr>"                    # add text, end header and row
+  fi
+
+  # draw LPAR column and up to $numCols more user IDs
+  local numIDs
+  local color="green"
+  echo "<td><a style=\"color:$color;\" href=onelpar?$systemID>$systemID</a></td>" # column 1 - the LPAR
+
+  # check if this is a new CEC 
+  if [ "$curCEC" != "$CEC" ]; then         # this is a new environment
+    curCEC="$CEC"                          # new current CEC 
+    echo "<td>$CEC</td>"                   # column 2 - the CEC 
+  else
+    echo "<td>&nbsp;</td>"                 # column 2 - empty cell 
+  fi
+
+  # loop up to $numCols user IDs to show
+  local nextUserID
+  let colNum=2                             # current column 
+  for nextUserID in $userIDs; do           # loop through max number of user IDs
+    if [ "$role" = netadmin ]; then        # user is a network admin
+      echo $netadminIDs | grep $nextUserID >/dev/null
+      if [ $? != 0 ]; then                 # not a user ID network admins can see
+        continue                           # iterate loop
+      fi    
+    fi
+    let colNum=$colNum+1                   # increment counter
+    if [ $colNum = $numCols ]; then        # this is the last column 
+      echo "<td><a style=\"color:$color;\" href=onelpar?$systemID>More</a></td>"
+      break                                # out of for loop
+    fi
+    echo "<td bgcolor=\"black\"><a style=\"color:#40ff00; text-decoration:none;\" href=onecons?$nextUserID&amp;$systemID>$nextUserID</a></td>"
+  done
+
+  # draw empty cells, if needed 
+  while [ $colNum -lt $numCols ]; do       # need some empty cells 
+    echo "<td>&nbsp;</td>"                 # empty cell 
+    let colNum=$colNum+1                   # increment counter
+  done
+  echo "</tr>"                             # end row
+ }                                         # drawOneRow{}
+
+#+--------------------------------------------------------------------------+
+function drawMainTable
+# Produce a report from the most recent health check
+# Args: none 
+#+--------------------------------------------------------------------------+
+ {
+  startPage $title                         # start the Web page
+  cat consolez.css                         # inline consolez cascading style sheets
+
+  # get all saved console data.  It is of the form:
+  #   ZSS:ZS01 ENGZS01 ENGZS012 MMACISA
+  #   ZSS:ZS02 ENGZS022 HTTPD MMACISA
+  #   where the first token is the environment:system ID and remaining are uesr IDs
+  local consoleData
+  consoleData=`/usr/local/sbin/lscons`    # list all saved consoles from the Web UI
+  rc=$?
+  if [ "$rc" != 0 ]; then                  # not expected
+    startTable
+    startRow "#FF6666"                     # draw row in light red
+    if [ "$rc" = 1 ]; then
+      echo "<td><h2>ERROR!</h2><p>No data found by lscons</p>"
+    else
+      echo "<td><h2>Unexpected!</h2><p>/usr/local/sbin/lscons returned $rc</p>"
+    fi
+    echo "<p>$consoleData</p>"             # error message is the data
+    echo "</td></tr></table>"              # end cell, row and table
+    exit 3                                 # internal server error
+  fi  
+
+  # draw the table
+  echo "<h2>$title</h2>"
+  drawSearchBar                            # enable searching for consoles
+  echo '<table class="consolezTable" align="center">' # start consolez table aligned in center 
+  local nextRow                            # next row from test 
+  exec 3<&0                                # Link file descriptor #3 with stdin
+  while read -u 3 nextRow; do              # read from file descriptor 3
+    drawOneRow $nextRow
+  done 3< <(echo "$consoleData")           # all rows from last test are input
+  echo "</tr></table>"                     # end row and table
+ }                                         # drawMainTable()
+
+#+--------------------------------------------------------------------------+
+# global variables
+consolezUser="none"                        # user this script is running as
+curCEC="none"                              # the current CEC being processed
+curEnv="none"                              # the current environment being processed
+env=""                                     # environment passed in
+flags="-s"                                 # default is succinct output
+role="none"
+title="z/VM Console data"                  # page title
+tgtEnvs=""                                 # target environments
+
+# main()
+source /usr/local/sbin/consfuncs           # import common line command functions
+source consuifuncs                         # import common Web UI functions
+setWebUIvars                               # override defaults with user's preferences
+setRole                                    # set user's role based on login credentials
+drawMainTable $rc                          # show table with all LPARs and tests 
+drawButtons                                # add buttons at bottom
+
