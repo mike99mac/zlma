@@ -82,6 +82,35 @@ uid=1000(mikemac) gid=1000(mikemac) groups=1000(mikemac),48(apache)
     sudo dnf update 
     ```
 
+## Upgrade Python
+
+This step is optional.  
+
+Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. AlmaLinux 9.4 ships with a base Python version of 3.9 which will not run this code.
+
+To install Python 3.11, perform the following steps.
+
+- Install Python 3.11
+
+```
+sudo dnf install python3.11 python3.11-devel
+```
+
+- Show the new version:
+
+```
+python3.11 -V
+Python 3.11.7
+```
+
+## Install this repository
+- Clone this repo to your home directory:
+
+```
+cd;
+git clone https://github.com/mike99mac/zlma
+```
+
 ## Choose manual install or install script
 Choose either to install manually or use the install script 
 
@@ -178,26 +207,6 @@ ALTER USER 'root'@'localhost' IDENTIFIED BY 'new_password';
 exit
 ```
 
-## Upgrade Python
-
-This step is optional.  Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. AlmaLinux 9.4 ships with a base Python version of 3.9.
-
-To install Python 3.11, perform the following steps.
-
-- Install Python 3.11
-
-```
-sudo dnf install python3.11 python3.11-devel
-
-```
-
-- Show the new version:
-
-```
-python3.11 -V
-Python 3.11.7
-```
-
 ## Create a virtual environment
 Now that the co-requisites are satisfied, the virtual environment can be created with the following steps:
 
@@ -220,23 +229,24 @@ cd /srv
     sudo python3.11 -m venv venv
     ```
 
-- Change the group to that which will be running Apache, and add group write permission to ``/`` and ``/srv/``.
-
-  - For Debian-based:
-    ```
-    sudo chgrp www-data / /srv
-    ```
-
-  - For RHEL-based:
-    ```
-    sudo chgrp apache / /srv
-    ```
-
-- Add group write permission to ``/`` and ``/srv``.
-
-```
-sudo chmod g+w / /srv
-```
+[//]: # (Comment) Hope this is not necessary:
+[//]: # (Comment)- Change the group to that which will be running Apache, and add group write permission to ``/`` and ``/srv/``.
+[//]: # (Comment)
+[//]: # (Comment)  - For Debian-based:
+[//]: # (Comment)    ```
+[//]: # (Comment)    sudo chgrp www-data / /srv
+[//]: # (Comment)    ```
+[//]: # (Comment)
+[//]: # (Comment)  - For RHEL-based:
+[//]: # (Comment)    ```
+[//]: # (Comment)    sudo chgrp apache / /srv
+[//]: # (Comment)    ```
+[//]: # (Comment)
+[//]: # (Comment)- Add group write permission to ``/`` and ``/srv``.
+[//]: # (Comment)
+[//]: # (Comment)```
+[//]: # (Comment)sudo chmod g+w / /srv
+[//]: # (Comment)```
 
 - Recursively change the group of the new virtual environment.
 
@@ -287,13 +297,6 @@ python3 -m pip install mariadb mysql-connector-python ply
 - Issue the following command and answer the many security questions:
 ```
 mysql_secure_installation
-```
-
-- Clone this repo to your home directory:
-
-```
-cd;
-git clone https://github.com/mike99mac/zlma
 ```
 
 - Run the ``install`` script. It copies files to ``/usr/local/sbin``, ``/srv/www/zlma`` and your home directory.
