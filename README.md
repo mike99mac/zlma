@@ -103,6 +103,8 @@ python3.11 -V
 Python 3.11.7
 ```
 
+If you need to use Python 3.11, it will be specified later.
+
 ## Install this repository
 - Clone this repo to your home directory:
 
@@ -229,25 +231,6 @@ cd /srv
     sudo python3.11 -m venv venv
     ```
 
-[//]: # (Comment) Hope this is not necessary:
-[//]: # (Comment)- Change the group to that which will be running Apache, and add group write permission to ``/`` and ``/srv/``.
-[//]: # (Comment)
-[//]: # (Comment)  - For Debian-based:
-[//]: # (Comment)    ```
-[//]: # (Comment)    sudo chgrp www-data / /srv
-[//]: # (Comment)    ```
-[//]: # (Comment)
-[//]: # (Comment)  - For RHEL-based:
-[//]: # (Comment)    ```
-[//]: # (Comment)    sudo chgrp apache / /srv
-[//]: # (Comment)    ```
-[//]: # (Comment)
-[//]: # (Comment)- Add group write permission to ``/`` and ``/srv``.
-[//]: # (Comment)
-[//]: # (Comment)```
-[//]: # (Comment)sudo chmod g+w / /srv
-[//]: # (Comment)```
-
 - Recursively change the group of the new virtual environment.
 
   - For Debian-based:
@@ -299,13 +282,7 @@ python3 -m pip install mariadb mysql-connector-python ply
 mysql_secure_installation
 ```
 
-- Run the ``install`` script. It copies files to ``/usr/local/sbin``, ``/srv/www/zlma`` and your home directory.
-
-```
-./zlma/install
-```
-
-
+For reference, 
 ```
 # cat /etc/apache2/sites-available/zlma.conf
 ```
