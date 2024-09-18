@@ -1,11 +1,13 @@
 #!/bin/bash
 #
-# zlmaloc - count the lines of code in the zlma code
-#
-python="/srv/www/zlma/finder.py /srv/www/zlma/restapi.py /usr/local/sbin/zlma /usr/local/sbin/zlma_conf.py /usr/local/sbin/vif"
+# countzlma - count lines of the zlma code
+# 
+SBN="/usr/local/sbin"
+ZRW="/srv/www/zlmarw"
+python="/srv/www/zlma/finder.py /srv/www/zlma/restapi.py $SBNlocal/sbin/zlma $SBN/zlma_conf.py $SBN/vif"
 javascript="/srv/www/zlma/bootstable.js"
-bash="$HOME/zlmainfo /usr/local/sbin/testrestapi /usr/local/sbin/testvif"
-css="/srv/www/zlma/finder.css" 
+bash="$HOME/zlmainfo $SBN/testrestapi $SBN/testvif $SBN/sbin/spoolcons $SBN/sbin/cpcommand $SBN/consfuncs $ZRW/one* $ZRW/consolez $ZRW/searchcons $ZRW/cpcmds $ZRW/consuifuncs"
+css="/srv/www/zlma/finder.css $ZRW/consolez.css" 
  
 echo
 echo "Lines of code in zlma:"

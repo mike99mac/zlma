@@ -82,28 +82,24 @@ uid=1000(mikemac) gid=1000(mikemac) groups=1000(mikemac),48(apache)
     sudo dnf update 
     ```
 
+## Choose manual install or install script
+Choose either to install manually or use the install script 
+
+### Install manually
+If you will use the install script, skip this section.
+
+To install zlma and co-req packages, perform the following steps.
+
 - Install co-requisite packages.
 
   - For Debian-based:
     ```
-    sudo apt install cifs-utils curl gcc git  make mlocate net-tools pandoc python3 python3-dev python3-pip 
+    sudo apache apt install cifs-utils curl gcc git libmariadb3 libmariadb-dev make mariadb-server mlocate net-tools pandoc python3 python3-dev python3-pip 
     ```
 
   - For RHEL-based:
     ```
-    sudo dnf install bzip2-devel cifs-utils curl gcc git libffi-devel make mlocate net-tools openssl-devel python3 python3-devel python3-pip vim wget zlib-devel
-    ```
-
-- Install Apache.
-
-  - For Debian-based:
-    ```
-    sudo apt install apache2
-    ```
-
-  - For RHEL-based:
-    ```
-    sudo dnf install httpd
+    sudo dnf install bzip2-devel cifs-utils curl gcc git httpd libffi-devel make mariadb-server mlocate net-tools openssl-devel python3 python3-devel python3-pip vim wget zlib-devel
     ```
 
 - Set Apache to start at boot time: 
@@ -117,20 +113,6 @@ uid=1000(mikemac) gid=1000(mikemac) groups=1000(mikemac),48(apache)
 
     ```
     sudo systemctl enable httpd
-    ```
-
-- Install Mariadb, Apache and some co-requisite packages:
-
-  - For Debian-based:
-
-    ```
-    sudo apt install mariadb-server libmariadb3 libmariadb-dev 
-    ```
-
-  - For RHEL-based:
-
-    ```
-    sudo dnf install mariadb-server
     ```
 
 - Create a directory for zlma to log to:
@@ -168,6 +150,20 @@ sudo systemctl enable mariadb
 ```
 sudo systemctl start mariadb
 ```
+
+### Install automatically
+The script ``instzlma`` is provided to save time. To run it, perform the following step
+
+```
+cd 
+cd zlma
+./instzlma 
+```
+
+The output will be written to your home directory in a file of the form ``<yr-mon-day-hr-min-sec>-instzlma.out``.
+
+### Set mariadb root password
+The install script does not set the mariadb root password, so this step must be performed manually.
 
 - Set the mariadb root password. This must be the same user and password as in ``/etc/mariadb.conf``. Enter the MariaDB command-line tool:
 
@@ -306,16 +302,26 @@ git clone https://github.com/mike99mac/zlma
 ./zlma/install
 ```
 
-- For reference, following is an Apache configuration file for a **Debian-based Linux**:
 
 ```
 # cat /etc/apache2/sites-available/zlma.conf
 ```
-
+{
+  "db_user":        "root",
+  "db_pw":          "pi",
+  "db_host":        "127.0.0.1",
+  "db_name":        "zlma",
+  "home_dir":       "/home/mikemac",
+  "log_level":      "debug",
+  "user_directory": "vmsecure"
+}
 ```
 #
-# Mariacmdb configuration file
+# zlma configuration file
 #
+For reference, following is an Apache configuration file for a **Debian-based Linux**:
+
+```
 User pi
 Group pi
 <VirtualHost *:80>
@@ -348,25 +354,16 @@ Group pi
 ```
 # cat /etc/httpd/conf/httpd.conf
 ```
-
-```
 #
 # Apache configuration file for zlma
 #
-LoadModule access_compat_module /usr/lib64/httpd/modules/mod_access_compat.so
-LoadModule alias_module         /usr/lib64/httpd/modules/mod_alias.so
-LoadModule authz_core_module    /usr/lib64/httpd/modules/mod_authz_core.so
-LoadModule cgi_module           /usr/lib64/httpd/modules/mod_cgi.so
-LoadModule dir_module           /usr/lib64/httpd/modules/mod_dir.so
-LoadModule mime_module          /usr/lib64/httpd/modules/mod_mime.so
-LoadModule log_config_module    /usr/lib64/httpd/modules/mod_log_config.so
-LoadModule mpm_prefork_module   /usr/lib64/httpd/modules/mod_mpm_prefork.so
-LoadModule unixd_module         /usr/lib64/httpd/modules/mod_unixd.so
+Include conf.modules.d/*.conf
 User apache
 Group apache
-ServerName mmac01
+ServerName your.server.fqdn
+ServerRoot /etc/httpd
 Listen *:80
-ServerAdmin mmacisaac@sinenomine.net
+ServerAdmin admin@example.com
 DocumentRoot /srv/www/zlma
 LogLevel error
 
@@ -376,11 +373,29 @@ LogLevel error
   Require all granted
 </Directory>
 
+# Read-Only queries do not require credentials
 AddHandler cgi-script .py
 Alias /zlma /srv/www/zlma
 <Directory /srv/www/zlma>
   Options +ExecCGI
   Require all granted
+</Directory>
+
+# Read-Write operations require credentials
+ScriptAlias /zlmarw/ /srv/www/zlmarw/
+<Directory /srv/www/zlmarw/>
+  AllowOverride None
+  Options +ExecCGI -Includes
+  AuthType Basic
+  AuthName "zlma - Enter password"
+  AuthType Basic
+  AuthName "Restricted Access"
+  AuthUserFile /srv/www/zlmarw/.htpasswd
+  Require valid-user
+  # Replace above if using LDAP
+  # AuthBasicProvider ldap
+  # AuthLDAPURL ldap://<your.orgs.ldap.server:389/ou=people,ou=linux_systems,dc=example,dc=com?uid
+  # Require ldap-filter objectClass=posixAccount
 </Directory>
 
 ErrorLog /var/log/httpd/error.log

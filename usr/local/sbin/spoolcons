@@ -1,0 +1,742 @@
+#!/bin/bash
+#
+# This code is shipped under the Artistic License 2.0. See the file
+# Artistic-License-2.0.txt or http://opensource.org/licenses/Artistic-2.0
+#
+#+--------------------------------------------------------------------------+
+#
+# catcons   - type contents of z/VM console file (symlink to spoolcons) 
+# grepcons  - search contents of z/VM console file (symlink to spoolcons) 
+# lscons    - list saved z/VM console files (symlink to spoolcons) 
+# prunecons - prune older z/VM console data - TO BE WRITTEN!
+# rmcons    - remove file with z/VM console data (symlink to spoolcons) 
+# spoolcons - spool z/VM consoles to a console file 
+#
+#+--------------------------------------------------------------------------+
+function usage
+# Give help
+# Args: none 
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  echo ""                                  # leave some room
+  if [ "$cmdCalled" = grepcons ]; then
+    echo "Name:    grepcons - search through saved console data" 
+    echo "Usage:   grepcons [OPTIONS] USERID SYSTEMID PATTERN..."
+    echo "Where:   USERID    is a pattern of user IDs to search or ':' for all user IDs" 
+    echo "Where:   SYSTEMID  is a z/VM system ID, an environment or ':' for all z/VM systems"
+    echo "Where:   PATTERN   is a pattern to search consoles for" 
+  elif [ "$cmdCalled" = lscons ]; then
+    echo "Name:    lscons - list user IDs with saved console data" 
+    echo "Usage:   lscons [OPTIONS] [USERIDS] [SYSTEMIDS]"
+    echo "Where:   USERIDS   is a specific user ID or ':' to list all user IDs (default)" 
+    echo "Where:   SYSTEMIDS is a specific z/VM system ID or ':' to list all (default)" 
+  elif [ "$cmdCalled" = prunecons ]; then
+    echo "Name:    prunecons - prune saved console data CODE HAS YET TO BE WRITTEN!" 
+    echo "Usage:   prunecons [OPTIONS] AGE"
+    echo "Where:   AGE is the age over which all console data will be pruned: <value><M|months|D|days|Y|years>"
+    echo "Example: 'prunecons 1Y' - prune console data one year or older" 
+  else                                     # other three commands of the same form
+    echo "Name:  $cmdCalled - $verb z/VM console data for a virtual machine" 
+    echo "Usage: $cmdCalled [OPTIONS] USERID [SYSTEMID]"
+    echo "Where: USERID   is the virtual machine whose console is to be spooled"
+    echo "       SYSTEMID is the z/VM System Identifier name (default: this LPAR)" 
+  fi
+  echo ""
+  echo "OPTIONS:"
+  echo "  -h|--help             Give help"
+  if [ "$cmdCalled" = grepcons ]; then     # add a common grep flag 
+    echo "  -i|--ignorecase       Ignore case" 
+  fi
+  if [ "$cmdCalled" = lscons -o "$cmdCalled" = catcons ]; then 
+    echo "  -l|--long             Long listing" 
+  fi
+  echo "  -s|--silent           Minimal output"
+  echo "  -v|--verbose          Include additional output"
+  echo "  -V|--veryverbose      Include even more output"
+  echo "  -x|--debug            Print commands and arguments as they are executed"
+  if [ "$cmdCalled" = rmcons -o "$cmdCalled" = prunecons ]; then 
+    echo "  -y|--yes              Don't ask 'Are you sure?'"
+  fi
+  echo ""                                  # leave some room
+  exit 51
+ }                                         # usage()
+
+#+--------------------------------------------------------------------------+
+function parseArgs
+# Parse arguments 
+# Arg 1: all arguments passed into script 
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  case "$cmdCalled" in 
+    catcons)
+      verb="show"
+      ;;
+    grepcons)
+      verb="search"
+      ;;
+    lscons)
+      verb="list"
+      ;;
+    rmcons)
+      verb="remove"
+      ;;
+    spoolcons)
+      verb="spool"
+      ;;
+  esac
+  while (( "$#" )); do                     # iterate through all flags and arguments
+    case $1 in
+      -F)                                  # "From server" - undocumented
+        shift
+        fromServer=$1                      # engineering server being called from
+        shift
+        tmpConsFile=$1                     # where to copy temp console file to 
+        verboseMsg "on $thisServer: set fromServer to $fromServer and tmpConsFile to $tmpConsFile"
+        ;;
+      -h|--help)
+        usage
+        ;;
+      -i|--ignorecase)
+        if [ "$cmdCalled" != grepcons ]; then 
+          echo "ERROR: unrecognized flag $1"
+          usage
+        fi
+        grepFlags="$grepFlags -i" 
+        ;;
+      -l|--long)
+        if [ "$cmdCalled" != lscons -a "$cmdCalled" != catcons ]; then 
+          echo "ERROR: unrecognized flag $1"
+          usage
+        fi
+        outputType="long" 
+        ;;
+      -s|--silent)
+        verbose=0
+        flags="$flags -s"
+        ;;
+      -v|--verbose)
+        verbose=2
+        flags="$flags -v"
+        ;;
+      -V|--veryverbose)
+        verbose=3
+        flags="$flags -V"
+        ;;
+      -w)                                  # undocumented - called from Web UI
+        webUI=yes
+        ;;
+      -x|--debug)
+        flags="$flags -x"
+        set -vx
+        ;;
+      -y|--yes)
+        if [ "$cmdCalled" != rmcons -a "$cmdCalled" != prunecons ]; then 
+          echo "ERROR: unrecognized flag $1"
+          usage
+        fi
+        yes=1                              # do not ask 'Are you sure?' 
+        ;;
+      *)                                   # non-flag args 
+        if [ "${1:0:1}" = "-" ]; then      # error - unrecognized flag
+          echo "ERROR: unrecognized flag $1"
+          usage 
+        fi
+        if [ "$cmdCalled" = prunecons ]; then # one argument is AGE
+          if [ ${#age} = 0 ]; then
+            age=$1
+          else
+            echo "ERROR: Too many arguments"
+            usage
+          fi
+        else                                # one of other three commands
+          if [ ${#userID} = 0 ]; then       # first arg 
+            userID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
+          elif [ ${#systemID} = 0 ]; then   # second arg 
+            systemID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
+          else
+            if [ "$cmdCalled" != grepcons ]; then # too many args
+              echo "ERROR: Too many arguments"
+              usage
+            else                           # grepcons remaining args are search pattern
+              pattern="$@"
+              break                        # all done 
+            fi
+          fi
+        fi
+        ;;
+    esac
+    shift
+  done
+  if [ "$cmdCalled" = prunecons ]; then
+    if [ ${#age} = 0 ]; then 
+      age="1Y"                             # default to delete data more than a year old
+    fi 
+  else                                     # other three commands
+    if [ "$cmdCalled" != lscons -a ${#userID} = 0 ]; then # USERID is required
+      echo "ERROR: required argument USERID missing"
+      usage
+    fi
+  fi
+  if [ "$cmdCalled" = grepcons -a ${#pattern} = 0 ]; then # no search pattern supplied
+    echo "ERROR: required argument PATTERN missing"
+    usage
+  fi
+  verboseMsg "bottom of parseArgs userID = $userID systemID = $systemID"
+  thisUserID=`grep "VM00 Name:" /proc/sysinfo | awk '{print $3}'` # user ID of this server
+  thisSystemID=`grep "LPAR Name:" /proc/sysinfo | awk '{print $3}'` # user ID of this server
+  verboseMsg "thisUser = $thisUser thisSystemID = $thisSystemID"
+  if [ ${#systemID} = 0 -a "$cmdCalled" != lscons -a "$cmdCalled" != grepcons ]; then 
+    systemID="$thisSystemID"               # default is local LPAR 
+  fi
+ }                                         # parseArgs()
+
+#+--------------------------------------------------------------------------+
+function checkEnv
+# Verify the environment 
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  if [ ! -f $confFile -a ${#fromServer} = 0 ]; then 
+    echo "ERROR: Configuration file $confFile does not exist" 
+    exit 4                                 # cannot perform operation
+  fi
+  thisUser=`id | awk -F\( '{print $2}' | awk -F\) '{print $1}'` # get the current user
+
+  if [ ${#thisUser} = 0 ]; then            # not expected 
+    echo "ERROR: Unexpected: id | awk -F\( '{print $2}' | awk -F\) '{print $1}' did not return current user"
+    exit 3                                 # internal server error
+  fi
+  if [ "$thisUser" = root -a "$cmdCalled" = spoolcons ]; then 
+    echo "ERROR: Sorry, spoolcons cannot run as root" 
+    exit 2                                 # not authorized
+  fi
+ }                                         # checkEnv()
+
+#+--------------------------------------------------------------------------+
+function makeConsoleFile
+# Create the console file if it doesn't exist 
+# If this is the first console file for an LPAR, make a new directory 
+# of the form: $consolezDir/<env><systemID>/
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  if [ ! -f $consFile ]; then              # console file does not exist for target user ID
+    local LPARdir=${consFile%/*}           # get directory from file
+    if [ ! -d $LPARdir ]; then             # directory for this LPAR doesn't exist
+      cmd="/bin/mkdir $LPARdir"            # make a new directory 
+      $cmd                                 # run the command
+      rc=$?
+      if [ $rc != 0 ]; then                # unexpected issue
+        echo "ERROR: $cmd returned $rc"
+        return 4                           # cannot perform operation
+      fi
+    fi
+    echo -e "`date +%F-%T`: Console file created\n$equals" > $consFile # create the file with a timestamp
+    verboseMsg "created console file $consFile"
+    cmd="sudo /usr/bin/chmod g+r,g+w $consFile" # make temp file r/w to group
+    verboseMsg "making console file R/W with: $cmd"
+    $cmd
+    rc=$?
+    if [ $rc != 0 ]; then                  # unexpected 
+      echo "ERROR: $cmd returned $rc"
+      exit 4                               # cannot perform operation
+    fi
+  fi
+ }                                         # makeConsoleFile()
+
+#+--------------------------------------------------------------------------+
+function getRemoteConsole
+# Get console data from a different z/VM LPAR 
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  verboseMsg "remote server: $engServer  local server: $thisServer"
+  cmd="$sshCmd $engServer /usr/local/sbin/spoolcons $flags -F $thisServer $tmpConsFile $userID"
+  verboseMsg "calling remote server: $cmd"
+  $cmd                                     # run this command on the remote server
+  rc=$?
+  if [ "$rc" != 0 ]; then                  # issue warning
+    echo "WARNING: $cmd returned $rc"
+    return $rc                             # all done
+  else                                     # success - wait for temp file to show up
+    for i in .2 .3 .5 1 2 3 5; do          # wait for remote console file to be copied back
+      if [ -f $tmpConsFile ]; then         # remote console file exists
+        verboseMsg "found remote console file $tmpConsFile" 
+        break                              # out of for loop
+      else                                 # remote file has not shown up yet
+        verboseMsg "waiting $i seconds for remote console file $tmpConsFile"
+        sleep $i                           # wait a bit longer
+      fi
+    done
+  fi
+ }                                         # getRemoteConsole
+
+#+--------------------------------------------------------------------------+
+function checkUserID
+# Check the status of the user ID whose console is to be spooled 
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  CPcmd QUERY $userID >/dev/null 2>&1      # first check if the user ID exists
+  rc=$?
+  if [ "$rc" = 3 ]; then                   # user ID does not exist
+    echo "ERROR: No such user ID: $userID at $thisSystemID" 
+    exit 4                                 # cannot perform operation
+  fi
+  
+  CPcmd QUERY USER $userID >/dev/null 2>&1 # get current status of user ID
+  rc=$?
+  case $rc in
+    0)                                     # user ID is logged on/disconnected but does not ping
+      verboseMsg "user ID $userID is logged on"
+      ;;
+    3)                                     # QUERY USER does not seem to return this any more 
+      echo "ERROR: user ID $userID does not exist on $thisSystemID"
+      exit 4                               # cannot perform operation
+      ;;
+    45)                                    # user ID is logged off - power on
+      echo "ERROR: user ID $userID at $thisSystemID is logged off - cannot spool console" 
+      exit 4                               # cannot perform operation
+      ;;
+    361)                                    # HCPCQU361E LOGOFF/FORCE pending for <userID>
+      echo "ERROR: user ID $userID is pending log off - cannot spool console" 
+      ;;
+   *)                                      # unexpected return code
+      echo "ERROR: unexpected rc from QUERY USER $userID: $rc"
+      exit 4                               # cannot perform operation
+  esac
+ }                                         # checkUserID()
+
+#+--------------------------------------------------------------------------+
+function getLocalConsole
+# Get console data from this z/VM LPAR
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  if [ ! -c /dev/vmrdr-0.0.000c ]; then    # reader is not enabled
+    verboseMsg "Reader not enabled - enabling 000C ..."
+    cmd="sudo /sbin/chccwdev -e 000c"
+    $cmd                                   # run the command
+    rc=$?
+    if [ "$rc" != 0 ]; then                # error
+      echo "ERROR: $cmd returned $rc"
+      echo "Does this virtual machine have C privilege class?"
+      exit 4                               # cannot perform operation
+    fi
+  fi
+
+  local qrdrCmd="$vmcpCmd QUERY RDR"       # command to query this reader
+  local lastSpoolID=`eval $qrdrCmd | tail -1 | awk '{print $2}'` # get the most recent reader file
+  cmd="$vmcpCmd FOR $userID CMD SPOOL CONS TO $thisUserID CLOSE" # have target user ID send console here
+  verboseMsg "getting console data on $thisSystemID with: $cmd"
+  eval $cmd                                # run the command
+  sleep .1                                 # wait for console to arrive in reader
+  local newSpoolID=`eval $qrdrCmd | tail -1 | awk '{print $2}'` # get the last reader file
+  verboseMsg "lastSpoolID = $lastSpoolID newSpoolID = $newSpoolID"
+  if [ "$lastSpoolID" = "$newSpoolID" ]; then # no console data showed up
+    verboseMsg "Did not find any console output from $userID"
+    sleep 2                                # wait a bit longer
+    newSpoolID=`eval $qrdrCmd | tail -1 | awk '{print $2}'` # get reader files again
+    if [ "$lastSpoolID" = "$newSpoolID" ]; then # still no console data showed up
+      echo -e "`date +%F-%T`: No new console data found" > $tmpConsFile
+    fi
+    cmd="FOR $userID CMD SPOOL CONS $tgtUserID START" # command to restart console spooling
+    verboseMsg "Resetting console $cmd"
+    eval CPcmd $cmd                        # run the command
+    rc=$?
+    if [ $rc != 0 ]; then                  # unexpected issue
+      echo "WARNING: $cmd returned $rc"
+      return 4                             # cannot perform operation
+    fi
+    spoolID="none"
+  else                                     # have console output
+    cmd="sudo /usr/sbin/vmur receive -f -t $newSpoolID $tmpConsFile"
+    $cmd                                   # receive reader file to temp file owned by root
+    rc=$?
+    if [ $rc != 0 ]; then                  # unexpected issue
+      echo "ERROR: $cmd returned $rc"
+      return 4                             # cannot perform operation
+    fi
+  fi
+  if [ ${#fromServer} != 0 ]; then         # this spoolcons is being called remotely
+    cmd="/usr/bin/scp -q $tmpConsFile $fromServer:$tmpConsFile" # copy temp console file back to calling server
+    verboseMsg "Copying temp console file back to calling server with: $cmd"
+    eval $cmd                              # copy remote console data back to calling server
+    rc=$?
+    if [ "$rc" != 0 ]; then                # issue warning
+      echo "WARNING: $cmd returned $rc"
+      return $rc                           # all done
+    fi
+  fi
+ }                                         # getLocalConsole()
+
+#+--------------------------------------------------------------------------+
+function makeTempConsFile
+# Make a temporary file in the user's home directory 
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  local cmd                                # a command
+  local rc                                 # a return code
+ 
+  verboseMsg "making temporary console file $tmpConsFile"
+  if [ -f $tmpConsFile ]; then             # an old file exists
+    cmd="sudo /bin/rm $tmpConsFile"
+    verboseMsg "removing old temporary console file with: $cmd"
+    eval $cmd                              # run the command
+    rc=$?
+    if [ "$rc" != 0 ]; then                # error
+      echo "ERROR: command $cmd returned $rc"
+      exit 4                               # cannot perform operation
+    fi
+  fi
+  cmd="sudo /bin/touch $tmpConsFile"      # command to create the file
+  eval $cmd                                # run the command
+  rc=$?
+  if [ "$rc" != 0 ]; then                  # error
+    echo "ERROR: command $cmd returned $rc"
+    exit 4                                 # cannot perform operation
+  fi
+  cmd="sudo /usr/bin/chown $thisUser $tmpConsFile" # command to change ownership of temp file
+  verboseMsg "changing ownership of temp console file with: $cmd"
+  eval $cmd                                # run the command
+  rc=$?
+  if [ "$rc" != 0 ]; then                  # issue warning
+    echo "ERROR: $cmd returned $rc"
+    exit 4                                 # cannot perform operation
+  fi
+ }                                         # makeTempConsFile()
+
+#+--------------------------------------------------------------------------+
+function spoolConsole
+# Spool one z/VM console on this local LPAR or a remote one
+# NOTE: if remote, this function will be called and will become local
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  local cmd                                # a command
+  local engServer 
+  local rc                                 # a return code
+
+  if [ ${#fromServer} != 0 ]; then         # being called from main engineering server
+    engServer="$thisServer"                # console is local
+  else 
+    if [ "$verbose" -ge 1 ]; then          # not in silent mode
+      echo "Spooling console of $userID at $systemID ..."
+    fi
+    verboseMsg "trying to get engineering server with: getEngServer $systemID"
+    getEngServer $systemID                 # get Eng server, CEC and env't
+    if [ $? = 1 ]; then                    # not found
+      echo "ERROR: did not find LPAR $systemID in $confFile"
+      exit 1                               # object not found
+    fi
+    verboseMsg "found engineering server $engServer consFile = $consFile"
+    verboseMsg "numLPARs = $numLPARs envs = $envs" 
+  fi
+  makeConsoleFile                          # make the console file if it doesn't exist
+  if [ "$thisServer" != "$engServer" ]; then # target LPAR is remote
+    if [ ${#fromServer} != 0 ]; then       # not expected
+      echo "INTERNAL ERROR! thisServer = $thisServer engServer = engServer but fromServer = $fromServer"
+      exit 3                               # to avoid endless loop
+    fi 
+    verboseMsg "getting console on remote server $engServer"
+    getRemoteConsole                       # get the console data from remote eng'g server
+  else                                     # target LPAR is local (this LPAR)
+    verboseMsg "on server $thisServer"
+    checkUserID                            # first be sure user ID exists and is logged on
+    makeTempConsFile                       # make the temporary file for this set of console data 
+    getLocalConsole                        # get the console data from this eng'g server
+  fi
+  if [ ${#fromServer} = 0 ]; then          # on calling server
+    if [ ! -f $tmpConsFile ]; then         # temp file not created
+      echo "WARNING: Temporary console file $tmpConsFile not found"
+    else                                   # file exists
+      echo -e "`date +%F-%T`: Console data for $userID at $systemID:" >> $consFile
+      cmd="cat $tmpConsFile >> $consFile"  # command to append to complete console file
+      verboseMsg "appending remote console with: $cmd"
+      eval $cmd                            # run the command
+      rc=$?
+      if [ "$rc" != 0 ]; then              # issue warning
+        echo "WARNING: $cmd returned $rc"
+      fi
+      echo -e "$equals" >> $consFile
+      cmd="/bin/rm $tmpConsFile"           # command to remove temporary file
+      verboseMsg "remove temp console file with: $cmd"
+      eval $cmd                            # run the command
+      rc=$?
+      if [ "$rc" != 0 ]; then              # issue warning
+        echo "WARNING: $cmd returned $rc"
+      fi
+    fi
+  fi
+ }                                         # spoolConsole()
+
+#+--------------------------------------------------------------------------+
+function catConsole
+# Print a console file for specified user ID 
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  local cmd                                # a command
+
+  cmd="/bin/ls -d $consolezDir/*:$systemID"
+  verboseMsg "checking for LPAR directory with: $cmd"
+  local LPARdir=`$cmd`                     # run the command
+  if [ ${#LPARdir} = 0 ]; then 
+    echo "No console data found for LPAR $systemID"
+    exit 1                                 # object not found
+  fi
+  consFile="$LPARdir/$userID"              # set the console file name
+  verboseMsg "Checking for console file: $consFile"
+  if [ -f $consFile ]; then                # there is a console file
+    cat $consFile                          # show it
+  else
+    echo "No console data found for user ID $userID at $systemID"
+    exit 1                                 # object not found
+  fi
+ }                                         # catConsole()
+
+#+--------------------------------------------------------------------------+
+function searchConsoles 
+# Search through console data 
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  # first check if an environment was passed as the systemID 
+  local systemSearch
+  echo "$envs" | grep "$systemID" >/dev/null 
+  if [ $? = 0 ]; then                      # an environment was passed
+    verboseMsg "$systemID is an environment"
+    systemSearch="$systemID:*"             # search all LPARs in the environment
+  elif [ "$systemID" = '*' ]; then  
+    systemSearch="*"  
+  else                    
+    systemSearch="*${systemID}*"
+  fi    
+  local userSearch
+  if [ "$userID" = ':' ]; then             # search all user IDs
+    userSearch="*"
+  else
+    userSearch="*$userID*"
+  fi
+  local cmd="grep $grepFlags \"$pattern\" $systemSearch/$userSearch" 
+  if [ "$verbose" -ge 1 ]; then            # show grep command unless in silent mode
+    echo "Searching from $consolezDir with: $cmd" 
+  fi
+  cd $consolezDir
+  eval $cmd                                # run the command
+  if [ $? = 1 ]; then                      # pattern not found
+    echo "Pattern '$pattern' not found" 
+    exit 1                                 # object not found
+  fi 
+ }                                         # searchConsoles()
+
+#+--------------------------------------------------------------------------+
+function listConsoles
+# List saved console files 
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  local foundOne=no
+  if [ ! -d $consolezDir ]; then           # base directory does not exist
+    verboseMsg "Base directory $consolezDir not found"
+    exit 1                                 # object not found
+  fi 
+  local systemIDs
+  if [ ${#systemID} = 0 ]; then            # not specified
+    systemIDs=`/bin/ls $consolezDir | xargs` # default is all
+  else                                     # a system ID was passed in
+    systemIDs=`/bin/ls -d $consolezDir/*:$systemID 2>/dev/null`
+    if [ ${#systemIDs} = 0 ]; then         # LPAR not found
+      echo "No consoles for z/VM LPAR $systemID found"
+      exit 1                               # object not found
+    else                                   # one LPAR found
+      systemIDs="${systemIDs##*/}"         # chop off FQ file name
+    fi
+  fi
+  local userIDs
+  local nextSystemID
+  for nextSystemID in $systemIDs; do       # loop through all LPARs
+    verboseMsg "Listing consoles for System ID : $nextSystemID"
+    cd $consolezDir/$nextSystemID
+    if [ "$outputType" = short ]; then 
+      userIDs=`/bin/ls | xargs`  
+      echo "$nextSystemID $userIDs"        # short output
+    else                                   # assume long
+      echo "$nextSystemID:"
+      /bin/ls -lth
+    fi
+    foundOne=yes
+  done 
+  if [ "$foundOne" = no ]; then 
+    verboseMsg "Did not find any consoles in $consolezDir"
+    exit 1                                 # object not found
+  fi  
+ }                                         # listConsoles()
+
+#+--------------------------------------------------------------------------+
+function pruneConsData
+# Prune cosole data older than the global variable 'age'
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  if [ "$yes" != 1 ]; then                 # if --yes is not set, ask "Are you sure?"
+    echo -n "Are you sure you prune all console data older than $age (y/n) "
+    read ans
+    if [ "$ans" != "y" ]; then
+      exit 4                               # cannot perform operation
+    fi
+  fi
+  echo "TODO: write code to prune console data older than $age" 
+ }                                         # pruneConsData()
+
+#+--------------------------------------------------------------------------+
+function removeConsole
+# Remove a console file for specified userID/systemID 
+# Args: none
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  local engData                            # environment:SystemID
+  local rc                                 # a return code
+
+  verboseMsg "trying to get engineering server with: getEngServer $systemID"
+  getEngServer $systemID
+  if [ $? = 0 ]; then 
+    echo "ERROR: did not find LPAR $systemID in $confFile"
+    exit 1                               # object not found
+  fi
+  verboseMsg "Checking if $consFile exists"
+  if [ ! -f $consFile ]; then              # no console file for this userID/systemID
+    echo "WARNING: No console data found for user ID $userID on LPAR $systemID" 
+    exit 1                                 # object not found
+  fi
+  if [ "$yes" != 1 ]; then                 # if --yes is not set, ask "Are you sure?"
+    echo -n "Are you sure you remove console data for $userID at $systemID (y/n) "
+    read ans
+    if [ "$ans" != "y" ]; then
+      exit 4                               # cannot perform operation
+    fi
+  fi
+  verboseMsg "Checking for console file: $consFile"
+  local cmd="/bin/rm $consFile"            # command to remove a console file
+  eval $cmd                                # run the command
+  rc=$?
+  if [ "$rc" != 0 ]; then                  # command failed
+    echo "WARNING: command $cmd returned $rc"
+  fi
+ }                                         # removeConsole()
+
+#+--------------------------------------------------------------------------+
+function doTheWork
+# Perform the operation based on which script was called 
+# Args: None
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  case $cmdCalled in
+    catcons)
+      catConsole                           # show a console file
+      ;;
+    grepcons)
+      searchConsoles                       # search through saved console files 
+      ;;
+    lscons)
+      listConsoles                         # list saved console files 
+      ;;
+    prunecons)
+      pruneConsData                        # prune console data
+      ;;
+    rmcons)
+      removeConsole                        # remove a console file 
+      ;;
+    spoolcons)
+      spoolConsole                         # spool and save a console
+      ;;
+    *)                                     # unexpected 
+      echo "Internal error: cmdCalled = $cmdCalled"
+      exit 3                               # internal server error
+      ;;
+  esac
+  exit $?
+ }                                         # doTheWork()
+
+#+--------------------------------------------------------------------------+
+# Global variables
+age=""                                     # for prunecons - age at which to prune data
+declare -A arr                             # array of environments/eng'g servers/LPARs/
+cmdCalled=`basename $0`                    # get the name of the script called
+confFile="/etc/consolez.conf"              # configuration file that must exist            
+consFile=""                                # file with all console data of target userID
+consolezDir="/srv/consolez"                # default data directory
+equals="================================================================================" # a divider
+flags=""                                   # flags to pass on to remote calls
+fromServer=""                              # if called from another engineering server
+grepFlags="-H -n"                          # always include file name and line numbers, optional -i flag
+numLPARs="0"                               # number of LPARs in input file
+outputType="short"                         # output 'long' or 'short' listing 
+pattern=""                                 # search pattern for grepcons
+systemID=""                                # target z/VM LPAR
+tmpConsFile=""                             # temp file to store latest console data 
+thisServer=`/bin/hostname`                 # host name of this server
+thisSystemID=""                            # local LPAR
+thisUser=""                                # user running this script
+tgtCEC="none"                              # target CEC 
+tgtEnv="none"                              # target environment
+userID=""                                  # target z/VM User ID 
+verb=""                                    # operation being performed
+verbose="1"                                # default verbosity level
+vmcpCmd="sudo vmcp --buffer=1M"            # command to issue "vmcp"
+webUI="no"                                 # called from the Web UI?
+yes=0                                      # --yes flag passed in?
+
+# main()
+source /usr/local/sbin/consfuncs           # import common functions
+parseArgs $@                               # parse arguments
+checkEnv                                   # verify environment
+readConfFile                               # read the /etc/consolez.conf file
+doTheWork                                  # perform requested function 
+
