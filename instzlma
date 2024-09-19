@@ -280,15 +280,23 @@ function instZlma
   cd /usr/local/sbin
   if [ ! -h catcons ]; then
     runCmd sudo ln -s spoolcons catcons
+  else
+    echo "catcons symlink already exists"
   fi
   if [ ! -h grepcons ]; then
     runCmd sudo ln -s spoolcons grepcons 
+  else
+    echo "grepcons symlink already exists"
   fi
   if [ ! -h lscons ]; then
     runCmd sudo ln -s spoolcons lscons 
+  else
+    echo "lscons symlink already exists"
   fi
   if [ ! -h rmcons ]; then
     runCmd sudo ln -s spoolcons rmcons 
+  else
+    echo "rmcons symlink already exists"
   fi
 
   # make a virtual environment

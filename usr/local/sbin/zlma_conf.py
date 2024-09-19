@@ -2,6 +2,7 @@
 # zlma_conf - load the zlma configuration file
 #
 import json
+import os
 
 class Zlma_conf:
   def __init__(self):
@@ -11,6 +12,11 @@ class Zlma_conf:
     self.db_name = "zlma"                   # default database name
     self.home_dir = "/home/someuser"        # default home directory
     self.log_level = "INFO"                 # default log level
+    try:
+      self.user = os.getenv('USER')         # user running command
+    except KeyError:
+      self.log.error("USER environment variable is not set")
+      self.user = "unknown"
 
   def load_config_file(self):
     """
