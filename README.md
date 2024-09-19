@@ -109,6 +109,14 @@ Python 3.11.7
 If you need to use Python 3.11, it will be specified later.
 
 ## Install this repository
+To install this repository, some basic packages are first needed.
+
+- Install git, httpd and vim:
+
+```
+sudo dnf install -y git httpd vim
+```
+
 - Clone this repo to your home directory:
 
 ```
@@ -117,10 +125,33 @@ git clone https://github.com/mike99mac/zlma
 ```
 
 ## Choose manual install or install script
-Choose either to install manually or use the install script 
+Choose either to install manually or use the install script (recommended).
 
+### Install automatically
+The script ``instzlma`` is provided in the ``zlma`` repo to save you time. 
+
+
+- Change to the new zlma directory:
+
+```
+cd $HOME/zlma;
+```
+
+    - To run it if your Linux has a base Python version of 3.10 or greater, perform the following steps:
+
+    ```
+    ./instzlma 
+    ```
+
+    -To run it if your system has an upgraded python, include the upgraded version as an argument to ``instzlma``:
+
+    ```
+    ./instzlma python3.11
+    ```
+
+The output will be written to your home directory in a file of the form ``<yr-mon-day-hr-min-sec>-instzlma.out``.
 ### Install manually
-If you want to/automaticall use the install script, skip this section and [go to](#Install-automatically).
+If you want to use the install script to save time, skip this section and [go to Install automatically](#Install-automatically).
 
 To install zlma and co-req packages, perform the following steps.
 
@@ -185,20 +216,6 @@ sudo systemctl enable mariadb
 sudo systemctl start mariadb
 ```
 
-### Install automatically
-The script ``instzlma`` is provided to save time. To run it if your system has a Python base of 3.10 or greater, perform the following step:
-
-```
-$HOME/zlma/instzlma 
-```
-
-If your system required Python to be upgraded, include the python command of the upgraded version:
-
-```
-$HOME/zlma/instzlma python3.11
-```
-
-The output will be written to your home directory in a file of the form ``<yr-mon-day-hr-min-sec>-instzlma.out``.
 
 ### Set mariadb root password
 The install script does not set the mariadb root password, so this step must be performed manually.
