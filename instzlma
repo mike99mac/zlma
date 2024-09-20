@@ -210,16 +210,18 @@ function instPackages
 
   echo; echo "Step 1): installing packages ..."
   which apt >/dev/null 2>&1
-  if [ $? = 0 ]; then                      # use apt
-    cmd="sudo apt install -y cifs-utils curl gcc git  make mlocate net-tools pandoc python3 python3-dev python3-pip"
+  if [ $? = 0 ]; then                      # use apt and assume Debian-based
+    cmd="sudo apt install -y cifs-utils curl gcc git  make mariadb-server mlocate net-tools pandoc python3 python3-dev python3-pip"
     runCmd $cmd
+    echo; echo "Step 2): setting Apache and mariadb to start at boot time ..."
     runCmd sudo systemctl enable apache2   # set Apache to start at boot
   else                                     # no apt, check for dnf
     which dnf >/dev/null 2>&1
-    if [ $? = 0 ]; then                    # use dnf
-      cmd="sudo dnf install -y bzip2-devel cifs-utils curl gcc git libffi-devel make mlocate net-tools openssl-devel" 
+    if [ $? = 0 ]; then                    # use dnf and assume RHEL-based
+      cmd="sudo dnf install -y bzip2-devel cifs-utils curl gcc git libffi-devel make mariadb-server mlocate net-tools openssl-devel" 
       local morePkgs="python3 python3-devel python3-pip vim wget zlib-devel"
       runCmd $cmd $morePkgs
+      echo; echo "Step 2): setting Apache and mariadb to start at boot time ..."
       runCmd sudo systemctl enable httpd   # set Apache to start at boot
     else
       echo "ERROR: did not find 'apt' nor 'dnf' - don't know how to install"
@@ -230,6 +232,76 @@ function instPackages
  }                                         # instPackages()
 
 #+--------------------------------------------------------------------------+
+function mkDirectories
+# Create target directories
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  # make 2 CGI dirs, a log file dir and a directory for console data
+  echo; echo "Step 3): creating directories ..."
+  mkDir /srv/www/zlma
+  mkDir /srv/www/zlmarw
+  mkDir /var/log/zlma
+  mkDir /srv/consolez
+ }                                         # mkDirectories()
+
+#+--------------------------------------------------------------------------+
+function copyFiles
+# Copy files from repo to target directories
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  # copy all files from CGI dirs in repo to new dirs
+  echo; echo "Step 4): copying CGI files from repo to /srv/www ..."
+  copyAllFiles $repoDir/srv/www/zlma   /srv/www/zlma
+  copyAllFiles $repoDir/srv/www/zlmarw /srv/www/zlmarw
+
+  # copy files one at a time to /usr/local/sbin
+  echo; echo "Step 5): copying scripts from repo to /usr/local/sbin ..."
+  cd $repoDir/usr/local/sbin
+  local nextFile
+  for nextFile in *; do                    # copy each file to /usr/local/sbin
+    copyOneFile $repoDir/usr/local/sbin $nextFile /usr/local/sbin
+  done
+ }                                         # copyFiles()
+
+#+--------------------------------------------------------------------------+
+function mkSymlinks 
+# Create symlinks for additional console scripts
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  echo; echo "Step 6): creating symbolic links ..."
+  cd /usr/local/sbin
+  if [ ! -h catcons ]; then                # symlink does not exist
+    runCmd sudo ln -s spoolcons catcons
+  else
+    echo "  symlink catcons already exists - skipping"	  
+  fi
+  if [ ! -h grepcons ]; then
+    runCmd sudo ln -s spoolcons grepcons 
+  else
+    echo "  symlink spoolcons already exists - skipping"	  
+  fi
+  if [ ! -h lscons ]; then
+    runCmd sudo ln -s spoolcons lscons 
+  else
+    echo "  symlink lscons already exists - skipping"	  
+  fi
+  if [ ! -h rmcons ]; then
+    runCmd sudo ln -s spoolcons rmcons 
+  else
+    echo "  symlink rmcons already exists - skipping"	  
+  fi
+}                                          # mkSymlinks() 
+
+#+--------------------------------------------------------------------------+
 function mkVenv
 # Make a virtual environment under /srv/venv/ 
 #+--------------------------------------------------------------------------+
@@ -238,83 +310,50 @@ function mkVenv
   : STACK:  ${FUNCNAME[@]}
 
   cd /srv/
-  echo; echo "Step 5): creating virtual environment ..."
+  echo; echo "Step 7): creating virtual environment ..."
   runCmd sudo $pythonCmd -m venv venv
+  # not sure this is needed:
+  #runCmd sudo chown -R $webUser.$webUser /srv/venv 
+  #runCmd sudo chmod -R g+w /srv/venv 
+
+  echo; echo "Step 8): activating venv ..."
   runCmd source venv/bin/activate
 
-  echo; echo "Step 6): upgrading pip ..."
-  runCmd "$pythonCmd -m pip install --upgrade pip"
+  echo; echo "Step 9): upgrading pip ..."
+  runCmd "sudo $pythonCmd -m pip install --upgrade pip"
  }                                         # mkVenv()
 
 #+--------------------------------------------------------------------------+
-function instZlma
-# Do the work to install and configure zlma 
+function mkCustom
+# Customize environment with .bash_profile and vim settings
 #+--------------------------------------------------------------------------+
  {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  instPackages                             # install packages
-
-  # make 2 CGI dirs, a log file dir and a directory for console data
-  echo; echo "Step 2): creating directories ..."
-  mkDir /srv/www/zlma
-  mkDir /srv/www/zlmarw
-  mkDir /var/log/zlma
-  mkDir /srv/consolez 
-
-  # copy all files from CGI dirs in repo to new dirs
-  echo; echo "Step 3): copying files from repo ..."
-  copyAllFiles $repoDir/srv/www/zlma   /srv/www/zlma
-  copyAllFiles $repoDir/srv/www/zlmarw /srv/www/zlmarw
-
-  # copy files one at a time to /usr/local/sbin
-  cd $repoDir/usr/local/sbin
-  local nextFile
-  for nextFile in *; do                    # copy each file to /usr/local/sbin
-    copyOneFile $repoDir/usr/local/sbin $nextFile /usr/local/sbin
-  done  
- 
-  # create symlinks for additional console scripts
-  echo; echo "Step 4): creating symbolic links ..."
-  cd /usr/local/sbin
-  if [ ! -h catcons ]; then
-    runCmd sudo ln -s spoolcons catcons
-  else
-    echo "catcons symlink already exists"
-  fi
-  if [ ! -h grepcons ]; then
-    runCmd sudo ln -s spoolcons grepcons 
-  else
-    echo "grepcons symlink already exists"
-  fi
-  if [ ! -h lscons ]; then
-    runCmd sudo ln -s spoolcons lscons 
-  else
-    echo "lscons symlink already exists"
-  fi
-  if [ ! -h rmcons ]; then
-    runCmd sudo ln -s spoolcons rmcons 
-  else
-    echo "rmcons symlink already exists"
-  fi
-
-  # make a virtual environment
-  mkVenv                                   
- }                                         # instZlma()
+  echo; echo "Step 10): customizing environment ..."
+  runCmd sudo cp $HOME/zlma/bash_profile $HOME/.bash_profile
+  runCmd sudo mv /etc/vimrc /etc/vimrc.orig                   
+  runCmd sudo cp $HOME/zlma/vimrc /etc/                       
+}                                          # mkCustom()
 
 # main()
 repoDir="$HOME/zlma"                       # directory with zlma repo 
+timeStamp=`date +"%y-%m-%d-%H-%M-%S"`      # current date and time
 outFile="$HOME/$timeStamp-instzlma.out"    # output file
 pythonCmd="python3"                        # can be another version
-timeStamp=`date +"%y-%m-%d-%H-%M-%S"`   
-verbose=0                                  # verbosity
+verbose=0                                  # 1 = verbose
 webUser="unknown"                          # either 'apache' or 'www-data'
 
 parseArgs $@
 checkBase                                  # verify this is s390x
 echo "Running instzlma to install zlma at $timeStamp ..." > $outFile # create a new log file
-instZlma | tee -a $outFile                 # do the work
+instPackages | tee -a $outFile             # install packages
+mkDirectories | tee -a $outFile            # make target directories
+copyFiles | tee -a $outFile                # copy from repo to targets
+mkSymlinks | tee -a $outFile               # create symlinks in /usr/local/sbin
+mkVenv | tee -a $outFile                   # make a virtual environment
+mkCustom | tee -a $outFile                 # customize environment and vim settings
 let min=$SECONDS/60
 let sec=$SECONDS%60
 if [ $sec -lt 10 ]; then                   # add a leading 0
