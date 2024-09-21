@@ -64,6 +64,9 @@ To install zlma, perform the following steps.
 
 ```
 sudo usermod -aG apache youruser
+```
+
+- Use the ``su -`` command to start a new shell which will reflect the group added 
 su - youruser
 id
 uid=1000(youruser) gid=1000(youruser) groups=1000(youruser),48(apache)
@@ -109,7 +112,7 @@ Python 3.11.7
 If you need to use Python 3.11, it will be specified later.
 
 ## Install this repository
-To install this repository, some basic packages are first needed.
+To install this ``zlma`` repository, some basic packages are first needed.
 
 - Install git, httpd and vim:
 
