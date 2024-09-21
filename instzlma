@@ -80,12 +80,12 @@ function checkBase
   : STACK:  ${FUNCNAME[@]}
 
   if [ ! -f /proc/sysinfo ]; then          # not zLinux
-    echo "ERROR: /proc/sysinfo not found - not running on s390x?" 
+    echo "ERROR: /proc/sysinfo not found - not running on s390x?" | tee -a $outFile
     exit 1
   fi
   if [ ! -d $HOME/zlma ]; then
-    echo 'ERROR: zlma repo not found under $HOME' 
-    echo "Try:   cd; git clone https://github.com/mike99mac/zlma"
+    echo 'ERROR: zlma repo not found under $HOME' | tee -a $outFile
+    echo "Try:   cd; git clone https://github.com/mike99mac/zlma" | tee -a $outFile
     exit 2
   fi
   id apache > /dev/null 2>&1
@@ -96,7 +96,7 @@ function checkBase
     if [ $? = 0 ]; then                    # user exists
       webUser="www-data"
     else
-      echo "ERROR: neither user 'apache' nor 'www-data' found" 
+      echo "ERROR: neither user 'apache' nor 'www-data' found - exiting" | tee -a $outFile
       exit 3
     fi
   fi
@@ -127,11 +127,11 @@ function runCmd
 
   cmd="$@"                                 # all args
 
-  echo "  Running: $cmd" 
+  echo "  Running: $cmd" | tee -a $outFile
   eval $cmd 2>&1 
   rc=$?
   if [ "$rc" != 0 ]; then                  # it failed
-    echo "ERROR: $cmd returned $rc" 
+    echo "ERROR: $cmd returned $rc - exiting" | tee -a $outFile
     exit 4
   fi
  }                                         # runCmd()
@@ -170,7 +170,7 @@ function copyAllFiles
   local targetDir=$2
 
   if [ ! -d $theDir ]; then                  # directory exists
-    echo "ERROR: Unexpected - source directory $sourceDir does not exist"
+    echo "ERROR: Unexpected - source directory $sourceDir does not exist - exiting" | tee -a $outFile
     exit 5
   fi
   runCmd cd $sourceDir
@@ -208,23 +208,23 @@ function instPackages
 
   local cmd
 
-  echo; echo "Step 1): installing packages ..."
+  echo; echo "Step 1): installing packages ..." | tee -a $outFile 
   which apt >/dev/null 2>&1
   if [ $? = 0 ]; then                      # use apt and assume Debian-based
-    cmd="sudo apt install -y cifs-utils curl gcc git  make mariadb-server mlocate net-tools pandoc python3 python3-dev python3-pip"
+    cmd="sudo apt install -y cifs-utils cmake curl gcc git make mariadb-server mlocate net-tools pandoc python3 python3-dev python3-pip"
     runCmd $cmd
-    echo; echo "Step 2): setting Apache and mariadb to start at boot time ..."
+    echo; echo "Step 2): setting Apache and mariadb to start at boot time ..." | tee -a $outFile
     runCmd sudo systemctl enable apache2   # set Apache to start at boot
   else                                     # no apt, check for dnf
     which dnf >/dev/null 2>&1
     if [ $? = 0 ]; then                    # use dnf and assume RHEL-based
-      cmd="sudo dnf install -y bzip2-devel cifs-utils curl gcc git libffi-devel make mariadb-server mlocate net-tools openssl-devel" 
+      cmd="sudo dnf install -y bzip2-devel cifs-utils curl gcc git libffi-devel make mariadb-connector-c mariadb-connector-c-devel.s390x mariadb-server mlocate net-tools openssl-devel python3 python3-pip tar" 
       local morePkgs="python3 python3-devel python3-pip vim wget zlib-devel"
       runCmd $cmd $morePkgs
-      echo; echo "Step 2): setting Apache and mariadb to start at boot time ..."
+      echo; echo "Step 2): setting Apache and mariadb to start at boot time ..." | tee -a $outFile
       runCmd sudo systemctl enable httpd   # set Apache to start at boot
     else
-      echo "ERROR: did not find 'apt' nor 'dnf' - don't know how to install"
+      echo "ERROR: did not find 'apt' nor 'dnf' - exiting" | tee -a $outFile
       exit 6
     fi
   fi
@@ -240,7 +240,7 @@ function mkDirectories
   : STACK:  ${FUNCNAME[@]}
 
   # make 2 CGI dirs, a log file dir and a directory for console data
-  echo; echo "Step 3): creating directories ..."
+  echo; echo "Step 3): creating directories ..." | tee -a $outFile
   mkDir /srv/www/zlma
   mkDir /srv/www/zlmarw
   mkDir /var/log/zlma
@@ -256,12 +256,12 @@ function copyFiles
   : STACK:  ${FUNCNAME[@]}
 
   # copy all files from CGI dirs in repo to new dirs
-  echo; echo "Step 4): copying CGI files from repo to /srv/www ..."
+  echo; echo "Step 4): copying CGI files from repo to /srv/www ..." | tee -a $outFile
   copyAllFiles $repoDir/srv/www/zlma   /srv/www/zlma
   copyAllFiles $repoDir/srv/www/zlmarw /srv/www/zlmarw
 
   # copy files one at a time to /usr/local/sbin
-  echo; echo "Step 5): copying scripts from repo to /usr/local/sbin ..."
+  echo; echo "Step 5): copying scripts from repo to /usr/local/sbin ..." | tee -a $outFile
   cd $repoDir/usr/local/sbin
   local nextFile
   for nextFile in *; do                    # copy each file to /usr/local/sbin
@@ -277,7 +277,7 @@ function mkSymlinks
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  echo; echo "Step 6): creating symbolic links ..."
+  echo; echo "Step 6): creating symbolic links ..." | tee -a $outFile
   cd /usr/local/sbin
   if [ ! -h catcons ]; then                # symlink does not exist
     runCmd sudo ln -s spoolcons catcons
@@ -310,17 +310,43 @@ function mkVenv
   : STACK:  ${FUNCNAME[@]}
 
   cd /srv/
-  echo; echo "Step 7): creating virtual environment ..."
+  echo; echo "Step 7): creating virtual environment ..." | tee -a $outFile
   runCmd sudo $pythonCmd -m venv venv
   # not sure this is needed:
   #runCmd sudo chown -R $webUser.$webUser /srv/venv 
   #runCmd sudo chmod -R g+w /srv/venv 
 
-  echo; echo "Step 8): activating venv ..."
+  echo; echo "Step 8): activating venv ..." | tee -a $outFile
   runCmd source venv/bin/activate
 
-  echo; echo "Step 9): upgrading pip ..."
-  runCmd "sudo $pythonCmd -m pip install --upgrade pip"
+  echo; echo "Step 9): upgrading pip ..." | tee -a $outFile
+  # runCmd "sudo $pythonCmd -m pip install --upgrade pip"
+  runCmd "$pythonCmd -m pip install --upgrade pip"
+ }                                         # mkSymlinks()
+
+#+--------------------------------------------------------------------------+
+function mkVenv
+# Make a virtual environment under /srv/venv/
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  echo; echo "Step 10): building and installing the mariadb connector ..." | tee -a $outFile
+  if [ -f /usr/local/lib/mariadb/libmariadb.a ]; then
+    echo "It appears the mariadb connector is built and installed"
+  else                                     # build and install the mariadb connector v3.3.1
+    cd                                     # change to home directory
+    wget https://downloads.mariadb.org/connector-c/3.3.1/mariadb-connector-c-3.3.1.tar.gz
+    tar -xzf mariadb-connector-c-3.3.1.tar.gz
+    cd mariadb-connector-c-3.3.1
+    runCmd "cmake ."
+    runCmd "cmake --build ."
+    runCmd "sudo cmake --install ."
+  fi
+  echo; echo "Step 11): installing pip packages ..." | tee -a $outFile
+  #runCmd "sudo $pythonCmd -m pip install certifi charset_normalizer idna mariadb mysql-connector-python packaging ply requests urllib"
+  runCmd "sudo $pythonCmd -m pip install certifi charset_normalizer idna mariadb mysql-connector-python packaging ply requests"
  }                                         # mkVenv()
 
 #+--------------------------------------------------------------------------+
@@ -331,7 +357,7 @@ function mkCustom
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  echo; echo "Step 10): customizing environment ..."
+  echo; echo "Step 11): customizing environment ..." | tee -a $outFile
   runCmd sudo cp $HOME/zlma/bash_profile $HOME/.bash_profile
   runCmd sudo mv /etc/vimrc /etc/vimrc.orig                   
   runCmd sudo cp $HOME/zlma/vimrc /etc/                       
@@ -348,12 +374,12 @@ webUser="unknown"                          # either 'apache' or 'www-data'
 parseArgs $@
 checkBase                                  # verify this is s390x
 echo "Running instzlma to install zlma at $timeStamp ..." > $outFile # create a new log file
-instPackages | tee -a $outFile             # install packages
-mkDirectories | tee -a $outFile            # make target directories
-copyFiles | tee -a $outFile                # copy from repo to targets
-mkSymlinks | tee -a $outFile               # create symlinks in /usr/local/sbin
-mkVenv | tee -a $outFile                   # make a virtual environment
-mkCustom | tee -a $outFile                 # customize environment and vim settings
+instPackages                               # install packages
+mkDirectories                              # make target directories
+copyFiles                                  # copy from repo to targets
+mkSymlinks                                 # create symlinks in /usr/local/sbin
+mkVenv                                     # make a virtual environment
+mkCustom                                   # customize environment and vim settings
 let min=$SECONDS/60
 let sec=$SECONDS%60
 if [ $sec -lt 10 ]; then                   # add a leading 0
