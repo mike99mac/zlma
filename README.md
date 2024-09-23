@@ -25,32 +25,11 @@ Following is a block diagram of zlma:
 **zlma block diagram**
 
 ## Set up SSH access
-Key-based authentication, or *Passwordless* SSH access is needed for one user from the zlma server to all systems that will be managed.
-``zlma`` commands must be run by that user and they must have ``sudo`` access.
-Details on how to accomplish this are outside the scope of this document (TODO: add another document?) 
+Key-based authentication, or *Passwordless* SSH access is needed for one user from the zlma server to all systems that will be managed.  ``zlma`` commands must be run by that user and they must have ``sudo`` access.  
 
-Following is an example of a script that SSH's to each managed server and runs the ``hostname`` command:
+Details on how to accomplish this are outside the scope of this document, howerver, there is a script, ``sshall``, which tests SSH connectivity: https://github.com/mike99mac/zlma/blob/main/usr/local/sbin/sshall
 
-```
-$ sshall
-SSHing to model800 ...
-model800
------------------------------------------
-SSHing to model1000 ...
-model1000
------------------------------------------
-SSHing to model1500 ...
-model1500
------------------------------------------
-SSHing to model2000 ...
-model2000
------------------------------------------
-4 of 4 SSHed
-```
-
-Here is ``sshall``: https://github.com/mike99mac/zlma/blob/main/usr/local/sbin/sshall
-
-Try to set this up first, then the following instructions can be followed. 
+Once SSH access is set up, the solution can be installed. 
 
 # Installation
 These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
@@ -59,20 +38,8 @@ This code has been installed on Debian and RHEL bases Linuxes.  When there are d
 
 To install zlma, perform the following steps.
 
-- Login as a non-root user with sudo privileges. Add the group which will be running apache to that user.  
-  In this exmple the user is ``youruser`` and the group is ``apache``, which is common for Red Hat-based distros. For Debian, the group ``www-data`` is common.
-
-```
-sudo usermod -aG apache youruser
-```
-
-- Use the ``su -`` command to start a new shell which will reflect the group added 
-su - youruser
-id
-uid=1000(youruser) gid=1000(youruser) groups=1000(youruser),48(apache)
-```
-
-- Update your system.
+## Update your system
+To uUpdate your system, perform the following:
 
   - For Debian-based:
     ```
@@ -87,6 +54,43 @@ uid=1000(youruser) gid=1000(youruser) groups=1000(youruser),48(apache)
     ```
     sudo dnf update 
     ```
+
+## Install this repository
+To install this ``zlma`` repository, some basic packages are first needed.
+
+- Install git, httpd and vim:
+
+  - For Debian-based:
+
+    ```
+    sudo apt install -y git apache2 vim
+    ```
+
+  - For RHEL-based:
+
+   ```
+   sudo dnf install -y git httpd vim
+   ```
+
+- Clone this repo to your home directory:
+
+```
+cd;
+git clone https://github.com/mike99mac/zlma
+```
+- Login as a non-root user with sudo privileges. Add the group which will be running apache to that user.  
+  In this exmple the user is ``youruser`` and the group is ``apache``, which is common for Red Hat-based distros. For Debian, the group ``www-data`` is common.
+
+```
+sudo usermod -aG <apache|www-data> <youruser>
+```
+
+- Use the ``su -`` command to start a new shell which will reflect the group added 
+su - youruser
+id
+uid=1000(youruser) gid=1000(youruser) groups=1000(youruser),48(apache)
+```
+
 
 ## Upgrade Python
 
@@ -111,21 +115,6 @@ Python 3.11.7
 
 If you need to use Python 3.11, it will be specified later.
 
-## Install this repository
-To install this ``zlma`` repository, some basic packages are first needed.
-
-- Install git, httpd and vim:
-
-```
-sudo dnf install -y git httpd vim
-```
-
-- Clone this repo to your home directory:
-
-```
-cd;
-git clone https://github.com/mike99mac/zlma
-```
 
 ## Choose manual install or install script
 Choose either to install manually or use the install script (recommended).
