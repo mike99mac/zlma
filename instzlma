@@ -223,7 +223,7 @@ function instPackages
   else                                     # no apt, check for dnf
     which dnf >/dev/null 2>&1
     if [ $? = 0 ]; then                    # use dnf and assume RHEL-based
-      cmd="sudo dnf install -y bzip2-devel cifs-utils curl gcc git libffi-devel make mariadb-connector-c mariadb-connector-c-devel.s390x mariadb-server mlocate net-tools openssl-devel python3 python3-pip tar" 
+      cmd="sudo dnf install -y bzip2-devel cifs-utils cmake curl file gcc git libffi-devel make mariadb-connector-c mariadb-connector-c-devel.s390x mariadb-server mlocate net-tools openssl-devel python3 python3-pip tar" 
       local morePkgs="python3 python3-devel python3-pip vim wget zlib-devel"
       runCmd $cmd $morePkgs
 
@@ -354,16 +354,22 @@ function buildConnector
 
   echo; echo "Step 11): Building and installing the mariadb connector ..." | tee -a $outFile
 
-  if [ -f /usr/local/lib/mariadb/libmariadb.a ]; then
-    echo "It appears the mariadb connector is built and installed"
+  connectorLib="/usr/local/lib/mariadb/libmariadb.a"
+  if [ -f $connectorLib ]; then
+    echo "mariadb connector is built and installed - skipping"
   else                                     # build and install the mariadb connector v3.3.1
-    cd                                     # change to home directory
-    wget https://downloads.mariadb.org/connector-c/3.3.1/mariadb-connector-c-3.3.1.tar.gz
-    tar -xzf mariadb-connector-c-3.3.1.tar.gz
-    cd mariadb-connector-c-3.3.1
+    cd /tmp
+    # wget https://downloads.mariadb.org/connector-c/3.3.1/mariadb-connector-c-3.3.1.tar.gz
+    tarFile="$HOME/mariadb-connector-c-3.3.1-src.tar.gz"
+    runCmd tar -xzf $tarFile 
+    cd mariadb-connector-c-3.3.1-src
     runCmd "cmake ."
     runCmd "cmake --build ."
     runCmd "sudo cmake --install ."
+    if [ ! -f $connectorLib ]; then
+      echo "ERROR: Library $connectorLib not found - exiting"
+      exit 7
+    fi	     
   fi
   echo; echo "Step 12): Installing pip packages ..." | tee -a $outFile
   runCmd "sudo $pythonCmd -m pip install certifi charset_normalizer idna mariadb mysql-connector-python packaging ply requests"
@@ -407,6 +413,10 @@ function mkCustom
   runCmd sudo cp $HOME/zlma/bash_profile $HOME/.bash_profile
   runCmd sudo mv /etc/vimrc /etc/vimrc.orig                   
   runCmd sudo cp $HOME/zlma/vimrc /etc/                       
+  cd /usr/share/vim/vim8*
+  if [ -f indent.vim ]; then               # turn off annoying indent rules
+    runCmd sudo mv indent.vim indent.vim.dontuse
+  fi
  }                                         # mkCustom()
 
 #+--------------------------------------------------------------------------+
