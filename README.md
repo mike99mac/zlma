@@ -65,18 +65,18 @@ To install this ``zlma`` repository, some basic packages are first needed.
     ```
 
     - For Debian-based, it is the ``sudo`` group:
-    ```
-    ...
-    %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
-    ...
-    ```
+      ```
+      ...
+      %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+      ...
+      ```
 
     - For RHEL-based, it is the ``wheel`` group:
-    ```
-    ...
-    %wheel  ALL=(ALL:ALL) NOPASSWD: ALL
-    ...
-    ```
+      ```
+      ...
+      %wheel  ALL=(ALL:ALL) NOPASSWD: ALL
+      ...
+      ```
 
 - Install git, httpd and vim:
 
@@ -88,9 +88,9 @@ To install this ``zlma`` repository, some basic packages are first needed.
 
   - For RHEL-based:
 
-   ```
-   sudo dnf install -y git httpd vim
-   ```
+    ```
+    sudo dnf install -y git httpd vim
+    ```
 
 - Clone this repo to your home directory:
 
