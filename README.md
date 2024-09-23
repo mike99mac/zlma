@@ -105,18 +105,25 @@ git clone https://github.com/mike99mac/zlma
 sudo usermod -aG <apache|www-data> <youruser>
 ```
 
-- Use the ``su -`` command to start a new shell which will reflect the group added 
+- Use the ``su -`` command to start a new shell which will reflect the group added. In this example, the user is ``mikemac`` and the new group is ``apache``.
 
 ```
-su - youruser
+su - mikemac
 id
-uid=1000(youruser) gid=1000(youruser) groups=1000(youruser),48(apache)
+uid=1000(mikemac) gid=1000(mikemac) groups=1000(mikemac),10(wheel),48(apache)
 ```
-
 
 ## Upgrade Python
 
 This step is optional.  
+
+- First, determine the Python version.
+
+```
+python -V
+Python 3.9.18
+
+```
 
 Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. AlmaLinux 9.4 (the distro often used to write this document) ships with a base Python version of 3.9 which will not run this code.
 
@@ -125,7 +132,7 @@ To install Python 3.11 on a RHEL based distro, perform the following steps.
 - Install Python 3.11
 
 ```
-sudo dnf install python3.11 python3.11-devel
+sudo dnf install -y python3.11 python3.11-devel
 ```
 
 - Show the new version:
@@ -144,7 +151,6 @@ Choose either to install manually or use the install script (recommended).
 ### Install automatically
 The script ``instzlma`` is provided in the ``zlma`` repo to save you time. 
 
-
 - Change to the new zlma directory:
 
 ```
@@ -157,7 +163,7 @@ cd $HOME/zlma;
     ./instzlma 
     ```
 
-    -To run it if your system has an upgraded python, include the upgraded version as an argument to ``instzlma``:
+    - To run it if your system has an upgraded python, include the upgraded version as an argument to ``instzlma``:
 
     ```
     ./instzlma python3.11
