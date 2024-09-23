@@ -78,18 +78,18 @@ To install this ``zlma`` repository, some basic packages are first needed.
       ...
       ```
 
-- Install git, httpd and vim:
+- Install git, vim and Apache:
 
   - For Debian-based:
 
     ```
-    sudo apt install -y git apache2 vim
+    sudo apt install -y git vim apache2 
     ```
 
   - For RHEL-based:
 
     ```
-    sudo dnf install -y git httpd vim
+    sudo dnf install -y git vim httpd 
     ```
 
 - Clone this repo to your home directory:
@@ -117,7 +117,7 @@ uid=1000(mikemac) gid=1000(mikemac) groups=1000(mikemac),10(wheel),48(apache)
 
 This step is optional.  
 
-- First, determine the Python version.
+- First, determine the Python version of your system: 
 
 ```
 python -V
@@ -125,7 +125,7 @@ Python 3.9.18
 
 ```
 
-Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. AlmaLinux 9.4 (the distro often used to write this document) ships with a base Python version of 3.9 which will not run this code.
+Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. In this example, AlmaLinux 9.4 ships with a base Python version of 3.9 which is not sufficient.
 
 To install Python 3.11 on a RHEL based distro, perform the following steps.
 
@@ -157,19 +157,19 @@ The script ``instzlma`` is provided in the ``zlma`` repo to save you time.
 cd $HOME/zlma;
 ```
 
-    - To run it if your Linux has a base Python version of 3.10 or greater, perform the following steps:
+    - To run it if your Linux has a base Python version of 3.10 or greater:
 
     ```
     ./instzlma 
     ```
 
-    - To run it if your system has an upgraded python, include the upgraded version as an argument to ``instzlma``:
+    - To run it if your system has an upgraded python, include the upgraded version with ``instzlma p <version>``:
 
     ```
-    ./instzlma python3.11
+    ./instzlma -p python3.11
     ```
 
-The output will be written to your home directory in a file of the form ``<yr-mon-day-hr-min-sec>-instzlma.out``.
+Output will be written to a file of the form ``$HOME/<yr-mon-day-hr-min-sec>-instzlma.out``.
 ### Install manually
 If you want to use the install script to save time, skip this section and [go to Install automatically](#Install-automatically).
 
