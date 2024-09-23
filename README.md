@@ -152,13 +152,15 @@ Choose either to install manually or use the install script (recommended).
 ### Install automatically
 The script ``instzlma`` is provided in the ``zlma`` repo to save you time and improve reliability. 
 
+- Run the script depending on your Python level.
+
     - Run it if your Linux has a base Python version of 3.10 or greater:
 
     ```
     $HOME/zlma/instzlma 
     ```
 
-    - To run it if your system has an upgraded python, include the upgraded version with ``instzlma p <version>``:
+    - To run it if your system has an upgraded python, include the upgraded version with the ``-p <version>`` flag:
 
     ```
     $HOME/zlma/instzlma -p python3.11
