@@ -39,7 +39,7 @@ This code has been installed on Debian and RHEL bases Linuxes.  When there are d
 To install zlma, perform the following steps.
 
 ## Update your system
-To uUpdate your system, perform the following:
+To update your system, perform the following steps:
 
   - For Debian-based:
     ```
@@ -74,7 +74,7 @@ To install this ``zlma`` repository, some basic packages are first needed.
     - For RHEL-based, it is the ``wheel`` group:
       ```
       ...
-      %wheel  ALL=(ALL:ALL) NOPASSWD: ALL
+      %wheel  ALL=(ALL)       NOPASSWD: ALL
       ...
       ```
 
@@ -106,6 +106,8 @@ sudo usermod -aG <apache|www-data> <youruser>
 ```
 
 - Use the ``su -`` command to start a new shell which will reflect the group added 
+
+```
 su - youruser
 id
 uid=1000(youruser) gid=1000(youruser) groups=1000(youruser),48(apache)
