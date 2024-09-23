@@ -98,8 +98,9 @@ To install this ``zlma`` repository, some basic packages are first needed.
 cd;
 git clone https://github.com/mike99mac/zlma
 ```
-- Login as a non-root user with sudo privileges. Add the group which will be running apache to that user.  
-  In this exmple the user is ``youruser`` and the group is ``apache``, which is common for Red Hat-based distros. For Debian, the group ``www-data`` is common.
+- Login as a non-root user with sudo privileges. 
+
+- Add the group which will be running apache to that user.  In this exmple the user is ``youruser`` and the group is ``apache``, which is common for Red Hat-based distros. For Debian, the group ``www-data`` is common.
 
 ```
 sudo usermod -aG <apache|www-data> <youruser>
@@ -149,24 +150,18 @@ If you need to use Python 3.11, it will be specified later.
 Choose either to install manually or use the install script (recommended).
 
 ### Install automatically
-The script ``instzlma`` is provided in the ``zlma`` repo to save you time. 
+The script ``instzlma`` is provided in the ``zlma`` repo to save you time and improve reliability. 
 
-- Change to the new zlma directory:
-
-```
-cd $HOME/zlma;
-```
-
-    - To run it if your Linux has a base Python version of 3.10 or greater:
+    - Run it if your Linux has a base Python version of 3.10 or greater:
 
     ```
-    ./instzlma 
+    $HOME/zlma/instzlma 
     ```
 
     - To run it if your system has an upgraded python, include the upgraded version with ``instzlma p <version>``:
 
     ```
-    ./instzlma -p python3.11
+    $HOME/zlma/instzlma -p python3.11
     ```
 
 Output will be written to a file of the form ``$HOME/<yr-mon-day-hr-min-sec>-instzlma.out``.
