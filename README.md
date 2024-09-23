@@ -58,6 +58,26 @@ To uUpdate your system, perform the following:
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
 
+- Allow members of a certain group to be able to run **``sudo``** commands without a password, by adding **``NOPASSWD:``** to the line near the bottom of the file.
+
+    ```
+    sudo visudo
+    ```
+
+    - For Debian-based, it is the ``sudo`` group:
+    ```
+    ...
+    %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+    ...
+    ```
+
+    - For RHEL-based, it is the ``wheel`` group:
+    ```
+    ...
+    %wheel  ALL=(ALL:ALL) NOPASSWD: ALL
+    ...
+    ```
+
 - Install git, httpd and vim:
 
   - For Debian-based:
