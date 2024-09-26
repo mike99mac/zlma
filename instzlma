@@ -16,7 +16,6 @@ function usage()
   echo ""
   echo "OPTIONS:"
   echo "  -h|--help         Give help (this screen)"
-  echo "  -p|--python PYTHON_CMD Where PYTHON_CMD is the python level to use (ex: python3.11)"
   echo "  -v|--verbose      Increase verbosity"
   echo "  -x|--debug        Print commands and arguments as they are executed"
   echo ""
@@ -37,20 +36,6 @@ function parseArgs()
     case "$1" in
       -h|--help)
         usage
-        ;;
-      -p|--python)
-        shift
-        if [ $# = 0 ]; then                # PYTHON_CMD not supplied
-          echo "ERROR: PYTHON_CMD not supplied"
-          usage
-        fi 
-        flags="-v"
-        pythonCmd=$1
-        which $pythonCmd >/dev/null 2>&1
-        if [ $? != 0 ]; then               # command not found
-          echo "ERROR: $pythonCmd not found"
-          usage
-        fi
         ;;
       -v|--verbose)
         verbose=2
@@ -98,7 +83,7 @@ function checkBase
       webUser="www-data"
       webDir="/var/log/apache2"
     else
-      echo "ERROR: neither user 'apache' nor 'www-data' found - exiting" 
+      echo "ERROR: neither user 'apache' nor 'www-data' found - exiting"  | tee -a $outFile
       exit 3
     fi
   fi
@@ -133,7 +118,7 @@ function runCmd
   eval $cmd 2>&1 
   rc=$?
   if [ "$rc" != 0 ]; then                  # it failed
-    echo "ERROR: $cmd returned $rc - exiting" 
+    echo "ERROR: $cmd returned $rc - exiting"  | tee -a $outFile
     exit 4
   fi
  }                                         # runCmd()
@@ -172,14 +157,14 @@ function copyAllFiles
   local targetDir=$2
 
   if [ ! -d $theDir ]; then                  # directory exists
-    echo "ERROR: Unexpected - source directory $sourceDir does not exist - exiting"
+    echo "ERROR: Unexpected - source directory $sourceDir does not exist - exiting" | tee -a $outFile
     exit 5
   fi
   runCmd cd $sourceDir
   runCmd "sudo cp * $targetDir"
   runCmd cd $targetDir
   runCmd "sudo chown $webUser.$webUser *"
- }                                         # mkDir()
+ }                                         # copyAllFiles()
 
 #+--------------------------------------------------------------------------+
 function copyOneFile
@@ -210,29 +195,31 @@ function instPackages
 
   local cmd
 
-  echo; echo "Step 1): Installing packages ..." | tee -a $outFile | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 1): Installing packages ..." | tee -a $outFile
 
   which apt >/dev/null 2>&1
   if [ $? = 0 ]; then                      # use apt and assume Debian-based
     cmd="sudo apt install -y cifs-utils cmake curl gcc git locate make mariadb-server net-tools pandoc python3 python3-dev python3-pip"
     runCmd $cmd
 
-    echo; echo "Step 2): Setting Apache and mariadb to start at boot time ..." | tee -a $outFile
+    echo | tee -a $outFile
+    echo "Step 2): Setting Apache and mariadb to start at boot time ..." | tee -a $outFile
 
     runCmd sudo systemctl enable apache2   # set Apache to start at boot
   else                                     # no apt, check for dnf
     which dnf >/dev/null 2>&1
     if [ $? = 0 ]; then                    # use dnf and assume RHEL-based
-      cmd="sudo dnf install -y bzip2-devel cifs-utils cmake curl file gcc git libffi-devel make mariadb-connector-c mariadb-connector-c-devel.s390x mariadb-server mlocate net-tools openssl-devel python3 python3-pip tar" 
-      local morePkgs="python3 python3-devel python3-pip vim wget zlib-devel"
-      runCmd $cmd $morePkgs
+      cmd="sudo dnf install -y bind-utils bzip2-devel cifs-utils cmake curl file gcc git libffi-devel make mariadb-connector-c mariadb-connector-c-devel.s390x mariadb-server mlocate net-tools nfs-utils openssl-devel python3 python3-pip tar vim wget zlib-devel"
+      runCmd $cmd 
 
-      echo; echo "Step 2): Setting Apache and mariadb to start at boot time ..." | tee -a $outFile
+      echo | tee -a $outFile
+      echo "Step 2): Setting Apache and mariadb to start at boot time ..." | tee -a $outFile
 
       sudo systemctl enable httpd          # set Apache to start at boot - ignore non-0 rc
     else
 
-      echo "ERROR: did not find 'apt' nor 'dnf' - exiting"
+      echo "ERROR: did not find 'apt' nor 'dnf' - exiting" | tee -a $outFile
       exit 6
     fi
   fi
@@ -248,7 +235,8 @@ function mkDirectories
   : STACK:  ${FUNCNAME[@]}
 
   # make 2 CGI dirs, a log file dir and a directory for console data
-  echo; echo "Step 3): Creating directories ..." | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 3): Creating directories ..." | tee -a $outFile
 
   mkDir /srv/www/zlma
   mkDir /srv/www/zlmarw
@@ -256,7 +244,8 @@ function mkDirectories
   mkDir /srv/consolez
 
   # set attributes of /var/log/'apache|httpd'
-  echo; echo "Step 4): Modifying directory /var/log/$webDir ..." | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 4): Modifying directory /var/log/$webDir ..." | tee -a $outFile
 
   cd /var/log
   runCmd sudo chown $webUser.$webUser $webDir
@@ -272,18 +261,21 @@ function copyFiles
   : STACK:  ${FUNCNAME[@]}
 
   # copy all files from CGI dirs in repo to new dirs
-  echo; echo "Step 5): Copying CGI files from repo to /srv/www ..." | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 5): Copying CGI files from repo to /srv/www ..." | tee -a $outFile
   copyAllFiles $repoDir/srv/www/zlma   /srv/www/zlma
   copyAllFiles $repoDir/srv/www/zlmarw /srv/www/zlmarw
 
   # copy files one at a time to /usr/local/sbin
-  echo; echo "Step 6): Copying scripts from repo to /usr/local/sbin ..." | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 6): Copying scripts from repo to /usr/local/sbin ..." | tee -a $outFile
 
   cd $repoDir/usr/local/sbin
   local nextFile
   for nextFile in *; do                    # copy each file to /usr/local/sbin
     copyOneFile $repoDir/usr/local/sbin $nextFile /usr/local/sbin
   done
+  copyOneFile $repoDir zlmainfo $HOME      # copy zlmainfo to user's home directory
  }                                         # copyFiles()
 
 #+--------------------------------------------------------------------------+
@@ -294,7 +286,8 @@ function mkSymlinks
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  echo; echo "Step 7): Creating symbolic links ..." | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 7): Creating symbolic links ..." | tee -a $outFile
 
   cd /usr/local/sbin
   if [ ! -h catcons ]; then                # symlink does not exist
@@ -327,20 +320,27 @@ function mkVenv
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  cd /srv/
-  echo; echo "Step 8): Creating virtual environment ..." | tee -a $outFile
 
+  cd /srv/
+  echo | tee -a $outFile
+  echo "Step 8): Creating virtual environment ..." | tee -a $outFile
+
+  /usr/bin/python3.11 -V >/dev/null 2>&1
+  if [ $? = 0 ]; then                      # Python 3.11 is installed - use it
+    pythonCmd="python3.11"
+  fi
   runCmd sudo $pythonCmd -m venv venv
   runCmd sudo chown -R $webUser.$webUser /srv/venv 
   runCmd sudo chmod -R g+w /srv/venv 
 
-  echo; echo "Step 9): Activating venv ..." | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 9): Activating venv ..." | tee -a $outFile
 
   runCmd source venv/bin/activate
 
-  echo; echo "Step 10): Upgrading pip ..." | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 10): Upgrading pip ..." | tee -a $outFile
 
-  # runCmd "sudo $pythonCmd -m pip install --upgrade pip"
   runCmd "$pythonCmd -m pip install --upgrade pip"
  }                                         # mkSymlinks()
 
@@ -352,28 +352,43 @@ function buildConnector
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  echo; echo "Step 11): Building and installing the mariadb connector ..." | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 11): Building and installing the mariadb connector ..." | tee -a $outFile
 
   connectorLib="/usr/local/lib/mariadb/libmariadb.a"
   if [ -f $connectorLib ]; then
-    echo "mariadb connector is built and installed - skipping"
+    echo "  The mariadb connector $connectorLib seems to be installed - skipping" | tee -a $outFile
   else                                     # build and install the mariadb connector v3.3.1
+    connectorVer="mariadb-connector-c-3.2.6-src"
+    tarFile="$HOME/zlma/$connectorVer.tar.gz"
+    # wget https://downloads.mariadb.org/connector-c/3.3.1/$tarFile - old file
     cd /tmp
-    # wget https://downloads.mariadb.org/connector-c/3.3.1/mariadb-connector-c-3.3.1.tar.gz
-    tarFile="$HOME/mariadb-connector-c-3.3.1-src.tar.gz"
     runCmd tar -xzf $tarFile 
-    cd mariadb-connector-c-3.3.1-src
-    runCmd "cmake ."
-    runCmd "cmake --build ."
-    runCmd "sudo cmake --install ."
+    cd $connectorVer
+    runCmd "cmake ." | tee -a $outFile
+    runCmd "cmake --build ." | tee -a $outFile
+    runCmd "sudo cmake --install ." | tee -a $outFile
     if [ ! -f $connectorLib ]; then
-      echo "ERROR: Library $connectorLib not found - exiting"
+      echo "ERROR: Library $connectorLib not found - exiting" | tee -a $outFile
       exit 7
     fi	     
   fi
-  echo; echo "Step 12): Installing pip packages ..." | tee -a $outFile
-  runCmd "sudo $pythonCmd -m pip install certifi charset_normalizer idna mariadb mysql-connector-python packaging ply requests"
  }                                         # buildConnector()
+
+#+--------------------------------------------------------------------------+
+function pipPackages
+# Install pip packages 
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  echo | tee -a $outFile
+  echo "Step 12): Installing pip packages ..." | tee -a $outFile
+  for nextPkg in certifi charset_normalizer idna "mariadb==1.1.4"  mysql-connector-python packaging ply requests; do
+    runCmd "$pythonCmd -m pip install $nextPkg"  | tee -a $outFile
+  done
+ }                                         # pipPackages()
 
 #+--------------------------------------------------------------------------+
 function confApache 
@@ -383,7 +398,8 @@ function confApache
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  echo; echo "Step 13): Configuring Apache" | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 13): Configuring Apache" | tee -a $outFile
 
   if [ "$webUser" == "apache" ]; then      # RHEL-based: remove -DFOREGROUND and copy mime.types
     svcFile="/usr/lib/systemd/system/httpd.service"
@@ -408,11 +424,13 @@ function mkCustom
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  echo; echo "Step 14): Customizing environment ..." | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 14): Customizing environment ..." | tee -a $outFile
 
   runCmd sudo cp $HOME/zlma/bash_profile $HOME/.bash_profile
   runCmd sudo mv /etc/vimrc /etc/vimrc.orig                   
   runCmd sudo cp $HOME/zlma/vimrc /etc/                       
+  runCmd sudo cp $HOME/zlma/zlma.conf /etc/                       
   cd /usr/share/vim/vim8*
   if [ -f indent.vim ]; then               # turn off annoying indent rules
     runCmd sudo mv indent.vim indent.vim.dontuse
@@ -427,7 +445,8 @@ function fixBlockers
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  echo; echo "Step 15): Opening firewall and turning off SE Linux ..." | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 15): Opening firewall and turning off SE Linux ..." | tee -a $outFile
 
   runCmd sudo firewall-cmd --zone=public --add-service=http --permanent # open port 80
   runCmd sudo firewall-cmd --reload        # reload firewall
@@ -443,27 +462,34 @@ function fixBlockers
 
 #+--------------------------------------------------------------------------+
 function restartServices
-# Restart mariadb and Apache 
+# Restart mariadb and Apache and show status 
 #+--------------------------------------------------------------------------+
  {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  echo; echo "Step 16): restarting mariadb and Apache ..." | tee -a $outFile
+  echo | tee -a $outFile
+  echo "Step 16): restarting mariadb and Apache and checking status..." | tee -a $outFile
 
   runCmd sudo systemctl restart mariadb
+  echo -n "  Status: "
+  service mariadb status | grep Active:
   if [ "$webUser" == "apache" ]; then      # RHEL-based
     runCmd sudo systemctl start httpd
+    echo -n "  Status: "
+    service httpd status | grep Active:
   else                                     # assume Debian
     runCmd sudo systemctl start apache2
+    echo -n "  Status: "
+    service apache2 status | grep Active:
   fi
- }                                         # confApache()
+ }                                         # restartServices()
 
 # main()
 repoDir="$HOME/zlma"                       # directory with zlma repo 
 timeStamp=`date +"%y-%m-%d-%H-%M-%S"`      # current date and time
 outFile="$HOME/$timeStamp-instzlma.out"    # log file
-pythonCmd="python3"                        # can be another version
+pythonCmd="python3"                        # can be python3.11
 verbose=0                                  # 1 = verbose
 webDir="unknown"                           # either '/var/log/apache' or '/var/log/httpd'
 webUser="unknown"                          # either 'apache' or 'www-data'
@@ -476,10 +502,11 @@ mkDirectories                              # make target directories
 copyFiles                                  # copy from repo to targets
 mkSymlinks                                 # create symlinks in /usr/local/sbin
 mkVenv                                     # make a virtual environment
-buildConnector                             # create the mariadb Python connector
+#buildConnector                             # create the mariadb Python connector
+pipPackages                                # install pip packages
+confApache                                 # set up Apache
 mkCustom                                   # customize environment and vim settings
 fixBlockers                                # fix blockers such as firewall and SE Linux
-confApache                                 # set up Apache
 restartServices                            # restart mariadb and Apache
 let min=$SECONDS/60
 let sec=$SECONDS%60

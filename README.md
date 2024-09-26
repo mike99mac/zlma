@@ -152,86 +152,13 @@ Choose either to install manually or use the install script (recommended).
 ### Install automatically
 The script ``instzlma`` is provided in the ``zlma`` repo to save you time and improve reliability. 
 
-- Run the script depending on your Python level.
+- Run the script 
 
-    - Run it if your Linux has a base Python version of 3.10 or greater:
-
-    ```
-    $HOME/zlma/instzlma 
-    ```
-
-    - To run it if your system has an upgraded python, include the upgraded version with the ``-p <version>`` flag:
-
-    ```
-    $HOME/zlma/instzlma -p python3.11
-    ```
+```
+$HOME/zlma/instzlma 
+```
 
 Output will be written to a file of the form ``$HOME/<yr-mon-day-hr-min-sec>-instzlma.out``.
-### Install manually
-If you want to use the install script to save time, skip this section and [go to Install automatically](#Install-automatically).
-
-To install zlma and co-req packages, perform the following steps.
-
-- Install co-requisite packages.
-
-  - For Debian-based:
-    ```
-    sudo apache apt install cifs-utils curl gcc git libmariadb3 libmariadb-dev make mariadb-server mlocate net-tools pandoc python3 python3-dev python3-pip 
-    ```
-
-  - For RHEL-based:
-    ```
-    sudo dnf install bzip2-devel cifs-utils curl gcc git httpd libffi-devel make mariadb-server mlocate net-tools openssl-devel python3 python3-devel python3-pip vim wget zlib-devel
-    ```
-
-- Set Apache to start at boot time: 
-
-  - For Debian-based:
-    ```
-    sudo systemctl enable apache2
-    ```
-
-  - For RHEL-based:
-
-    ```
-    sudo systemctl enable httpd
-    ```
-
-- Create a directory for zlma to log to:
-
-```
-sudo mkdir /var/log/zlma
-```
-
-- Change the group of that directory to the group that Apache runs as.
- 
-  - For Debian based:
-    ```
-    sudo chgrp www-data /var/log/zlma
-    ```
-
-  - For RHEL based:
-    ```
-    sudo chgrp apache /var/log/zlma
-    ```
-
-- Set the group write bit of the new directory:
-
-```
-sudo chmod g+w /var/log/zlma
-```
-
-- Set mariadb to start at boot time:
-
-```
-sudo systemctl enable mariadb
-```
-
-- Start mariadb.
-
-```
-sudo systemctl start mariadb
-```
 
 
 ### Set mariadb root password
@@ -325,16 +252,14 @@ mysql_secure_installation
 
 For reference, 
 ```
-# cat /etc/apache2/sites-available/zlma.conf
-```
+# cat /etc/zlma.conf
 {
   "db_user":        "root",
-  "db_pw":          "pi",
+  "db_pw":          "<your_pw>",
   "db_host":        "127.0.0.1",
   "db_name":        "zlma",
-  "home_dir":       "/home/youruser",
+  "home_dir":       "</home/youruser>",
   "log_level":      "debug",
-  "user_directory": "vmsecure"
 }
 ```
 #
@@ -733,5 +658,73 @@ configuration: display current vif settings
 # consolez 
 consolez is an open-source package that allows browser access to z/VM console data and to issue CP commands. It helps alleviate the need for *green screen* access to z/VM.
 
+# Install manually
+It is recommended that you install the code using the above ``instzmla`` script, as that has been tested.
+
+Below are the manual installation steps which haven't :
+If you want to use the install script to save time, skip this section and [go to Install automatically](#Install-automatically).
+
+To install zlma and co-req packages, perform the following steps.
+
+- Install co-requisite packages.
+
+  - For Debian-based:
+    ```
+    sudo apache apt install cifs-utils curl gcc git libmariadb3 libmariadb-dev make mariadb-server mlocate net-tools pandoc python3 python3-dev python3-pip 
+    ```
+
+  - For RHEL-based:
+    ```
+    sudo dnf install bzip2-devel cifs-utils curl gcc git httpd libffi-devel make mariadb-server mlocate net-tools openssl-devel python3 python3-devel python3-pip vim wget zlib-devel
+    ```
+
+- Set Apache to start at boot time: 
+
+  - For Debian-based:
+    ```
+    sudo systemctl enable apache2
+    ```
+
+  - For RHEL-based:
+
+    ```
+    sudo systemctl enable httpd
+    ```
+
+- Create a directory for zlma to log to:
+
+```
+sudo mkdir /var/log/zlma
+```
+
+- Change the group of that directory to the group that Apache runs as.
+ 
+  - For Debian based:
+    ```
+    sudo chgrp www-data /var/log/zlma
+    ```
+
+  - For RHEL based:
+    ```
+    sudo chgrp apache /var/log/zlma
+    ```
+
+- Set the group write bit of the new directory:
+
+```
+sudo chmod g+w /var/log/zlma
+```
+
+- Set mariadb to start at boot time:
+
+```
+sudo systemctl enable mariadb
+```
+
+- Start mariadb.
+
+```
+sudo systemctl start mariadb
+```
 # Colophon
 Zelma is a feminine given name that originated in the late 19th century in the United States. It's believed to be a variant of the German name Selma, which is derived from the Old Norse word "selmr," meaning "protection" or "shelter."
