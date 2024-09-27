@@ -295,10 +295,7 @@ Group pi
 </VirtualHost>
 ```
 
-- Following is an Apache configuration file for a **RHEL-based Linux**: 
-
-```
-# cat /etc/httpd/conf/httpd.conf
+- Following is an Apache configuration file for a **RHEL-based Linux** in the file ``/etc/httpd/conf/httpd.conf``:
 ```
 #
 # Apache configuration file for zlma
