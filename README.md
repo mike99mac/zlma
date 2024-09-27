@@ -24,24 +24,21 @@ Following is a block diagram of zlma:
 
 **zlma block diagram**
 
+# Preparing for installation 
+
+A script is included with the ``zlma`` repository for easier installation.  There is some preparation before it can be run.
+
 ## Set up SSH access
 Key-based authentication, or *Passwordless* SSH access is needed for one user from the zlma server to all systems that will be managed.  ``zlma`` commands must be run by that user and they must have ``sudo`` access.  
 
-Details on how to accomplish this are outside the scope of this document, howerver, there is a script, ``sshall``, which tests SSH connectivity: https://github.com/mike99mac/zlma/blob/main/usr/local/sbin/sshall
+Details on it are outside the scope of this document, howerver, there is a script, ``sshall``, which tests SSH connectivity: https://github.com/mike99mac/zlma/blob/main/usr/local/sbin/sshall
 
 Once SSH access is set up, the solution can be installed. 
-
-# Installation
-These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
-
-This code has been installed on Debian and RHEL bases Linuxes.  When there are differences, separate steps are given for each.
-
-To install zlma, perform the following steps.
 
 ## Update your system
 To update your system, perform the following steps:
 
-  - For Debian-based:
+  - For Debian-based systems run one command:
     ```
     sudo apt update 
     ```
@@ -50,10 +47,17 @@ To update your system, perform the following steps:
     sudo apt upgrade -y
     ```
 
-  - For RHEL-based:
+  - For RHEL-based systems run two commands:
     ```
     sudo dnf update 
     ```
+
+# Automated Installation
+These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
+
+This code has been tested on Debian-based (Ubuntu server 22.04) and RHEL-based (AlmaLinux 9.4) Linux's.  When there are differences, separate steps are given for each variant.
+
+To install zlma, perform the following steps.
 
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
@@ -258,7 +262,7 @@ For reference,
   "db_pw":          "<your_pw>",
   "db_host":        "127.0.0.1",
   "db_name":        "zlma",
-  "home_dir":       "</home/youruser>",
+  "home_dir":       "</home/your_user>",
   "log_level":      "debug",
 }
 ```
