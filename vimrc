@@ -16,5 +16,4 @@ set mouse=r
 set ruler
 set scroll=25
 set ttymouse=sgr
-set redrawtime=5000
-
+set redrawtime=10000

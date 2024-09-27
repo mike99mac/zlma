@@ -182,7 +182,7 @@ function copyOneFile
   local targetDir=$3
 
   runCmd sudo cp $sourceDir/$sourceFile $targetDir
-  runCmd sudo chown $webUser.$webUser $targetDir/$sourceFile
+  runCmd sudo chown $webUser:$webUser $targetDir/$sourceFile
  }                                         # copyOneFile()
 
 #+--------------------------------------------------------------------------+
@@ -200,12 +200,14 @@ function instPackages
 
   which apt >/dev/null 2>&1
   if [ $? = 0 ]; then                      # use apt and assume Debian-based
-    cmd="sudo apt install -y cifs-utils cmake curl gcc git locate make mariadb-server net-tools pandoc python3 python3-dev python3-pip"
+    cmd="sudo apt install -y apache2 cifs-utils cmake curl gcc git locate make libmariadb-dev mariadb-server net-tools pandoc python3 python3-dev python3-pip python3.12-venv"
     runCmd $cmd
 
     echo | tee -a $outFile
-    echo "Step 2): Setting Apache and mariadb to start at boot time ..." | tee -a $outFile
+    #echo "Step 2): Setting Apache and mariadb to start at boot time ..." | tee -a $outFile
+    echo "Step 2): Setting mariadb to start at boot time ..." | tee -a $outFile
 
+    # no apache2.service file?
     runCmd sudo systemctl enable apache2   # set Apache to start at boot
   else                                     # no apt, check for dnf
     which dnf >/dev/null 2>&1
@@ -248,8 +250,11 @@ function mkDirectories
   echo "Step 4): Modifying directory /var/log/$webDir ..." | tee -a $outFile
 
   cd /var/log
-  runCmd sudo chown $webUser.$webUser $webDir
-  runCmd sudo chmod 750 httpd
+  if [ ! -d $webDir ]; then                # log dir does not exist
+    runCmd sudo mkdir $webDir
+  fi    
+  runCmd sudo chown $webUser:$webUser $webDir
+  runCmd sudo chmod 750 $webDir
  }                                         # mkDirectories()
 
 #+--------------------------------------------------------------------------+
@@ -330,7 +335,7 @@ function mkVenv
     pythonCmd="python3.11"
   fi
   runCmd sudo $pythonCmd -m venv venv
-  runCmd sudo chown -R $webUser.$webUser /srv/venv 
+  runCmd sudo chown -R $webUser:$webUser /srv/venv 
   runCmd sudo chmod -R g+w /srv/venv 
 
   echo | tee -a $outFile
@@ -388,6 +393,11 @@ function pipPackages
   for nextPkg in certifi charset_normalizer idna "mariadb==1.1.4"  mysql-connector-python packaging ply requests; do
     runCmd "$pythonCmd -m pip install $nextPkg"  | tee -a $outFile
   done
+  if [ "$webUser" = apache ]; then         # RHEL-based system
+    runCmd "$pythonCmd -m pip install mariadb==1.1.4"
+  else
+    runCmd "$pythonCmd -m pip install mariadb"
+  fi
  }                                         # pipPackages()
 
 #+--------------------------------------------------------------------------+
@@ -401,7 +411,7 @@ function confApache
   echo | tee -a $outFile
   echo "Step 13): Configuring Apache" | tee -a $outFile
 
-  if [ "$webUser" == "apache" ]; then      # RHEL-based: remove -DFOREGROUND and copy mime.types
+  if [ "$webUser" = "apache" ]; then      # RHEL-based: remove -DFOREGROUND and copy mime.types
     svcFile="/usr/lib/systemd/system/httpd.service"
     if [ ! -f $svcFile.orig ]; then         # no backup
       runCmd sudo cp $svcFile $svcFile.orig # make a backup
@@ -412,7 +422,8 @@ function confApache
     runCmd sudo chgrp apache /run/httpd     # change group of run directory
     runCmd sudo chmod 770 /run/httpd        # change mode to group write
   else
-    echo "TODO: customize Apache for Debian - NEED AN UBUNTU!!!"
+    svcFile="/usr/lib/systemd/system/apache2.service"
+    runCmd sudo chmod 770 /var/log/apache2  # change mode to group write
   fi
  }                                         # confApache()
 
@@ -428,13 +439,27 @@ function mkCustom
   echo "Step 14): Customizing environment ..." | tee -a $outFile
 
   runCmd sudo cp $HOME/zlma/bash_profile $HOME/.bash_profile
-  runCmd sudo mv /etc/vimrc /etc/vimrc.orig                   
-  runCmd sudo cp $HOME/zlma/vimrc /etc/                       
+  if [ "$webUser" = "apache" ]; then       # RHEL-based:
+    if [ ! -f /etc/vimrc.orig ]; then
+      runCmd sudo mv /etc/vimrc /etc/vimrc.orig                   
+      runCmd sudo cp $HOME/zlma/vimrc /etc/                       
+    fi
+    runCmd sudo cp $HOME/zlma/zlma.conf /etc/                       
+    cd /usr/share/vim/vim8*
+    if [ -f indent.vim ]; then             # turn off annoying indent rules
+      runCmd sudo mv indent.vim indent.vim.dontuse
+    fi
+  else                                     # assume Debian-based  
+    if [ ! -f /etc/vim/vimrc.orig ]; then
+      runCmd sudo mv /etc/vim/vimrc /etc/vim/vimrc.orig                   
+      runCmd sudo cp $HOME/zlma/vimrc /etc/vimrc                       
+    fi
+    cd /usr/share/vim/vim9*
+    if [ -f indent.vim ]; then             # turn off annoying indent rules
+      runCmd sudo mv indent.vim indent.vim.dontuse
+    fi	    
+  fi	    
   runCmd sudo cp $HOME/zlma/zlma.conf /etc/                       
-  cd /usr/share/vim/vim8*
-  if [ -f indent.vim ]; then               # turn off annoying indent rules
-    runCmd sudo mv indent.vim indent.vim.dontuse
-  fi
  }                                         # mkCustom()
 
 #+--------------------------------------------------------------------------+
@@ -446,11 +471,13 @@ function fixBlockers
   : STACK:  ${FUNCNAME[@]}
 
   echo | tee -a $outFile
-  echo "Step 15): Opening firewall and turning off SE Linux ..." | tee -a $outFile
+  echo "Step 15): Opening firewall and SE Linux ..." | tee -a $outFile
 
-  runCmd sudo firewall-cmd --zone=public --add-service=http --permanent # open port 80
-  runCmd sudo firewall-cmd --reload        # reload firewall
-
+  which firewall-cmd >/dev/null 2>&1
+  if [ $? = 0 ]; then                      # there is a firewall-cmd command
+    runCmd sudo firewall-cmd --zone=public --add-service=http --permanent # open port 80
+    runCmd sudo firewall-cmd --reload        # reload firewall
+  fi
   if [ -f /etc/selinux/config ]; then      # SE Linux config file exists
     grep "^SELINUX=enforcing" /etc/selinux/config >/dev/null 2>&1
     if [ $? = 0 ]; then                    # SE Linux is enabled

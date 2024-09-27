@@ -78,12 +78,12 @@ To install this ``zlma`` repository, some basic packages are first needed.
       ...
       ```
 
-- Install git, vim and Apache:
+- Install git, vim and Apache on RHEL:
 
   - For Debian-based:
 
     ```
-    sudo apt install -y git vim apache2 
+    sudo apt install -y git vim 
     ```
 
   - For RHEL-based:
