@@ -53,14 +53,29 @@ To update your system, perform the following steps:
     ```
 
 ## Configure sudo
-It is more efficient to allow sudo access with having to type passwords.  To set that up, perform the following steps:
+
+## Install this repository
+To install this ``zlma`` repository, some basic packages and configurations are first needed.
+
+- Set vim to be the system editor:
+
+```
+sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
+```
+
+- Edit the sudoers file:
+
+```
+sudo visudo
+```
 
 - Allow members of a group to run **``sudo``** commands without a password, by adding **``NOPASSWD:``**: 
 
-    ```
-    sudo visudo
-    ```
+```
+sudo visudo
+```
 
+      ```
     - For Debian-based, it is usually the ``sudo`` group:
       ```
       ...
@@ -258,7 +273,7 @@ python3 -m pip install mariadb mysql-connector-python ply
 mysql_secure_installation
 ```
 
-For reference, 
+Following is the ``zlma.conf`` file copied to ``/etc``. Set the database root password and the home directory of the user you are running as.
 ```
 # cat /etc/zlma.conf
 {
