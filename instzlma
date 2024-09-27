@@ -326,7 +326,7 @@ function mkVenv
   : STACK:  ${FUNCNAME[@]}
 
 
-  cd /srv/
+  runCmd cd /srv/
   echo | tee -a $outFile
   echo "Step 8): Creating virtual environment ..." | tee -a $outFile
 
@@ -338,6 +338,15 @@ function mkVenv
   runCmd sudo chown -R $webUser:$webUser /srv/venv 
   runCmd sudo chmod -R g+w /srv/venv 
 
+  # make a 'python3' symlink
+  runCmd cd /srv/venv/lib
+  if [ -d python3.10 ]; then   # 3.10 is the venv Python ver
+    ln -s python3.10 python3
+  elif [ -d python3.11 ]; then # 3.11 is the venv Python ver
+    ln -s python3.11 python3
+  elif [ -d python3.12 ]; then # 3.12 is the venv Python ver
+    ln -s python3.12 python3
+  fi
   echo | tee -a $outFile
   echo "Step 9): Activating venv ..." | tee -a $outFile
 
