@@ -58,11 +58,21 @@ To update your system, perform the following steps:
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
 
+- Set vim to be the system editor:
+
+```
+sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
+```
+
 - Allow members of a certain group to be able to run **``sudo``** commands without a password, by adding **``NOPASSWD:``** to the line near the bottom of the file.
 
-    ```
-    sudo visudo
-    ```
+- Edit the sudoers file:
+ 
+```
+sudo visudo
+```
+
+    - Allow members of a certain group to be able to run **``sudo``** commands without a password, by adding **``NOPASSWD:``** to the line near the bottom of the file.
 
     - For Debian-based, it is the ``sudo`` group:
       ```
@@ -123,7 +133,6 @@ This step is optional.
 ```
 python -V
 Python 3.9.18
-
 ```
 
 Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. In this example, AlmaLinux 9.4 ships with a base Python version of 3.9 which is not sufficient.
