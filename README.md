@@ -38,7 +38,7 @@ Once SSH access is set up, the solution can be installed.
 ## Update your system
 To update your system, perform the following steps:
 
-  - For Debian-based systems run two commands:
+  - For Debian-based systems, run two commands:
     ```
     sudo apt update 
     ```
@@ -47,7 +47,7 @@ To update your system, perform the following steps:
     sudo apt upgrade -y
     ```
 
-  - For RHEL-based systems run one command:
+  - For RHEL-based systems, run one command:
     ```
     sudo dnf update 
     ```
@@ -67,19 +67,19 @@ sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
 sudo visudo
 ```
 
-  - For Debian-based, it is usually the ``sudo`` group:
-  ```
-  ...
-  %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
-  ...
-  ```
+    - For Debian-based, it is usually the ``sudo`` group:
+    ```
+    ...
+    %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+    ...
+    ```
 
-  - For RHEL-based, it is the usually the ``wheel`` group:
-  ```
-  ...
-  %wheel  ALL=(ALL)       NOPASSWD: ALL
-  ...
-  ```
+    - For RHEL-based, it is the usually the ``wheel`` group:
+    ```
+    ...
+    %wheel  ALL=(ALL)       NOPASSWD: ALL
+    ...
+    ```
 
 # Automated Installation
 These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
