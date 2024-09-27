@@ -67,26 +67,19 @@ sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
 sudo visudo
 ```
 
-- Allow members of a group to run **``sudo``** commands without a password, by adding **``NOPASSWD:``**: 
+  - For Debian-based, it is usually the ``sudo`` group:
+  ```
+  ...
+  %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+  ...
+  ```
 
-```
-sudo visudo
-```
-
-      ```
-    - For Debian-based, it is usually the ``sudo`` group:
-      ```
-      ...
-      %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
-      ...
-      ```
-
-    - For RHEL-based, it is the usually the ``wheel`` group:
-      ```
-      ...
-      %wheel  ALL=(ALL)       NOPASSWD: ALL
-      ...
-      ```
+  - For RHEL-based, it is the usually the ``wheel`` group:
+  ```
+  ...
+  %wheel  ALL=(ALL)       NOPASSWD: ALL
+  ...
+  ```
 
 # Automated Installation
 These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
@@ -98,20 +91,19 @@ To install zlma, perform the following steps.
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
 
-
 - Install git, vim and Apache on RHEL:
 
   - For Debian-based:
 
-    ```
-    sudo apt install -y git vim 
-    ```
+  ```
+  sudo apt install -y git vim apache2
+  ```
 
   - For RHEL-based:
 
-    ```
-    sudo dnf install -y git vim httpd 
-    ```
+  ```
+  sudo dnf install -y git vim httpd 
+   ```
 
 - Clone this repo to your home directory:
 
