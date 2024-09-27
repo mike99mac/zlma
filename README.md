@@ -38,7 +38,7 @@ Once SSH access is set up, the solution can be installed.
 ## Update your system
 To update your system, perform the following steps:
 
-  - For Debian-based systems run one command:
+  - For Debian-based systems run two commands:
     ```
     sudo apt update 
     ```
@@ -47,15 +47,13 @@ To update your system, perform the following steps:
     sudo apt upgrade -y
     ```
 
-  - For RHEL-based systems run two commands:
+  - For RHEL-based systems run one command:
     ```
     sudo dnf update 
     ```
 
 ## Configure sudo
-
-## Install this repository
-To install this ``zlma`` repository, some basic packages and configurations are first needed.
+Set ``sudo`` so authorized users are not challenged first:
 
 - Set vim to be the system editor:
 
