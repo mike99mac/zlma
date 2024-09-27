@@ -445,7 +445,7 @@ function mkCustom
       runCmd sudo cp $HOME/zlma/vimrc /etc/                       
     fi
     runCmd sudo cp $HOME/zlma/zlma.conf /etc/                       
-    cd /usr/share/vim/vim8*
+    runCmd cd /usr/share/vim/vim8*
     if [ -f indent.vim ]; then             # turn off annoying indent rules
       runCmd sudo mv indent.vim indent.vim.dontuse
     fi
@@ -454,10 +454,15 @@ function mkCustom
       runCmd sudo mv /etc/vim/vimrc /etc/vim/vimrc.orig                   
       runCmd sudo cp $HOME/zlma/vimrc /etc/vimrc                       
     fi
-    cd /usr/share/vim/vim9*
+    runCmd cd /usr/share/vim/vim9*
     if [ -f indent.vim ]; then             # turn off annoying indent rules
       runCmd sudo mv indent.vim indent.vim.dontuse
     fi	    
+    runCmd cd /usr/share/vim/vim9*/colors
+    if [ -f desert.vim -a ! -f desert.vim.orig ]; then      # replace desert.vim with strange colors
+      runCmd sudo cp desert.vim desert.vim.orig
+      runCmd sudo cp $HOME/zlma/desert.vim . 
+    fi
   fi	    
   runCmd sudo cp $HOME/zlma/zlma.conf /etc/                       
  }                                         # mkCustom()
