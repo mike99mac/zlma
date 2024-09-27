@@ -52,6 +52,29 @@ To update your system, perform the following steps:
     sudo dnf update 
     ```
 
+## Configure sudo
+It is more efficient to allow sudo access with having to type passwords.  To set that up, perform the following steps:
+
+- Allow members of a group to run **``sudo``** commands without a password, by adding **``NOPASSWD:``**: 
+
+    ```
+    sudo visudo
+    ```
+
+    - For Debian-based, it is usually the ``sudo`` group:
+      ```
+      ...
+      %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+      ...
+      ```
+
+    - For RHEL-based, it is the usually the ``wheel`` group:
+      ```
+      ...
+      %wheel  ALL=(ALL)       NOPASSWD: ALL
+      ...
+      ```
+
 # Automated Installation
 These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
 
@@ -62,25 +85,6 @@ To install zlma, perform the following steps.
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
 
-- Allow members of a certain group to be able to run **``sudo``** commands without a password, by adding **``NOPASSWD:``** to the line near the bottom of the file.
-
-    ```
-    sudo visudo
-    ```
-
-    - For Debian-based, it is the ``sudo`` group:
-      ```
-      ...
-      %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
-      ...
-      ```
-
-    - For RHEL-based, it is the ``wheel`` group:
-      ```
-      ...
-      %wheel  ALL=(ALL)       NOPASSWD: ALL
-      ...
-      ```
 
 - Install git, vim and Apache on RHEL:
 
