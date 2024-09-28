@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# gr - short command for grep but
+#      don't output errors
+#      don't show duplicates because of symlinks
+#
+pattern="$1"
+shift
+files="$@"
+find $files -type f -print0 | xargs -0 grep "$pattern" 2>/dev/null
+
