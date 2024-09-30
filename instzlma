@@ -138,7 +138,7 @@ function mkDir
     echo "  directory $theDir already exists"
   else                                     # create directory and set attributes
     runCmd sudo mkdir -p $theDir
-    runCmd sudo chown $webUser.$webUser $theDir
+    runCmd sudo chown $webUser:$webUser $theDir
     runCmd sudo chmod g+w $theDir
   fi 
  }                                         # mkDir
@@ -160,9 +160,9 @@ function copyAllFiles
     echo "ERROR: Unexpected - source directory $sourceDir does not exist - exiting" | tee -a $outFile
     exit 5
   fi
-  runCmd cd $sourceDir
+  cd $sourceDir
   runCmd "sudo cp * $targetDir"
-  runCmd cd $targetDir
+  cd $targetDir
   runCmd "sudo chown $webUser.$webUser *"
  }                                         # copyAllFiles()
 
@@ -200,7 +200,7 @@ function instPackages
 
   which apt >/dev/null 2>&1
   if [ $? = 0 ]; then                      # use apt and assume Debian-based
-    cmd="sudo apt install -y apache2 cifs-utils cmake curl gcc git locate make libmariadb-dev mariadb-server net-tools pandoc python3 python3-dev python3-pip python3.12-venv"
+    cmd="sudo apt install -y apache2 cifs-utils cmake curl gcc git jq locate make libmariadb-dev mariadb-server net-tools pandoc python3 python3-dev python3-pip python3.12-venv"
     runCmd $cmd
 
     echo | tee -a $outFile
@@ -212,7 +212,7 @@ function instPackages
   else                                     # no apt, check for dnf
     which dnf >/dev/null 2>&1
     if [ $? = 0 ]; then                    # use dnf and assume RHEL-based
-      cmd="sudo dnf install -y bind-utils bzip2-devel cifs-utils cmake curl file gcc git libffi-devel make mariadb-connector-c mariadb-connector-c-devel.s390x mariadb-server mlocate net-tools nfs-utils openssl-devel python3 python3-pip tar vim wget zlib-devel"
+      cmd="sudo dnf install -y bind-utils bzip2-devel cifs-utils cmake curl file gcc git jq libffi-devel make mariadb-connector-c mariadb-connector-c-devel.s390x mariadb-server mlocate net-tools nfs-utils openssl-devel python3 python3-pip tar vim wget zlib-devel"
       runCmd $cmd 
 
       echo | tee -a $outFile
@@ -240,10 +240,10 @@ function mkDirectories
   echo | tee -a $outFile
   echo "Step 3): Creating directories ..." | tee -a $outFile
 
-  mkDir /srv/www/zlma
-  mkDir /srv/www/zlmarw
-  mkDir /var/log/zlma
-  mkDir /srv/consolez
+  mkDir /srv/www/zlma                      # CGI R/O
+  mkDir /srv/www/zlmarw                    # CGI R/W
+  mkDir /var/log/zlma                      # log files
+  mkDir /srv/consolez                      # console data
 
   # set attributes of /var/log/'apache|httpd'
   echo | tee -a $outFile
@@ -338,10 +338,20 @@ function mkVenv
   runCmd sudo chown -R $webUser:$webUser /srv/venv 
   runCmd sudo chmod -R g+w /srv/venv 
 
+  # make a 'python3' symlink
+  cd /srv/venv/lib
+  if [ -d python3.10 ]; then   # 3.10 is the venv Python ver
+    ln -s python3.10 python3
+  elif [ -d python3.11 ]; then # 3.11 is the venv Python ver
+    ln -s python3.11 python3
+  elif [ -d python3.12 ]; then # 3.12 is the venv Python ver
+    ln -s python3.12 python3
+  fi
+
   echo | tee -a $outFile
   echo "Step 9): Activating venv ..." | tee -a $outFile
 
-  runCmd source venv/bin/activate
+  runCmd source /srv/venv/bin/activate     # activate the virtual environment
 
   echo | tee -a $outFile
   echo "Step 10): Upgrading pip ..." | tee -a $outFile
@@ -350,35 +360,36 @@ function mkVenv
  }                                         # mkSymlinks()
 
 #+--------------------------------------------------------------------------+
-function buildConnector 
+# function buildConnector 
+# TODO: this is not getting called - should be able to delete it...
 # Download and build the mariadb Python connector
 #+--------------------------------------------------------------------------+
- {
-  : SOURCE: ${BASH_SOURCE}
-  : STACK:  ${FUNCNAME[@]}
+#{
+# : SOURCE: ${BASH_SOURCE}
+# : STACK:  ${FUNCNAME[@]}
 
-  echo | tee -a $outFile
-  echo "Step 11): Building and installing the mariadb connector ..." | tee -a $outFile
+# echo | tee -a $outFile
+# echo "Step 11): Building and installing the mariadb connector ..." | tee -a $outFile
 
-  connectorLib="/usr/local/lib/mariadb/libmariadb.a"
-  if [ -f $connectorLib ]; then
-    echo "  The mariadb connector $connectorLib seems to be installed - skipping" | tee -a $outFile
-  else                                     # build and install the mariadb connector v3.3.1
-    connectorVer="mariadb-connector-c-3.2.6-src"
-    tarFile="$HOME/zlma/$connectorVer.tar.gz"
-    # wget https://downloads.mariadb.org/connector-c/3.3.1/$tarFile - old file
-    cd /tmp
-    runCmd tar -xzf $tarFile 
-    cd $connectorVer
-    runCmd "cmake ." | tee -a $outFile
-    runCmd "cmake --build ." | tee -a $outFile
-    runCmd "sudo cmake --install ." | tee -a $outFile
-    if [ ! -f $connectorLib ]; then
-      echo "ERROR: Library $connectorLib not found - exiting" | tee -a $outFile
-      exit 7
-    fi	     
-  fi
- }                                         # buildConnector()
+# connectorLib="/usr/local/lib/mariadb/libmariadb.a"
+# if [ -f $connectorLib ]; then
+#   echo "  The mariadb connector $connectorLib seems to be installed - skipping" | tee -a $outFile
+# else                                     # build and install the mariadb connector v3.3.1
+#   connectorVer="mariadb-connector-c-3.2.6-src"
+#   tarFile="$HOME/zlma/$connectorVer.tar.gz"
+#   # wget https://downloads.mariadb.org/connector-c/3.3.1/$tarFile - old file
+#   cd /tmp
+#   runCmd tar -xzf $tarFile 
+#   cd $connectorVer
+#   runCmd "cmake ." | tee -a $outFile
+#   runCmd "cmake --build ." | tee -a $outFile
+#   runCmd "sudo cmake --install ." | tee -a $outFile
+#   if [ ! -f $connectorLib ]; then
+#     echo "ERROR: Library $connectorLib not found - exiting" | tee -a $outFile
+#     exit 8
+#   fi	     
+# fi
+#}                                         # buildConnector()
 
 #+--------------------------------------------------------------------------+
 function pipPackages
@@ -390,14 +401,32 @@ function pipPackages
 
   echo | tee -a $outFile
   echo "Step 12): Installing pip packages ..." | tee -a $outFile
-  for nextPkg in certifi charset_normalizer idna "mariadb==1.1.4"  mysql-connector-python packaging ply requests; do
+  for nextPkg in certifi charset_normalizer idna "mariadb==1.1.4"  mysql-connector-python packaging ply requests setuptools; do
     runCmd "$pythonCmd -m pip install $nextPkg"  | tee -a $outFile
   done
   if [ "$webUser" = apache ]; then         # RHEL-based system
-    runCmd "$pythonCmd -m pip install mariadb==1.1.4"
+    runCmd "$pythonCmd -m pip install mariadb==1.1.4" # need older code to not pull in connector/C 3.3.1
   else
     runCmd "$pythonCmd -m pip install mariadb"
   fi
+
+# THIS DID NOT WORK
+  # distutils is not included in Python 3.12, but mariadb still uses it - kludgy workaround:
+#  if [ "$webUser" = "www-data" ]; then     # Debian-based distro
+#   mariadbDir="/srv/venv/lib/python3.12/site-packages/mariadb"
+#   if [ ! -d $mariadbDir ]; then
+#     echo "ERROR: directory $mariadbDir not found" | tee -a $outFile
+#     exit 7
+#   fi
+#   cd $mariadbDir
+#   connFile="connections.py"
+#   if [ ! -f $connFile ]; then
+#     echo "ERROR: executable file $mariadbDir/$connFile not found" | tee -a $outFile
+#     exit 8
+#   fi
+#   runCmd sudo cp connections.py connections.py.orig
+#   runCmd sed -i -e "'s/from distutils.version import StrictVersion/from packaging import version/g'" connections.py
+# fi
  }                                         # pipPackages()
 
 #+--------------------------------------------------------------------------+
@@ -445,7 +474,7 @@ function mkCustom
       runCmd sudo cp $HOME/zlma/vimrc /etc/                       
     fi
     runCmd sudo cp $HOME/zlma/zlma.conf /etc/                       
-    runCmd cd /usr/share/vim/vim8*
+    cd /usr/share/vim/vim8*
     if [ -f indent.vim ]; then             # turn off annoying indent rules
       runCmd sudo mv indent.vim indent.vim.dontuse
     fi
@@ -454,11 +483,11 @@ function mkCustom
       runCmd sudo mv /etc/vim/vimrc /etc/vim/vimrc.orig                   
       runCmd sudo cp $HOME/zlma/vimrc /etc/vimrc                       
     fi
-    runCmd cd /usr/share/vim/vim9*
+    cd /usr/share/vim/vim9*
     if [ -f indent.vim ]; then             # turn off annoying indent rules
       runCmd sudo mv indent.vim indent.vim.dontuse
     fi	    
-    runCmd cd /usr/share/vim/vim9*/colors
+    cd /usr/share/vim/vim9*/colors
     if [ -f desert.vim -a ! -f desert.vim.orig ]; then      # replace desert.vim with strange colors
       runCmd sudo cp desert.vim desert.vim.orig
       runCmd sudo cp $HOME/zlma/desert.vim . 

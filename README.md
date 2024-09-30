@@ -24,24 +24,21 @@ Following is a block diagram of zlma:
 
 **zlma block diagram**
 
+# Preparing for installation 
+
+A script is included with the ``zlma`` repository for easier installation.  There is some preparation before it can be run.
+
 ## Set up SSH access
 Key-based authentication, or *Passwordless* SSH access is needed for one user from the zlma server to all systems that will be managed.  ``zlma`` commands must be run by that user and they must have ``sudo`` access.  
 
-Details on how to accomplish this are outside the scope of this document, howerver, there is a script, ``sshall``, which tests SSH connectivity: https://github.com/mike99mac/zlma/blob/main/usr/local/sbin/sshall
+Details on it are outside the scope of this document, howerver, there is a script, ``sshall``, which tests SSH connectivity: https://github.com/mike99mac/zlma/blob/main/usr/local/sbin/sshall
 
 Once SSH access is set up, the solution can be installed. 
-
-# Installation
-These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
-
-This code has been installed on Debian and RHEL bases Linuxes.  When there are differences, separate steps are given for each.
-
-To install zlma, perform the following steps.
 
 ## Update your system
 To update your system, perform the following steps:
 
-  - For Debian-based:
+  - For Debian-based systems, run two commands:
     ```
     sudo apt update 
     ```
@@ -50,14 +47,51 @@ To update your system, perform the following steps:
     sudo apt upgrade -y
     ```
 
-  - For RHEL-based:
+  - For RHEL-based systems, run one command:
     ```
     sudo dnf update 
     ```
 
+## Configure sudo
+Set ``sudo`` so authorized users are not challenged first:
+
+- Set vim to be the system editor:
+
+```
+sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
+```
+
+- Edit the sudoers file:
+
+```
+sudo visudo
+```
+
+    - For Debian-based, it is usually the ``sudo`` group:
+    ```
+    ...
+    %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+    ...
+    ```
+
+    - For RHEL-based, it is the usually the ``wheel`` group:
+    ```
+    ...
+    %wheel  ALL=(ALL)       NOPASSWD: ALL
+    ...
+    ```
+
+# Automated Installation
+These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
+
+This code has been tested on Debian-based (Ubuntu server 22.04) and RHEL-based (AlmaLinux 9.4) Linux's.  When there are differences, separate steps are given for each variant.
+
+To install zlma, perform the following steps.
+
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
 
+<<<<<<< HEAD
 - Set vim to be the system editor:
 
 ```
@@ -88,19 +122,21 @@ sudo visudo
       ...
       ```
 
+=======
+>>>>>>> 0fc3199ad1c11a60a78ea133bed1272350c2f818
 - Install git, vim and Apache on RHEL:
 
   - For Debian-based:
 
-    ```
-    sudo apt install -y git vim 
-    ```
+  ```
+  sudo apt install -y git vim apache2
+  ```
 
   - For RHEL-based:
 
-    ```
-    sudo dnf install -y git vim httpd 
-    ```
+  ```
+  sudo dnf install -y git vim httpd 
+   ```
 
 - Clone this repo to your home directory:
 
@@ -259,16 +295,20 @@ python3 -m pip install mariadb mysql-connector-python ply
 mysql_secure_installation
 ```
 
-For reference, 
+Following is the ``zlma.conf`` file copied to ``/etc``. Set the database root password and the home directory of the user you are running as.
 ```
 # cat /etc/zlma.conf
 {
-  "db_user":        "root",
-  "db_pw":          "<your_pw>",
-  "db_host":        "127.0.0.1",
-  "db_name":        "zlma",
-  "home_dir":       "</home/youruser>",
-  "log_level":      "debug",
+  "db_user":   "root",
+  "db_pw":     "your_pw",
+  "db_host":   "127.0.0.1",
+  "db_name":   "zlma",
+  "eng_srvrs": [
+    {"lpar": "LPAR1", "eng_srvr": "zlnx1"},
+    {"lpar": "LPAR2", "eng_srvr": "zlnx2"}
+  ],
+  "home_dir":  "/home/your_user",
+  "log_level": "debug"
 }
 ```
 #
@@ -304,10 +344,7 @@ Group pi
 </VirtualHost>
 ```
 
-- Following is an Apache configuration file for a **RHEL-based Linux**: 
-
-```
-# cat /etc/httpd/conf/httpd.conf
+- Following is an Apache configuration file for a **RHEL-based Linux** in the file ``/etc/httpd/conf/httpd.conf``:
 ```
 #
 # Apache configuration file for zlma
