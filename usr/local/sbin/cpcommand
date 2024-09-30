@@ -91,10 +91,6 @@ function checkEnv
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  if [ ! -f $confFile ]; then 
-    echo "ERROR: Configuration file $consFile does not exist" 
-    exit 4                                 # cannot perform operation
-  fi
   if [ ${#USER} = 0 ]; then                # env var USER not set
     USER=`id | awk -F\( '{print $2}' | awk -F\) '{print $1}'` # get the current user
   fi
@@ -124,7 +120,6 @@ function sendCPcommand
     echo "ERROR: did not find LPAR $systemID in $confFile"
     exit 1                               # object not found
   fi
-  verboseMsg "found engineering server $engServer environment = $tgtEnv"
 
   # send the CP command
   cmd="$sshCmd $engServer sudo vmcp $cpCmd"
@@ -142,7 +137,6 @@ confFile="/etc/consolez.conf"              # configuration file that must exist
 cpCmd=""                                   # the CP command to execute
 flags=""                                   # flags to pass on to remote calls
 systemID=""                                # target z/VM LPAR
-tgtEnv="none"                              # target environment
 verb=""                                    # operation being performed
 verbose="1"                                # default verbosity level
 vmcpCmd="sudo vmcp --buffer=1M"            # command to issue "vmcp"

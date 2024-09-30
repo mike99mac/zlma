@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# gr - short command for grep but
-#      don't output errors
-#      don't show duplicates because of symlinks
+# gr - short command for grep but:
+#      - Don't output errors
+#      - Don't show duplicates because of symlinks
 #
 pattern="$1"
 shift

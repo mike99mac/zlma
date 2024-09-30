@@ -267,12 +267,16 @@ Following is the ``zlma.conf`` file copied to ``/etc``. Set the database root pa
 ```
 # cat /etc/zlma.conf
 {
-  "db_user":        "root",
-  "db_pw":          "<your_pw>",
-  "db_host":        "127.0.0.1",
-  "db_name":        "zlma",
-  "home_dir":       "</home/your_user>",
-  "log_level":      "debug",
+  "db_user":   "root",
+  "db_pw":     "your_pw",
+  "db_host":   "127.0.0.1",
+  "db_name":   "zlma",
+  "eng_srvrs": [
+    {"lpar": "LPAR1", "eng_srvr": "zlnx1"},
+    {"lpar": "LPAR2", "eng_srvr": "zlnx2"}
+  ],
+  "home_dir":  "/home/your_user",
+  "log_level": "debug"
 }
 ```
 #
