@@ -19,118 +19,6 @@ function verboseMsg
  }                                         # verboseMsg()
 
 #+--------------------------------------------------------------------------+
-function readConfFile
-# Read the /etc/consolez.conf file
-# Args: none
-#+--------------------------------------------------------------------------+
- {
-  : SOURCE: ${BASH_SOURCE}
-  : STACK:  ${FUNCNAME[@]}
-
-  if [ ${#fromServer} != 0 ]; then         # being called from another spoolcons
-    return                                 # do not have to read conf file
-  fi
-  local rc                                 # a return code
-  local inputLines
-  verboseMsg "reading configuration file $confFile"
-  inputLines=`cat $confFile `              # configuration file in a variable
-  rc=$?
-  if [ "$rc" != 0 ]; then                  # error reading input file
-    echo "ERROR! reading input file with cat $confFile returned $rc"
-    exit 4                                 # cannot perform operation
-  fi 
-  local LPARnum=0                          # z/VM number 
-  local lineNum=0                          # current line number
-  local curEnv=""                          # current environment
-  local curCEC=""                          # current CEC
-  local nextLine                           # next line in input file
-  local success=true                       # assume success
-
-  exec 3<&0                                # link file descriptor #3 with stdin.
-  while read -u 3 nextLine; do             # read from file descriptor 3
-    let lineNum=$lineNum+1                 # keep count of lines
-    if [ "${nextLine:0:1}" = '#' ]; then   # this is a comment
-      continue                             # iterate loop
-    fi
-    local numFields=`echo $nextLine | awk '{print NF}'` # get number of fields on line
-    if [ "$numFields" = 0 ]; then          # this is a blank line
-      continue                             # iterate loop
-    fi
-    local numEquals=`echo $nextLine | awk -F= '{print NF}'` # get number of fields around equals signs 
-    if [ "$numEquals" = 2 ]; then          # this is a variable assignment
-      local varName=`echo ${nextLine%=*} | xargs`   # get variable name, trim whitespace
-      local varValue=`echo ${nextLine#*=}  | awk '{print $1}' | sed 's/"//g'` # get variable value
-      case $varName in 
-        consolezDir)
-          consolezDir="$varValue"          # where all console data is
-          verboseMsg "consolezDir is set to $consolezDir"
-          ;;
-        consolezUser)
-          consolezUser="$varValue"
-          if [ ! -d $HOME ]; then          # current user does not have a home directory
-            echo "ERROR: user $thisUser must have a home directory in $HOME"
-            exit 4                         # cannot perform operation
-          fi
-          tmpConsFile="/home/$thisUser/tmpConsFile" # temp file to store latest console data 
-          verboseMsg "tmpConsFile is set to $tmpConsFile"
-          ;;
-        admins)                            # GID of full administrators
-          local re='^[0-9]+$'
-          if ! [[ "$varValue" =~ $re ]] ; then
-            echo "ERROR: $varValue is not a number on line $lineNum of $confFile" 
-            exit 4                         # cannot perform operation
-          fi
-          admins="$varValue"
-          ;;
-        netadmins)                         # GID of network administrators
-          local re='^[0-9]+$'
-          if ! [[ "$varValue" =~ $re ]] ; then
-            echo "ERROR: $varValue is not a number on line $lineNum of $confFile" 
-            exit 4                         # cannot perform operation
-          fi
-          netadmins="$varValue"
-          ;;
-        *) 
-          echo "ERROR: unrecognized variable $varName on line $lineNum of $confFile - valid: consolezDir, consolezUser admins & netadmins"
-          exit 4                           # cannot perform operation
-          ;;
-      esac
-      continue                             # iterate loop
-    fi
-    if [ "${nextLine:0:11}" = environment ]; then # new environment
-      if [ "$numFields" != 2 ]; then       # error
-        success=false
-        echo "ERROR: expected 2 fields but found $numFields on line $lineNum of $confFile: $nextLine"
-        break                              # out of loop
-      fi
-      curEnv=`echo $nextLine | awk '{print $2}'` # 2nd token is name of environment
-      verboseMsg "processing new environment $curEnv"
-      envs="$envs $curEnv"                 # add to list of environments
-    elif [ "${nextLine:0:3}" = CEC ]; then # new CEC in this environment
-      curCEC=`echo $nextLine | awk '{print $2}'` # 2nd token in CEC name
-      verboseMsg "processing new CEC $curCEC"
-    else                                   # not a comment blank line nor environment
-      if [ ${#curEnv} = 0 ]; then          # first environment not found
-        echo "ERROR: line $lineNum of $confFile must start with 'environment'"
-        success=false
-        break                              # out of loop
-      fi
-      if [ "$numFields" -lt 2 ]; then # error
-        success=false
-        echo "ERROR: expected 2 fields but found $numFields on line $lineNum of $confFile: $nextLine"
-        break                              # out of loop
-      fi
-      let LPARnum=$LPARnum+1               # increment LPAR count
-      arr[$LPARnum,engServer]=`echo "$nextLine" | awk '{print $1}'`  # engineering server is first token
-      arr[$LPARnum,systemID]=`echo "$nextLine" | awk '{print $2}'`   # z/VM system identifier is second token
-      arr[$LPARnum,CEC]="$curCEC"          # save CEC 
-      arr[$LPARnum,env]="$curEnv"          # save environment
-    fi
-  done 3< <(echo "$inputLines")            # read from input on file descriptor 3
-  numLPARs=$LPARnum                        # number of LPARs processed
- }                                         # readConfFile()
-
-#+--------------------------------------------------------------------------+
 function CPcmd
 # invoke a CP command with the vmcp module/command
 # Args 1-n: the command to issue
@@ -169,12 +57,11 @@ function CPcmd
 
 #+--------------------------------------------------------------------------+
 function getEngServer
-# Given a z/VM system ID, return the engineering server, CEC and environment 
+# Given a z/VM system ID, return the engineering server
 # Arg 1: LPAR being queried
 # Global variables: 
 #   engServer - the engineering server
 #   tgtCEC    - the CEC
-#   tgtEnv    - the environment
 #   consFile  - saved console file path
 #+--------------------------------------------------------------------------+
  {
@@ -183,17 +70,23 @@ function getEngServer
 
   local theLPAR=$1                         # target z/VM System ID
   if [ ${#theLPAR} = 0 ]; then             # unexpected
-    echo "ERROR: no args passed to getEngServer"
+    echo "INTERNAL ERROR: no args passed to getEngServer" | tee -a $logFile
     exit 3                                 # internal server error
   fi
+
+  # Assign LPARs and engineering servers to arrays
+  lpars=`jq -r '.eng_srvrs[].lpar' /etc/zlma.conf | xargs`         # read engineering servers with jq
+  eng_srvrs=`jq -r '.eng_srvrs[].eng_srvr' /etc/zlma.conf | xargs` # read LPARs with jq
+  lpars=($lpars)                           # convert to array
+  eng_srvrs=($eng_srvrs)                   # convert to array
+  numLPARs="${#lpars[@]}"
+  local endIndex
+  let endIndex=$numLPARs-1
   local i
-  for i in `seq 1 $numLPARs`; do
-    if [ "${arr[$i,systemID]}" = "$theLPAR" ]; then # found it
-      engServer="${arr[$i,engServer]}"     # set eng'g server 
-      tgtCEC="${arr[$i,CEC]}"              # set CEC 
-      tgtEnv="${arr[$i,env]}"              # set environment 
-      consFile="$consolezDir/$tgtEnv:$tgtCEC:$systemID/$userID"
-      return 0                             # sucess  
+  for i in `seq 0 $endIndex`; do
+    if [ "${lpars[$i]}" = "$theLPAR" ]; then # found LPAR
+      echo ${eng_srvrs[$i]}
+      return 0                             # success
     fi
   done
   return 1                                 # object not found 
