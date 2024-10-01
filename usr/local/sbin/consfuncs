@@ -1,22 +1,50 @@
 #!/bin/bash
 #
-# consfuncs - functions common to consolez
+# consfuncs - consolez functions 
 #
 #+--------------------------------------------------------------------------+
 function verboseMsg
-# write a message to stdout when -v|--verbose (2) or -V|--veryverbose (3) are set
-# Args: the message to write
+# write a message to stdout and log file when verbose is 2 or 3 
+# Args: the message 
 #+--------------------------------------------------------------------------+
  {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  if [ "$verbose" = 2 ]; then              # verbose
-    echo -e "$@"
-  elif [ "$verbose" = 3 ]; then            # very verbose
-   echo -e "spoolcons: ${FUNCNAME[1]}: $@"
+  if [ "$verbose" -gt 1 ]; then            # verbose or very verbose
+    local timeStamp=`date +"%Y-%m-%d %H:%M:%S,%3N"`
+    echo -e "$timeStamp $0/${FUNCNAME[1]}() user $USER: $@" | tee -a $logFile
   fi
  }                                         # verboseMsg()
+
+#+--------------------------------------------------------------------------+
+function readConfFile
+# Read configuration file /etc/zlma.conf
+# Also set thisUserID and thisSysID - user ID and system ID we are on
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  if [ ! -f $confFile ]; then              # error
+    echo "ERROR: configuration file $confFile not found"
+    exit 1
+  fi
+  local confFileData=`cat $confFile`
+  lpars=`echo "$confFileData" | jq -r '.eng_srvrs[].lpar' | xargs`        # read engineering servers with jq
+  engSrvrs=`echo "$confFileData" | jq -r '.eng_srvrs[].eng_srvr' | xargs` # read LPARs with jq
+  lpars=($lpars)                           # convert to array
+  engSrvrs=($engSrvrs)                     # convert to array
+  numLPARs="${#lpars[@]}"
+  local logLevel=`echo "$confFileData" | grep log_level | awk '{print $2}'`
+  if [ "$logLevel" = '"debug"' ]; then     # in debug mode
+    echo "$cmdCalled: logLevel = debug: increasing verbosity"
+    verbose=2                              # increase verbosity
+  fi
+  local sysinfo=`cat /proc/sysinfo`        # get sysinfo in memory
+  thisUserID=`echo "$sysinfo" | grep "VM00 Name:" | awk '{print $3}'` # user ID of this server
+  thisSysID=`echo "$sysinfo" | grep "LPAR Name:" /proc/sysinfo | awk '{print $3}'` # system ID (LPAR) 
+ }                                         # readConfFile()
 
 #+--------------------------------------------------------------------------+
 function CPcmd
@@ -59,10 +87,7 @@ function CPcmd
 function getEngServer
 # Given a z/VM system ID, return the engineering server
 # Arg 1: LPAR being queried
-# Global variables: 
-#   engServer - the engineering server
-#   tgtCEC    - the CEC
-#   consFile  - saved console file path
+# Return: engineering server host name
 #+--------------------------------------------------------------------------+
  {
   : SOURCE: ${BASH_SOURCE}
@@ -75,8 +100,8 @@ function getEngServer
   fi
 
   # Assign LPARs and engineering servers to arrays
-  lpars=`jq -r '.eng_srvrs[].lpar' /etc/zlma.conf | xargs`         # read engineering servers with jq
-  eng_srvrs=`jq -r '.eng_srvrs[].eng_srvr' /etc/zlma.conf | xargs` # read LPARs with jq
+  lpars=`jq -r '.eng_srvrs[].lpar' $confFile | xargs`         # read engineering servers with jq
+  eng_srvrs=`jq -r '.eng_srvrs[].eng_srvr' $confFile | xargs` # read LPARs with jq
   lpars=($lpars)                           # convert to array
   eng_srvrs=($eng_srvrs)                   # convert to array
   numLPARs="${#lpars[@]}"

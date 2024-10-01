@@ -1,8 +1,4 @@
 #!/bin/bash
-#
-# This code is shipped under the Artistic License 2.0. See the file
-# Artistic-License-2.0.txt or http://opensource.org/licenses/Artistic-2.0
-#
 #+--------------------------------------------------------------------------+
 #
 # cpcommand - issue a CP command on a specified z/VM LPAR 
@@ -18,12 +14,13 @@ function usage
 
   echo ""                                  # leave some room
   echo "Name:   cpcommand - issue a CP command on a specified z/VM LPAR"
-  echo "Usage:  cpcommand [OPTIONS] SYSTEM-ID CP-COMMAND"
+  echo "Usage:  cpcommand [OPTIONS] CP-COMMAND"
   echo "Where:  SYSTEM-ID  is the z/VM system to run the CP command on"
   echo "Where:  CP-COMMAND is CP command to invoke"
   echo ""
   echo "OPTIONS:"
   echo "  -h|--help             Give help"
+  echo "  -l|--lpar [LPAR]      LPAR system identifier to run command on (default: this LPAR)"
   echo "  -s|--silent           Minimal output"
   echo "  -v|--verbose          Include additional output"
   echo "  -V|--veryverbose      Include even more output"
@@ -45,6 +42,15 @@ function parseArgs
     case $1 in
       -h|--help)
         usage
+        ;;
+      -l|--lpar)
+        shift
+        if [ $# = 0 ]; then                # no more args
+          echo "ERROR: not enough arguments"
+          usage
+        fi
+        tgtSysID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
+echo "tgtSysID = $tgtSysID"
         ;;
       -s|--silent)
         verbose=0
@@ -70,16 +76,20 @@ function parseArgs
           echo "ERROR: unrecognized flag $1"
           usage 
         fi
-        if [ ${#systemID} = 0 ]; then      # first arg 
-          systemID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
-        else                               # second arg
-          cpCmd="$@"                       # all remaining args are the CP command 
-          break;                           # out of while loop
-        fi
+        cpCmd="$@"                         # all remaining args = CP command 
+        break;                             # out of while loop
         ;;
     esac
     shift
   done
+  if [ ${#cpCmd} = 0 ]; then
+    echo "ERROR: CP-COMMAND not specified"
+    usage
+  fi
+  echo "verbose = $verbose"
+  readConfFile
+  echo "AFTER: verbose = $verbose"
+  echo "cpCmd = $cpCmd logLevel = $logLevel"
  }                                         # parseArgs()
 
 #+--------------------------------------------------------------------------+
@@ -114,29 +124,39 @@ function sendCPcommand
   local engServer 
   local rc                                 # a return code
 
-  verboseMsg "trying to get engineering server with: getEngServer $systemID"
-  getEngServer $systemID
-  if [ $? != 0 ]; then 
-    echo "ERROR: did not find LPAR $systemID in $confFile"
-    exit 1                               # object not found
+  if [ ${#tgtSysID} = 0 ]; then            # target LPAR not specified
+    cmd="sudo vmcp $cpCmd"                 # run locally
+  else
+    verboseMsg "trying to get engineering server with: getEngServer $tgtSysID"
+    local engServer
+    engServer=`getEngServer $tgtSysID`
+    if [ $? != 0 ]; then 
+      echo "ERROR: did not find LPAR $tgtSysID in $confFile" | tee -a $logFile
+      exit 1                               # object not found
+    fi
+    cmd="$sshCmd $engServer sudo vmcp $cpCmd" # run remotely
   fi
-
-  # send the CP command
-  cmd="$sshCmd $engServer sudo vmcp $cpCmd"
-  if [ $verbose -ge 1 ]; then              # issue message unless in silent mode
-    echo "Executing CP command with: $cmd"
+  verboseMsg "Executing CP command: $cmd"
+  eval $cmd                                # run command locally or remotely
+  rc=$?
+  if [ "$rc" != 0 ]; then                  # error
+    verboseMsg "WARNING: command: $cmd returned $rc" 
   fi
-  eval $cmd                                # run the command
  }                                         # sendCPcommand()
 
 #+--------------------------------------------------------------------------+
 # Global variables
 declare -A arr                             # array of environments/eng'g servers/LPARs/
 cmdCalled=`basename $0`                    # get the name of the script called
-confFile="/etc/consolez.conf"              # configuration file that must exist            
+confFile="/etc/zlma.conf"                  # configuration file
 cpCmd=""                                   # the CP command to execute
 flags=""                                   # flags to pass on to remote calls
-systemID=""                                # target z/VM LPAR
+logFile="/var/log/zlma/consolez.log"       # log file 
+logLevel="info"                            # log level
+tgtSysID=""                                # target z/VM LPAR
+tgtUserID=""                               # target user ID 
+thisSysID=""                               # this z/VM LPAR
+thisUserID=""                              # this user ID 
 verb=""                                    # operation being performed
 verbose="1"                                # default verbosity level
 vmcpCmd="sudo vmcp --buffer=1M"            # command to issue "vmcp"
@@ -146,6 +166,5 @@ webUI="no"                                 # called from the Web UI?
 source /usr/local/sbin/consfuncs           # import common functions
 parseArgs $@                               # parse arguments
 checkEnv                                   # verify environment
-readConfFile                               # read the /etc/consolez.conf file
 sendCPcommand                              # issue requested CP command
 

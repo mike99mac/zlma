@@ -1,10 +1,5 @@
 #!/bin/bash
 #
-# This code is shipped under the Artistic License 2.0. See the file
-# Artistic-License-2.0.txt or http://opensource.org/licenses/Artistic-2.0
-#
-#+--------------------------------------------------------------------------+
-#
 # catcons   - type contents of z/VM console file (symlink to spoolcons) 
 # grepcons  - search contents of z/VM console file (symlink to spoolcons) 
 # lscons    - list saved z/VM console files (symlink to spoolcons) 
@@ -24,15 +19,15 @@ function usage
   echo ""                                  # leave some room
   if [ "$cmdCalled" = grepcons ]; then
     echo "Name:    grepcons - search through saved console data" 
-    echo "Usage:   grepcons [OPTIONS] USERID SYSTEMID PATTERN..."
+    echo "Usage:   grepcons  [OPTIONS] USERID SYSTEMID PATTERN..."
     echo "Where:   USERID    is a pattern of user IDs to search or ':' for all user IDs" 
-    echo "Where:   SYSTEMID  is a z/VM system ID, an environment or ':' for all z/VM systems"
+    echo "Where:   SYSTEMID  is a z/VM system ID ':' for all z/VM systems"
     echo "Where:   PATTERN   is a pattern to search consoles for" 
   elif [ "$cmdCalled" = lscons ]; then
     echo "Name:    lscons - list user IDs with saved console data" 
-    echo "Usage:   lscons [OPTIONS] [USERIDS] [SYSTEMIDS]"
-    echo "Where:   USERIDS   is a specific user ID or ':' to list all user IDs (default)" 
-    echo "Where:   SYSTEMIDS is a specific z/VM system ID or ':' to list all (default)" 
+    echo "Usage:   lscons   [OPTIONS] [USERID] [SYSTEMID]"
+    echo "Where:   USERID   is a specific user ID or ':' to list all user IDs (default)" 
+    echo "Where:   SYSTEMID is a specific z/VM system ID or ':' to list all (default)" 
   elif [ "$cmdCalled" = prunecons ]; then
     echo "Name:    prunecons - prune saved console data CODE HAS YET TO BE WRITTEN!" 
     echo "Usage:   prunecons [OPTIONS] AGE"
@@ -92,15 +87,6 @@ function parseArgs
   esac
 
   # get user ID and system ID of this virtual machine
-  sysinfo=`cat /proc/sysinfo`              # get sysinfo in memory
-  thisUserID=`echo "$sysinfo" | grep "VM00 Name:" | awk '{print $3}'` # user ID of this server
-  systemID=`echo "$sysinfo" | grep "LPAR Name:" /proc/sysinfo | awk '{print $3}'` # user ID of this server
-  logLevel=`grep log_level /etc/zlma.conf | awk '{print $2}'`
-  echo "logLevel = $logLevel"
-  if [ "$logLevel" = "debug" ]; then       # in debug mode
-    echo "$cmdCalled: parseArgs() logLevel = debug: increasing verbosity"
-    verbose=2                              # increase verbosity
-  fi
   while (( "$#" )); do                     # iterate through all flags and arguments
     case $1 in
       -F)                                  # "From server" - undocumented
@@ -166,11 +152,11 @@ function parseArgs
             usage
           fi
         else                                # one of other three commands
-          if [ ${#userID} = 0 ]; then       # first arg 
-            userID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
+          if [ ${#tgtUserID} = 0 ]; then    # first arg 
+            tgtUserID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
           elif [ ${#systemID} = 0 ]; then   # second arg 
-            systemID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
-          else
+            tgtSysID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
+          else                            
             if [ "$cmdCalled" != grepcons ]; then # too many args
               echo "ERROR: Too many arguments"
               usage
@@ -189,11 +175,11 @@ function parseArgs
       age="1Y"                             # default to delete data more than a year old
     fi 
   else                                     # other three commands
-    if [ "$cmdCalled" != lscons -a ${#userID} = 0 ]; then # user ID not specified 
-      userID=$thisUserID                   # assume 'self' 
+    if [ "$cmdCalled" != lscons -a ${#tgtUserID} = 0 ]; then # user ID not specified 
+      tgtUserID=$thisUserID                   # assume 'self' 
     fi
-    if [ "$cmdCalled" != lscons -a ${#systemID} = 0 ]; then # system ID not specified 
-      systemID=$thisSystemID               # assume 'self' 
+    if [ "$cmdCalled" != lscons -a ${#tgtSysID} = 0 ]; then # system ID not specified 
+      tgtSysID=$thisSystemID               # assume 'self' 
     fi
   fi
   if [ "$cmdCalled" = grepcons -a ${#pattern} = 0 ]; then # no search pattern supplied
@@ -201,7 +187,7 @@ function parseArgs
     usage
   fi
   verboseMsg "bottom of parseArgs userID = $userID systemID = $systemID"
-  verboseMsg "thisUserID = $thisUserID thisSystemID = $thisSystemID"
+  verboseMsg "thisUserID = $thisUserID thisSysID = $thisSysID"
  }                                         # parseArgs()
 
 #+--------------------------------------------------------------------------+
@@ -292,27 +278,23 @@ function getRemoteConsole
 #+--------------------------------------------------------------------------+
 function checkUserID
 # Check the status of the user ID whose console is to be spooled 
+# This is only called on the local server
 # Args: none
 #+--------------------------------------------------------------------------+
  {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  CPcmd QUERY $userID >/dev/null 2>&1      # first check if the user ID exists
-  rc=$?
-  if [ "$rc" = 3 ]; then                   # user ID does not exist
-    echo "ERROR: No such user ID: $userID at $systemID" 
-    exit 4                                 # cannot perform operation
-  fi
-  
-  CPcmd QUERY USER $userID >/dev/null 2>&1 # get current status of user ID
+  local cmd="CPcmd QUERY $tgtUserID >/dev/null 2>&1" # check if the user ID exists
+  verboseMsg "running command: $cmd"
+  eval $cmd
   rc=$?
   case $rc in
     0)                                     # user ID is logged on/disconnected but does not ping
       verboseMsg "user ID $userID is logged on"
       ;;
     3)                                     # QUERY USER does not seem to return this any more 
-      echo "ERROR: user ID $userID does not exist on $systemID"
+      echo "ERROR: user ID $userID does not exist on $tgtSysID"
       exit 4                               # cannot perform operation
       ;;
     45)                                    # user ID is logged off - power on
@@ -448,7 +430,6 @@ function spoolConsole
   local engServer 
   local rc                                 # a return code
 
-  echo "spoolConsole() fromServer = $fromServer engServer = $engServer thisServer = $thisServer"
   if [ ${#fromServer} != 0 ]; then         # being called from main engineering server
     engServer="$thisServer"                # console is local
   else 
@@ -708,7 +689,7 @@ function doTheWork
 # Global variables
 age=""                                     # for prunecons - age at which to prune data
 cmdCalled=`basename $0`                    # get the name of the script called
-confFile="/etc/consolez.conf"              # configuration file that must exist            
+confFile="/etc/zlma.conf"                  # configuration file 
 consFile=""                                # file with all console data of target userID
 consDir="/srv/consolez"                    # default data directory
 equals="================================================================================" # a divider
@@ -716,6 +697,7 @@ flags=""                                   # flags to pass on to remote calls
 fromServer=""                              # if called from another engineering server
 grepFlags="-H -n"                          # always include file name and line numbers, optional -i flag
 logFile="/var/log/zlma/consolez.log"       # file to log to
+logLevel="info"                            # log level
 numLPARs="0"                               # number of LPARs in input file
 outputType="short"                         # output 'long' or 'short' listing 
 pattern=""                                 # search pattern for grepcons
