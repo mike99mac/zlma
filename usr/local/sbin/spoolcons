@@ -96,6 +96,7 @@ function parseArgs
   thisUserID=`echo "$sysinfo" | grep "VM00 Name:" | awk '{print $3}'` # user ID of this server
   systemID=`echo "$sysinfo" | grep "LPAR Name:" /proc/sysinfo | awk '{print $3}'` # user ID of this server
   logLevel=`grep log_level /etc/zlma.conf | awk '{print $2}'`
+  echo "logLevel = $logLevel"
   if [ "$logLevel" = "debug" ]; then       # in debug mode
     echo "$cmdCalled: parseArgs() logLevel = debug: increasing verbosity"
     verbose=2                              # increase verbosity
@@ -447,6 +448,7 @@ function spoolConsole
   local engServer 
   local rc                                 # a return code
 
+  echo "spoolConsole() fromServer = $fromServer engServer = $engServer thisServer = $thisServer"
   if [ ${#fromServer} != 0 ]; then         # being called from main engineering server
     engServer="$thisServer"                # console is local
   else 
