@@ -168,7 +168,7 @@ function copyAllFiles
 
 #+--------------------------------------------------------------------------+
 function copyOneFile
-# Copy one file and set ownership to webUser
+# Copy one file and set ownership to user running the script 
 # Arg 1: source dir
 # Arg 2: source file
 # Arg 3: target dir
@@ -182,7 +182,7 @@ function copyOneFile
   local targetDir=$3
 
   runCmd sudo cp $sourceDir/$sourceFile $targetDir
-  runCmd sudo chown $webUser:$webUser $targetDir/$sourceFile
+  runCmd sudo chown $USER:$USER $targetDir/$sourceFile
  }                                         # copyOneFile()
 
 #+--------------------------------------------------------------------------+

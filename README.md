@@ -26,7 +26,7 @@ Following is a block diagram of zlma:
 
 # Preparing for installation 
 
-A script is included with the ``zlma`` repository for easier installation.  There is some preparation before it can be run.
+The script ``instzlma`` is included for easier installation.  There is some preparation before it can be run.
 
 ## Set up SSH access
 Key-based authentication, or *Passwordless* SSH access is needed for one user from the zlma server to all systems that will be managed.  ``zlma`` commands must be run by that user and they must have ``sudo`` access.  
@@ -38,16 +38,15 @@ Once SSH access is set up, the solution can be installed.
 ## Update your system
 To update your system, perform the following steps:
 
-  - For Debian-based systems, run two commands:
-    ```
-    sudo apt update 
-    ```
+- Login as a non-root user with sudo privileges. 
 
+  - For Debian-based systems, run these commands:
     ```
+    sudo apt update;
     sudo apt upgrade -y
     ```
 
-  - For RHEL-based systems, run one command:
+  - For RHEL-based systems, run this command:
     ```
     sudo dnf update 
     ```
@@ -63,23 +62,25 @@ sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
 
 - Edit the sudoers file:
 
-```
+```  
 sudo visudo
 ```
 
-    - For Debian-based, it is usually the ``sudo`` group:
-    ```
-    ...
-    %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
-    ...
-    ```
+   - For Debian-based, it is usually the ``sudo`` group:
+
+   ```
+   ...
+   %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+   ...
+   ```
 
     - For RHEL-based, it is the usually the ``wheel`` group:
-    ```
-    ...
-    %wheel  ALL=(ALL)       NOPASSWD: ALL
-    ...
-    ```
+
+   ```
+   ...
+   %wheel  ALL=(ALL)       NOPASSWD: ALL
+   ...
+   ```
 
 # Automated Installation
 These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
@@ -91,13 +92,6 @@ To install zlma, perform the following steps.
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
 
-<<<<<<< HEAD
-- Set vim to be the system editor:
-
-```
-sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
-```
-
 - Allow members of a certain group to be able to run **``sudo``** commands without a password, by adding **``NOPASSWD:``** to the line near the bottom of the file.
 
 - Edit the sudoers file:
@@ -106,36 +100,32 @@ sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
 sudo visudo
 ```
 
-    - Allow members of a certain group to be able to run **``sudo``** commands without a password, by adding **``NOPASSWD:``** to the line near the bottom of the file.
+  - For Debian-based, it is the ``sudo`` group:
+    ```
+    ...
+    %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+    ...
+    ```
 
-    - For Debian-based, it is the ``sudo`` group:
-      ```
-      ...
-      %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
-      ...
-      ```
+  - For RHEL-based, it is the ``wheel`` group:
+    ```
+    ...
+    %wheel  ALL=(ALL)       NOPASSWD: ALL
+    ...
+    ```
 
-    - For RHEL-based, it is the ``wheel`` group:
-      ```
-      ...
-      %wheel  ALL=(ALL)       NOPASSWD: ALL
-      ...
-      ```
-
-=======
->>>>>>> 0fc3199ad1c11a60a78ea133bed1272350c2f818
 - Install git, vim and Apache on RHEL:
 
-  - For Debian-based:
+   - For Debian-based:
 
-  ```
-  sudo apt install -y git vim apache2
-  ```
+   ```
+   sudo apt install -y git vim apache2
+   ```
 
-  - For RHEL-based:
+   - For RHEL-based:
 
-  ```
-  sudo dnf install -y git vim httpd 
+   ```
+   sudo dnf install -y git vim httpd 
    ```
 
 - Clone this repo to your home directory:
@@ -144,7 +134,6 @@ sudo visudo
 cd;
 git clone https://github.com/mike99mac/zlma
 ```
-- Login as a non-root user with sudo privileges. 
 
 - Add the group which will be running apache to that user.  In this exmple the user is ``youruser`` and the group is ``apache``, which is common for Red Hat-based distros. For Debian, the group ``www-data`` is common.
 
@@ -232,17 +221,18 @@ cd /srv
 ```
 
 - Create a virtual environment in one of two ways:
+
   - where the base Python version is 3.10 or greater:
 
-    ```
-    sudo python3 -m venv venv
-    ```
+   ```
+   sudo python3 -m venv venv
+   ```
 
   - Where Python 3.11 was added:
 
-    ```
-    sudo python3.11 -m venv venv
-    ```
+   ```
+   sudo python3.11 -m venv venv
+   ```
 
 - Recursively change the group of the new virtual environment.
 
@@ -274,15 +264,15 @@ You should see the text ``(venv)`` prefixed on the command prompt.
 
   - On systems where the base Python version is 3.10 or greater:
 
-    ```
-    /srv/venv/bin/python3 -m pip install --upgrade pip
-    ```
+   ```
+   /srv/venv/bin/python3 -m pip install --upgrade pip
+   ```
 
   - On systems where Python 3.11 was added:
 
-    ```
-    /srv/venv/bin/python3.11 -m pip install --upgrade pip
-    ```
+   ```
+   /srv/venv/bin/python3.11 -m pip install --upgrade pip
+   ```
 
 - Install Mariadb, the Python connector and the Lex-Yacc library:
 
@@ -311,6 +301,23 @@ Following is the ``zlma.conf`` file copied to ``/etc``. Set the database root pa
   "log_level": "debug"
 }
 ```
+
+The values are as follow
+- db_user
+  - The SQL database user, usually ``root``
+- db_pw
+  - The SQL password for the user, must be set manually
+- db_host
+  - Where mariadb is running, usually locally 
+- db_name
+  - The mariad database where the data is stored
+- eng_servers
+  - List of LPAR name/engineering servers' host name pairs
+- home_dir
+  - The home directory where the ``zlmainfo`` script will be stored and run from
+- log_level
+  - Log file verbosity: error (lowest verbosity), warning, info, debug (highest verbosity)
+
 #
 # zlma configuration file
 #
@@ -431,23 +438,23 @@ WantedBy=multi-user.target
 
   - For Debian-based:
 
-    ```
-    sudo systemctl enable apache2
-    ```
+   ```
+   sudo systemctl enable apache2
+   ```
 
-    ```
-    sudo systemctl start apache2
-    ```
+   ```
+   sudo systemctl start apache2
+   ```
 
   - For RHEL-based:
 
-    ```
-    sudo systemctl enable httpd
-    ```
+   ```
+   sudo systemctl enable httpd
+   ```
 
-    ```
-    sudo systemctl start httpd
-    ```
+   ```
+   sudo systemctl start httpd
+   ```
 
 ## Create a configuration file
 The zlma configuration file allows you to set local values such as the database credentials, the home directory and the logging level.
@@ -460,19 +467,6 @@ There is a sample configuration file named ``zlma.conf`` in the repo.  The code 
 sudo cp ~/zlma/zlma.conf /etc
 ```
 
-- Modify the values if desired. Set the root password to the value used earlier in mariadb.
-
-```
-sudo vi /etc/zlma.conf
-{
-  "DBuser": "root",
-  "DBpw": "pi",
-  "DBhost": "127.0.0.1",
-  "DBname": "cmdb",
-  "homeDir": "/home/pi",
-  "logLevel": "debug"
-}
-```
 - The first four variables are the database user, password, host name or IP address, and the database name which will store the table ``servers``.
 - ``homeDir`` is the directory where the ``serverinfo`` script will be copied to and run from.
 - ``logLevel``, in order of severity, are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR`` and ``CRITICAL``.
