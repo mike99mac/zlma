@@ -67,14 +67,14 @@ sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
 sudo visudo
 ```
 
-    - For Debian-based, it is usually the ``sudo`` group:
+  - For Debian-based, it is usually the ``sudo`` group:
     ```
     ...
     %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
     ...
     ```
 
-    - For RHEL-based, it is the usually the ``wheel`` group:
+  - For RHEL-based, it is the usually the ``wheel`` group:
     ```
     ...
     %wheel  ALL=(ALL)       NOPASSWD: ALL
@@ -93,16 +93,16 @@ To install this ``zlma`` repository, some basic packages are first needed.
 
 - Install git, vim and Apache on RHEL:
 
-  - For Debian-based:
+   - For Debian-based:
 
-  ```
-  sudo apt install -y git vim apache2
-  ```
+   ```
+   sudo apt install -y git vim apache2
+   ```
 
-  - For RHEL-based:
+   - For RHEL-based:
 
-  ```
-  sudo dnf install -y git vim httpd 
+   ```
+   sudo dnf install -y git vim httpd 
    ```
 
 - Clone this repo to your home directory:
