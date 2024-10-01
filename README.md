@@ -26,7 +26,7 @@ Following is a block diagram of zlma:
 
 # Preparing for installation 
 
-A script is included with the ``zlma`` repository for easier installation.  There is some preparation before it can be run.
+The script ``instzlma`` is included for easier installation.  There is some preparation before it can be run.
 
 ## Set up SSH access
 Key-based authentication, or *Passwordless* SSH access is needed for one user from the zlma server to all systems that will be managed.  ``zlma`` commands must be run by that user and they must have ``sudo`` access.  
@@ -62,23 +62,25 @@ sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
 
 - Edit the sudoers file:
 
-```
+```  
 sudo visudo
 ```
 
-    - For Debian-based, it is usually the ``sudo`` group:
-    ```
-    ...
-    %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
-    ...
-    ```
+   - For Debian-based, it is usually the ``sudo`` group:
+
+   ```
+   ...
+   %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+   ...
+   ```
 
     - For RHEL-based, it is the usually the ``wheel`` group:
-    ```
-    ...
-    %wheel  ALL=(ALL)       NOPASSWD: ALL
-    ...
-    ```
+
+   ```
+   ...
+   %wheel  ALL=(ALL)       NOPASSWD: ALL
+   ...
+   ```
 
 # Automated Installation
 These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
@@ -116,14 +118,14 @@ sudo visudo
 
   - For Debian-based:
 
-  ```
-  sudo apt install -y git vim apache2
-  ```
+   ```
+   sudo apt install -y git vim apache2
+   ```
 
   - For RHEL-based:
 
-  ```
-  sudo dnf install -y git vim httpd 
+   ```
+   sudo dnf install -y git vim httpd 
    ```
 
 - Clone this repo to your home directory:
@@ -219,17 +221,18 @@ cd /srv
 ```
 
 - Create a virtual environment in one of two ways:
+
   - where the base Python version is 3.10 or greater:
 
-    ```
-    sudo python3 -m venv venv
-    ```
+   ```
+   sudo python3 -m venv venv
+   ```
 
   - Where Python 3.11 was added:
 
-    ```
-    sudo python3.11 -m venv venv
-    ```
+   ```
+   sudo python3.11 -m venv venv
+   ```
 
 - Recursively change the group of the new virtual environment.
 
@@ -261,15 +264,15 @@ You should see the text ``(venv)`` prefixed on the command prompt.
 
   - On systems where the base Python version is 3.10 or greater:
 
-    ```
-    /srv/venv/bin/python3 -m pip install --upgrade pip
-    ```
+   ```
+   /srv/venv/bin/python3 -m pip install --upgrade pip
+   ```
 
   - On systems where Python 3.11 was added:
 
-    ```
-    /srv/venv/bin/python3.11 -m pip install --upgrade pip
-    ```
+   ```
+   /srv/venv/bin/python3.11 -m pip install --upgrade pip
+   ```
 
 - Install Mariadb, the Python connector and the Lex-Yacc library:
 
@@ -435,23 +438,23 @@ WantedBy=multi-user.target
 
   - For Debian-based:
 
-    ```
-    sudo systemctl enable apache2
-    ```
+   ```
+   sudo systemctl enable apache2
+   ```
 
-    ```
-    sudo systemctl start apache2
-    ```
+   ```
+   sudo systemctl start apache2
+   ```
 
   - For RHEL-based:
 
-    ```
-    sudo systemctl enable httpd
-    ```
+   ```
+   sudo systemctl enable httpd
+   ```
 
-    ```
-    sudo systemctl start httpd
-    ```
+   ```
+   sudo systemctl start httpd
+   ```
 
 ## Create a configuration file
 The zlma configuration file allows you to set local values such as the database credentials, the home directory and the logging level.
@@ -464,19 +467,6 @@ There is a sample configuration file named ``zlma.conf`` in the repo.  The code 
 sudo cp ~/zlma/zlma.conf /etc
 ```
 
-- Modify the values if desired. Set the root password to the value used earlier in mariadb.
-
-```
-sudo vi /etc/zlma.conf
-{
-  "DBuser": "root",
-  "DBpw": "pi",
-  "DBhost": "127.0.0.1",
-  "DBname": "cmdb",
-  "homeDir": "/home/pi",
-  "logLevel": "debug"
-}
-```
 - The first four variables are the database user, password, host name or IP address, and the database name which will store the table ``servers``.
 - ``homeDir`` is the directory where the ``serverinfo`` script will be copied to and run from.
 - ``logLevel``, in order of severity, are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR`` and ``CRITICAL``.
