@@ -1,4 +1,4 @@
-#!/srv/venv/bin/python3.11
+#!/srv/venv/bin/python3
 """
 zlma (z/VM and Linux modern administration) is a CMDB based on mariadb, designed to make administering z/VM and zLinux easier.
 The data is stored in a mariadb database named 'zlma' in a table named 'servers'. The table has these columns:
@@ -38,7 +38,7 @@ Return codes:
 
 Examples:
 - zlma -v init
-- zlma describe
+- zlma desc
 - zlma -v add --server model1000
 - zlma -v query
 """
@@ -73,7 +73,7 @@ class Zlma:
     self.parser.add_argument("-V", "--version", help="show current version", action="store_true")
     self.parser.add_argument("-C", "--copyscript", help="copy script 'zlmainfo' to target server before add", action="store_true")
     self.parser.add_argument("-c", "--column", help="column name to search", action="append")
-    self.parser.add_argument("subcommand", help="Can be 'add', 'describe', 'init', 'query', 'remove' or 'update'", nargs='?')
+    self.parser.add_argument("subcommand", help="Can be 'add', 'desc', 'init', 'query', 'remove' or 'update'", nargs='?')
     self.parser.add_argument("-p", "--pattern", help="pattern to search for", action="append")
     self.parser.add_argument("-s", "--server", help="server to add or remove", action="append")
     self.args = self.parser.parse_args()

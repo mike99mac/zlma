@@ -38,16 +38,15 @@ Once SSH access is set up, the solution can be installed.
 ## Update your system
 To update your system, perform the following steps:
 
-  - For Debian-based systems, run two commands:
-    ```
-    sudo apt update 
-    ```
+- Login as a non-root user with sudo privileges. 
 
+  - For Debian-based systems, run these commands:
     ```
+    sudo apt update;
     sudo apt upgrade -y
     ```
 
-  - For RHEL-based systems, run one command:
+  - For RHEL-based systems, run this command:
     ```
     sudo dnf update 
     ```
@@ -91,13 +90,6 @@ To install zlma, perform the following steps.
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
 
-<<<<<<< HEAD
-- Set vim to be the system editor:
-
-```
-sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
-```
-
 - Allow members of a certain group to be able to run **``sudo``** commands without a password, by adding **``NOPASSWD:``** to the line near the bottom of the file.
 
 - Edit the sudoers file:
@@ -106,24 +98,20 @@ sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
 sudo visudo
 ```
 
-    - Allow members of a certain group to be able to run **``sudo``** commands without a password, by adding **``NOPASSWD:``** to the line near the bottom of the file.
+  - For Debian-based, it is the ``sudo`` group:
+    ```
+    ...
+    %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+    ...
+    ```
 
-    - For Debian-based, it is the ``sudo`` group:
-      ```
-      ...
-      %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
-      ...
-      ```
+  - For RHEL-based, it is the ``wheel`` group:
+    ```
+    ...
+    %wheel  ALL=(ALL)       NOPASSWD: ALL
+    ...
+    ```
 
-    - For RHEL-based, it is the ``wheel`` group:
-      ```
-      ...
-      %wheel  ALL=(ALL)       NOPASSWD: ALL
-      ...
-      ```
-
-=======
->>>>>>> 0fc3199ad1c11a60a78ea133bed1272350c2f818
 - Install git, vim and Apache on RHEL:
 
   - For Debian-based:
@@ -144,7 +132,6 @@ sudo visudo
 cd;
 git clone https://github.com/mike99mac/zlma
 ```
-- Login as a non-root user with sudo privileges. 
 
 - Add the group which will be running apache to that user.  In this exmple the user is ``youruser`` and the group is ``apache``, which is common for Red Hat-based distros. For Debian, the group ``www-data`` is common.
 
@@ -311,6 +298,23 @@ Following is the ``zlma.conf`` file copied to ``/etc``. Set the database root pa
   "log_level": "debug"
 }
 ```
+
+The values are as follow
+- db_user
+  - The SQL database user, usually ``root``
+- db_pw
+  - The SQL password for the user, must be set manually
+- db_host
+  - Where mariadb is running, usually locally 
+- db_name
+  - The mariad database where the data is stored
+- eng_servers
+  - List of LPAR name/engineering servers' host name pairs
+- home_dir
+  - The home directory where the ``zlmainfo`` script will be stored and run from
+- log_level
+  - Log file verbosity: error (lowest verbosity), warning, info, debug (highest verbosity)
+
 #
 # zlma configuration file
 #
