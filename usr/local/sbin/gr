@@ -7,5 +7,5 @@
 pattern="$1"
 shift
 files="$@"
-find $files -type f -print0 | xargs -0 grep "$pattern" 2>/dev/null
+find $files -type f -print0 | xargs -0 grep -n "$pattern" 2>/dev/null
 

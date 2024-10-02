@@ -3,9 +3,22 @@
 # consfuncs - consolez functions 
 #
 #+--------------------------------------------------------------------------+
-function verboseMsg
-# write a message to stdout and log file when verbose is 2 or 3 
+function regMsg
+# write a message to stdout and log file
 # Args: the message 
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  local timeStamp=`date +"%Y-%m-%d %H:%M:%S,%3N"`
+  echo -e "$timeStamp ${0##*/}/${FUNCNAME[1]}()/$USER: $@" | tee -a $logFile
+ }                                         # verboseMsg()
+
+#+--------------------------------------------------------------------------+
+function verboseMsg
+# write a message to stdout and log file when verbose is 2 or 3
+# Args: the message
 #+--------------------------------------------------------------------------+
  {
   : SOURCE: ${BASH_SOURCE}
@@ -13,7 +26,7 @@ function verboseMsg
 
   if [ "$verbose" -gt 1 ]; then            # verbose or very verbose
     local timeStamp=`date +"%Y-%m-%d %H:%M:%S,%3N"`
-    echo -e "$timeStamp $0/${FUNCNAME[1]}() user $USER: $@" | tee -a $logFile
+    echo -e "$timeStamp ${0##*/}/${FUNCNAME[1]}()/$USER: $@" | tee -a $logFile
   fi
  }                                         # verboseMsg()
 
@@ -36,9 +49,9 @@ function readConfFile
   lpars=($lpars)                           # convert to array
   engSrvrs=($engSrvrs)                     # convert to array
   numLPARs="${#lpars[@]}"
-  local logLevel=`echo "$confFileData" | grep log_level | awk '{print $2}'`
+  logLevel=`echo "$confFileData" | grep log_level | awk '{print $2}'`
   if [ "$logLevel" = '"debug"' ]; then     # in debug mode
-    echo "$cmdCalled: logLevel = debug: increasing verbosity"
+    verboseMsg "logLevel = debug: increasing verbosity"
     verbose=2                              # increase verbosity
   fi
   local sysinfo=`cat /proc/sysinfo`        # get sysinfo in memory
@@ -118,6 +131,21 @@ function getEngServer
  }                                         # getEngServer()
 
 #+--------------------------------------------------------------------------+
+function getPrivClass
+# get the current user's z/VM privilege class 
+#+--------------------------------------------------------------------------+
+ {
+  : SOURCE: ${BASH_SOURCE}
+  : STACK:  ${FUNCNAME[@]}
+
+  privClass=`sudo vmcp q privclas | grep Currently | awk '{print $2}'`
+ }                                         # getPrivClass()
+
+#+--------------------------------------------------------------------------+
 # global variables
+eng_srvrs=""
+lpars=""
+numLPARs=""
+privClass=""                               # user's z/VM privilige class
 sshCmd="/usr/bin/ssh -q"                   # command to SSH to other nodes
 

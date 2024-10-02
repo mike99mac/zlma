@@ -154,7 +154,7 @@ function parseArgs
         else                                # one of other three commands
           if [ ${#tgtUserID} = 0 ]; then    # first arg 
             tgtUserID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
-          elif [ ${#systemID} = 0 ]; then   # second arg 
+          elif [ ${#tgtSysmID} = 0 ]; then   # second arg 
             tgtSysID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
           else                            
             if [ "$cmdCalled" != grepcons ]; then # too many args
@@ -176,18 +176,17 @@ function parseArgs
     fi 
   else                                     # other three commands
     if [ "$cmdCalled" != lscons -a ${#tgtUserID} = 0 ]; then # user ID not specified 
-      tgtUserID=$thisUserID                   # assume 'self' 
+      tgtUserID=$thisUserID                # assume 'self' 
     fi
     if [ "$cmdCalled" != lscons -a ${#tgtSysID} = 0 ]; then # system ID not specified 
-      tgtSysID=$thisSystemID               # assume 'self' 
+      tgtSysID=$thisSysID                  # assume 'self' 
     fi
   fi
   if [ "$cmdCalled" = grepcons -a ${#pattern} = 0 ]; then # no search pattern supplied
-    echo "ERROR: required argument PATTERN missing"
+    echo "ERROR: required argument PATTERN missing" | tee -a $logFile
     usage
   fi
-  verboseMsg "bottom of parseArgs userID = $userID systemID = $systemID"
-  verboseMsg "thisUserID = $thisUserID thisSysID = $thisSysID"
+  verboseMsg "tgtUserID = $tgtUserID tgtSysID = $tgtSysID thisUserID = $thisUserID thisSysID = $thisSysID"
  }                                         # parseArgs()
 
 #+--------------------------------------------------------------------------+
@@ -233,15 +232,14 @@ function makeConsoleFile
       fi
     fi
     echo -e "`date +%F-%T`: Console file created\n$equals" > $consFile # create the file with a timestamp
-    verboseMsg "created console file $consFile"
     cmd="sudo /usr/bin/chmod g+r,g+w $consFile" # make temp file r/w to group
-    verboseMsg "making console file R/W with: $cmd"
     $cmd
     rc=$?
     if [ $rc != 0 ]; then                  # unexpected 
       echo "ERROR: $cmd returned $rc"
       exit 4                               # cannot perform operation
     fi
+    verboseMsg "created console file $consFile"
   fi
  }                                         # makeConsoleFile()
 
@@ -255,7 +253,7 @@ function getRemoteConsole
   : STACK:  ${FUNCNAME[@]}
 
   verboseMsg "remote server: $engServer  local server: $thisServer"
-  cmd="$sshCmd $engServer /usr/local/sbin/spoolcons $flags -F $thisServer $tmpConsFile $userID"
+  cmd="$sshCmd $engServer /usr/local/sbin/spoolcons $flags -F $thisServer $tmpConsFile $tgtUserID"
   verboseMsg "calling remote server: $cmd"
   $cmd                                     # run this command on the remote server
   rc=$?
@@ -286,26 +284,25 @@ function checkUserID
   : STACK:  ${FUNCNAME[@]}
 
   local cmd="CPcmd QUERY $tgtUserID >/dev/null 2>&1" # check if the user ID exists
-  verboseMsg "running command: $cmd"
   eval $cmd
   rc=$?
   case $rc in
     0)                                     # user ID is logged on/disconnected but does not ping
-      verboseMsg "user ID $userID is logged on"
+      verboseMsg "user ID $tgtUserID is logged on"
       ;;
     3)                                     # QUERY USER does not seem to return this any more 
-      echo "ERROR: user ID $userID does not exist on $tgtSysID"
+      echo "ERROR: user ID $tgtUserID does not exist on $tgtSysID"
       exit 4                               # cannot perform operation
       ;;
     45)                                    # user ID is logged off - power on
-      echo "ERROR: user ID $userID at $systemID is logged off - cannot spool console" 
+      echo "ERROR: user ID $tgtUserID at $tgtSysID is logged off - cannot spool console" 
       exit 4                               # cannot perform operation
       ;;
     361)                                    # HCPCQU361E LOGOFF/FORCE pending for <userID>
-      echo "ERROR: user ID $userID is pending log off - cannot spool console" 
+      echo "ERROR: user ID $tgtUserID is pending log off - cannot spool console" 
       ;;
    *)                                      # unexpected return code
-      echo "ERROR: unexpected rc from QUERY USER $userID: $rc"
+      echo "ERROR: unexpected rc from QUERY USER $tgtUserID: $rc"
       exit 4                               # cannot perform operation
   esac
  }                                         # checkUserID()
@@ -320,7 +317,7 @@ function getLocalConsole
   : STACK:  ${FUNCNAME[@]}
 
   if [ ! -c /dev/vmrdr-0.0.000c ]; then    # reader is not enabled
-    verboseMsg "Reader not enabled - enabling 000C ..."
+    verboseMsg "enabling reader 000C"
     cmd="sudo /sbin/chccwdev -e 000c"
     $cmd                                   # run the command
     rc=$?
@@ -333,20 +330,20 @@ function getLocalConsole
 
   local qrdrCmd="$vmcpCmd QUERY RDR"       # command to query this reader
   local lastSpoolID=`eval $qrdrCmd | tail -1 | awk '{print $2}'` # get the most recent reader file
-  cmd="$vmcpCmd FOR $userID CMD SPOOL CONS TO $thisUserID CLOSE" # have target user ID send console here
-  verboseMsg "getting console data on $systemID with: $cmd"
+  cmd="$vmcpCmd FOR $tgtUserID CMD SPOOL CONS TO $thisUserID CLOSE" # have target user ID send console here
+  verboseMsg "getting console data on $tgtSysID with: $cmd"
   eval $cmd                                # run the command
   sleep .1                                 # wait for console to arrive in reader
   local newSpoolID=`eval $qrdrCmd | tail -1 | awk '{print $2}'` # get the last reader file
   verboseMsg "lastSpoolID = $lastSpoolID newSpoolID = $newSpoolID"
   if [ "$lastSpoolID" = "$newSpoolID" ]; then # no console data showed up
-    verboseMsg "Did not find any console output from $userID"
+    verboseMsg "Did not find any console output from $tgtUserID"
     sleep 2                                # wait a bit longer
     newSpoolID=`eval $qrdrCmd | tail -1 | awk '{print $2}'` # get reader files again
     if [ "$lastSpoolID" = "$newSpoolID" ]; then # still no console data showed up
       echo -e "`date +%F-%T`: No new console data found" > $tmpConsFile
     fi
-    cmd="FOR $userID CMD SPOOL CONS $tgtUserID START" # command to restart console spooling
+    cmd="FOR $tgtUserID CMD SPOOL CONS $tgtUserID START" # command to restart console spooling
     verboseMsg "Resetting console $cmd"
     eval CPcmd $cmd                        # run the command
     rc=$?
@@ -387,6 +384,7 @@ function makeTempConsFile
 
   local cmd                                # a command
   local rc                                 # a return code
+  tmpConsFile="$HOME/temp-console-file"
  
   verboseMsg "making temporary console file $tmpConsFile"
   if [ -f $tmpConsFile ]; then             # an old file exists
@@ -430,32 +428,29 @@ function spoolConsole
   local engServer 
   local rc                                 # a return code
 
-  if [ ${#fromServer} != 0 ]; then         # being called from main engineering server
+  if [ ${#fromServer} != 0 ]; then         # being called from main server
     engServer="$thisServer"                # console is local
-  else 
+  else                                     # this is main server
     if [ "$verbose" -ge 1 ]; then          # not in silent mode
-      echo "Spooling console of $userID at $systemID ..."
+      verboseMsg "Spooling console of $tgtUserID at $tgtSysID"
     fi
-    verboseMsg "trying to get engineering server with: getEngServer $systemID"
-    getEngServer $systemID                 # get Eng server and CEC
+    engServer=`getEngServer $tgtSysID`           
     if [ $? = 1 ]; then                    # not found
-      echo "ERROR: did not find LPAR $systemID in $confFile"
+      echo "ERROR: did not find LPAR $tgtSysID in $confFile" | tee -a $logFile
       exit 1                               # object not found
     fi
-    consFile="$consDir/$systemID/$userID"  # file with console data
-    verboseMsg "found engineering server $engServer consFile = $consFile"
-    verboseMsg "numLPARs = $numLPARs" 
+    consFile="$consDir/$tgtSysID/$tgtUserID"  # file with console data
   fi
   makeConsoleFile                          # make the console file if it doesn't exist
+  verboseMsg "thisServer = $thisServer engServer = $engServer"
   if [ "$thisServer" != "$engServer" ]; then # target LPAR is remote
     if [ ${#fromServer} != 0 ]; then       # not expected
-      echo "INTERNAL ERROR! thisServer = $thisServer engServer = engServer but fromServer = $fromServer"
+      echo "INTERNAL ERROR! thisServer = $thisServer engServer = engServer but fromServer = $fromServer" | tee -a $logFile
       exit 3                               # to avoid endless loop
     fi 
     verboseMsg "getting console on remote server $engServer"
     getRemoteConsole                       # get the console data from remote eng'g server
   else                                     # target LPAR is local (this LPAR)
-    verboseMsg "on server $thisServer"
     checkUserID                            # first be sure user ID exists and is logged on
     makeTempConsFile                       # make the temporary file for this set of console data 
     getLocalConsole                        # get the console data from this eng'g server
@@ -465,13 +460,13 @@ function spoolConsole
       echo "ERROR: spoolConsole() Temporary console file $tmpConsFile not found" | tee -a $logFile
       exit 1
     else                                   # file exists
-      echo -e "`date +%F-%T`: Console data for $userID at $systemID:" >> $consFile
+      echo -e "`date +%F-%T`: Console data for $tgtUserID at $tgtSysID:" >> $consFile
       cmd="cat $tmpConsFile >> $consFile"  # command to append to complete console file
       verboseMsg "appending remote console with: $cmd"
       eval $cmd                            # run the command
       rc=$?
       if [ "$rc" != 0 ]; then              # issue warning
-        echo "WARNING: $cmd returned $rc"
+        verboseMsg "WARNING: $cmd returned $rc"
       fi
       echo -e "$equals" >> $consFile
       cmd="/bin/rm $tmpConsFile"           # command to remove temporary file
@@ -479,7 +474,7 @@ function spoolConsole
       eval $cmd                            # run the command
       rc=$?
       if [ "$rc" != 0 ]; then              # issue warning
-        echo "WARNING: $cmd returned $rc"
+        verboseMsg "WARNING: $cmd returned $rc"
       fi
     fi
   fi
@@ -496,19 +491,19 @@ function catConsole
 
   local cmd                                # a command
 
-  cmd="/bin/ls -d $consDir/*:$systemID"
+  cmd="/bin/ls -d $consDir/*:$tgtSysID"
   verboseMsg "checking for LPAR directory with: $cmd"
   local LPARdir=`$cmd`                     # run the command
   if [ ${#LPARdir} = 0 ]; then 
-    echo "No console data found for LPAR $systemID"
+    echo "No console data found for LPAR $tgtSysID" | tee -a $logFile
     exit 1                                 # object not found
   fi
-  consFile="$LPARdir/$userID"              # set the console file name
-  verboseMsg "Checking for console file: $consFile"
+  consFile="$LPARdir/$tgtUserID"              # set the console file name
+  verboseMsg "Checking for console file: $consFile" | tee -a $logFile
   if [ -f $consFile ]; then                # there is a console file
     cat $consFile                          # show it
   else
-    echo "No console data found for user ID $userID at $systemID"
+    echo "No console data found for user ID $tgtUserID at $tgtSysID" | tee -a $logFile
     exit 1                                 # object not found
   fi
  }                                         # catConsole()
@@ -523,25 +518,25 @@ function searchConsoles
   : STACK:  ${FUNCNAME[@]}
 
   local systemSearch
-  if [ "$systemID" = '*' ]; then  
+  if [ "$tgtSysID" = '*' ]; then  
     systemSearch="*"  
   else                    
-    systemSearch="*${systemID}*"
+    systemSearch="*${tgtSysID}*"
   fi    
   local userSearch
-  if [ "$userID" = ':' ]; then             # search all user IDs
+  if [ "$tgtUserID" = ':' ]; then             # search all user IDs
     userSearch="*"
   else
-    userSearch="*$userID*"
+    userSearch="*$tgtUserID*"
   fi
   local cmd="grep $grepFlags \"$pattern\" $systemSearch/$userSearch" 
   if [ "$verbose" -ge 1 ]; then            # show grep command unless in silent mode
-    echo "Searching from $consDir with: $cmd" 
+    verboseMsg "Searching from $consDir with: $cmd" 
   fi
   cd $consDir
   eval $cmd                                # run the command
   if [ $? = 1 ]; then                      # pattern not found
-    echo "Pattern '$pattern' not found" 
+    echo "Pattern '$pattern' not found" | tee -a $logFile
     exit 1                                 # object not found
   fi 
  }                                         # searchConsoles()
@@ -562,11 +557,11 @@ function listConsoles
   fi 
   local systemIDs
   if [ ${#systemID} = 0 ]; then            # not specified
-    systemIDs=`/bin/ls $consDir | xargs` # default is all
+    systemIDs=`/bin/ls $consDir | xargs`   # default is all
   else                                     # a system ID was passed in
     systemIDs=`/bin/ls -d $consDir/*:$systemID 2>/dev/null`
     if [ ${#systemIDs} = 0 ]; then         # LPAR not found
-      echo "No console data for LPAR $systemID"
+      echo "No console data for LPAR $systemID" | tee -a $logFile
       exit 1                               # object not found
     else                                   # one LPAR found
       systemIDs="${systemIDs##*/}"         # chop off FQ file name
@@ -622,19 +617,18 @@ function removeConsole
 
   local rc                                 # a return code
 
-  verboseMsg "trying to get engineering server with: getEngServer $systemID"
-  getEngServer $systemID
+  engServer=`getEngServer $tgtSysID`
   if [ $? = 0 ]; then 
-    echo "ERROR: did not find LPAR $systemID in $confFile"
+    echo "ERROR: did not find LPAR $tgtSysID in $confFile"
     exit 1                               # object not found
   fi
   verboseMsg "Checking if $consFile exists"
   if [ ! -f $consFile ]; then              # no console file for this userID/systemID
-    echo "WARNING: No console data found for user ID $userID on LPAR $systemID" 
+    echo "WARNING: No console data found for user ID $tgtUserID on LPAR $tgtSysID" 
     exit 1                                 # object not found
   fi
   if [ "$yes" != 1 ]; then                 # if --yes is not set, ask "Are you sure?"
-    echo -n "Are you sure you remove console data for $userID at $systemID (y/n) "
+    echo -n "Are you sure you remove console data for $tgtUserID at $tgtSysID (y/n) "
     read ans
     if [ "$ans" != "y" ]; then
       exit 4                               # cannot perform operation
@@ -701,9 +695,8 @@ logLevel="info"                            # log level
 numLPARs="0"                               # number of LPARs in input file
 outputType="short"                         # output 'long' or 'short' listing 
 pattern=""                                 # search pattern for grepcons
-systemID=""                                # target z/VM LPAR
 tmpConsFile=""                             # temp file to store latest console data 
-thisServer=`/bin/hostname`                 # host name of this server
+thisServer=`/bin/hostname -f`              # get FQDN of this server
 thisUser=""                                # user running this script
 tgtCEC="none"                              # target CEC 
 userID=""                                  # target z/VM User ID 
@@ -715,6 +708,7 @@ yes=0                                      # --yes flag passed in?
 
 # main()
 source /usr/local/sbin/consfuncs           # import common functions
+readConfFile                               # read /etc/zlma.conf
 parseArgs $@                               # parse arguments
 checkEnv                                   # verify environment
 doTheWork                                  # perform requested function 
