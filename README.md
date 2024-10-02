@@ -29,7 +29,7 @@ Following is a block diagram of zlma:
 
 The script ``instzlma`` is included for easier installation.  There is some preparation before it can be run.
 
-This code has been tested on Debian-based (Ubuntu server 22.04) and RHEL-based (AlmaLinux 9.4) distros.  When there are differences, separate steps are given for each. 
+This code has been tested on Debian-based (Ubuntu server 22.04) and RHEL-based (AlmaLinux 9.4) distros, both zLinux (s390x architecture).  When there are differences, separate steps are given for each. 
 
 ## Set up SSH access
 Key-based authentication, or *Passwordless* SSH access is needed for one user from the zlma server to all systems that will be managed.  ``zlma`` commands must be run by that user and they must have ``sudo`` access.  
@@ -69,14 +69,14 @@ sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
 sudo visudo
 ```
 
-  - For Debian-based, it is usually the ``sudo`` group:
+  - Add the text ``NOPASSWD:``. For Debian-based, it is usually the ``sudo`` group:
     ```
     ...
     %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
     ...
     ```
 
-  - For RHEL-based, it is the usually the ``wheel`` group:
+  - Add the text ``NOPASSWD:``. For RHEL-based, it is the usually the ``wheel`` group:
     ```
     ...
     %wheel  ALL=(ALL)       NOPASSWD: ALL
@@ -91,15 +91,15 @@ To install this ``zlma`` repository, some basic packages are first needed.
 
 - Install git, vim and Apache on RHEL:
 
- - For Debian-based:
-   ```
-   sudo apt install -y git vim apache2
-   ```
+  - For Debian-based:
+    ```
+    sudo apt install -y git vim apache2
+    ```
 
- - For RHEL-based:
-   ```
-   sudo dnf install -y git vim httpd 
-   ```
+  - For RHEL-based:
+    ```
+    sudo dnf install -y git vim httpd 
+    ```
 
 - Clone this repo to your home directory:
 
