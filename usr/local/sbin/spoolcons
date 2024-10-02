@@ -346,16 +346,6 @@ function getLocalConsole
       return 4                             # cannot perform operation
     fi
   fi
-  if [ ${#fromServer} != 0 ]; then         # this spoolcons is being called remotely
-    cmd="/usr/bin/scp -q $tmpConsFile $fromServer:$tmpConsFile" # copy temp console file back to calling server
-    verboseMsg "Copying temp console file back to calling server with: $cmd"
-    eval $cmd                              # copy remote console data back to calling server
-    rc=$?
-    if [ "$rc" != 0 ]; then                # issue warning
-      echo "WARNING: $cmd returned $rc"
-      return $rc                           # all done
-    fi
-  fi
  }                                         # getLocalConsole()
 
 #+--------------------------------------------------------------------------+
@@ -370,7 +360,6 @@ function makeTempConsFile
   local cmd                                # a command
   local rc                                 # a return code
  
-  verboseMsg "making temporary console file $tmpConsFile"
   if [ -f $tmpConsFile ]; then             # an old file exists
     cmd="sudo /bin/rm $tmpConsFile"
     verboseMsg "removing old temporary console file with: $cmd"
@@ -381,6 +370,7 @@ function makeTempConsFile
       exit 4                               # cannot perform operation
     fi
   fi
+  verboseMsg "making temporary console file $tmpConsFile"
   cmd="sudo /bin/touch $tmpConsFile"       # command to create the file
   eval $cmd                                # run the command
   rc=$?
