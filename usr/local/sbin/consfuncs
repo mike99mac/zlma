@@ -45,7 +45,15 @@ function readConfFile
   fi
   local confFileData=`cat $confFile`
   lpars=`echo "$confFileData" | jq -r '.eng_srvrs[].lpar' | xargs`        # read engineering servers with jq
+  if [ ${#lpars} = 0 ]; then
+    regMsg "ERROR: did not find .lpar values in $confFile"
+    exit 1
+  fi
   engSrvrs=`echo "$confFileData" | jq -r '.eng_srvrs[].eng_srvr' | xargs` # read LPARs with jq
+  if [ ${#engSrvrs} = 0 ]; then
+    regMsg "ERROR: did not find .eng_srvrs values in $confFile"
+    exit 1
+  fi
   lpars=($lpars)                           # convert to array
   engSrvrs=($engSrvrs)                     # convert to array
   numLPARs="${#lpars[@]}"
@@ -113,11 +121,11 @@ function getEngServer
   fi
 
   # Assign LPARs and engineering servers to arrays
-  lpars=`jq -r '.eng_srvrs[].lpar' $confFile | xargs`         # read engineering servers with jq
-  eng_srvrs=`jq -r '.eng_srvrs[].eng_srvr' $confFile | xargs` # read LPARs with jq
-  lpars=($lpars)                           # convert to array
-  eng_srvrs=($eng_srvrs)                   # convert to array
-  numLPARs="${#lpars[@]}"
+  #lpars=`jq -r '.eng_srvrs[].lpar' $confFile | xargs`         # read engineering servers with jq
+  #eng_srvrs=`jq -r '.eng_srvrs[].eng_srvr' $confFile | xargs` # read LPARs with jq
+  #lpars=($lpars)                           # convert to array
+  #eng_srvrs=($eng_srvrs)                   # convert to array
+  #numLPARs="${#lpars[@]}"
   local endIndex
   let endIndex=$numLPARs-1
   local i
@@ -143,9 +151,10 @@ function getPrivClass
 
 #+--------------------------------------------------------------------------+
 # global variables
-eng_srvrs=""
-lpars=""
-numLPARs=""
+confFile="/etc/zlma.conf"                  # zlma configuration file
+eng_srvrs=""                               # array of engineering servers
+lpars=""                                   # array of LPARs
+numLPARs=""                                # number of LPARs
 privClass=""                               # user's z/VM privilige class
 sshCmd="/usr/bin/ssh -q"                   # command to SSH to other nodes
 
