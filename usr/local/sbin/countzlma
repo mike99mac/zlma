@@ -4,13 +4,16 @@
 # 
 SBN="/usr/local/sbin"
 ZRW="/srv/www/zlmarw"
-python="/srv/www/zlma/finder.py /srv/www/zlma/restapi.py $SBNlocal/sbin/zlma $SBN/zlma_conf.py $SBN/vif"
+python="/srv/www/zlma/finder.py /srv/www/zlma/restapi.py $SBN/zlma $SBN/zlma_conf.py $SBN/vif"
 javascript="/srv/www/zlma/bootstable.js"
-bash="$HOME/zlmainfo $SBN/testrestapi $SBN/testvif $SBN/sbin/spoolcons $SBN/sbin/cpcommand $SBN/consfuncs $ZRW/one* $ZRW/consolez $ZRW/searchcons $ZRW/cpcmds $ZRW/consuifuncs"
+bash="$HOME/zlmainfo $SBN/testrestapi $SBN/testvif $SBN/spoolcons $SBN/cpcommand $SBN/consfuncs $ZRW/one* $ZRW/consolez $ZRW/searchcons $ZRW/cpcmds $ZRW/consuifuncs"
 css="/srv/www/zlma/finder.css $ZRW/consolez.css" 
  
 echo
 echo "Lines of code in zlma:"
+echo
+echo "Bash:"
+wc -l $bash
 echo
 echo "Python:"
 wc -l $python
@@ -18,11 +21,7 @@ echo
 echo "Javascript:"
 wc -l $javascript
 echo
-echo "Bash:"
-wc -l $bash
-echo
 echo "CSS:"
 wc -l $css
 echo
-total=`wc -l $python $javascript $bash $css | tail -1`
-echo "$total"
+wc -l $python $javascript $bash $css | tail -1 | sed 's/^  //g'
