@@ -266,12 +266,12 @@ Following is the ``zlma.conf`` file copied to ``/etc``. Set the database root pa
   "db_pw":     "your_pw",
   "db_host":   "127.0.0.1",
   "db_name":   "zlma",
-  "eng_srvrs": [
-    {"lpar": "LPAR1", "eng_srvr": "zlnx1"},
-    {"lpar": "LPAR2", "eng_srvr": "zlnx2"}
-  ],
   "home_dir":  "/home/your_user",
-  "log_level": "debug"
+  "log_level": "debug",
+  "zlma_srvrs": [
+    {"lpar": "LPAR1", "zlma_srvr": "zlnx1.domainname.com"},
+    {"lpar": "LPAR2", "zlma_srvr": "zlnx2.domainname.com"}
+  ]
 }
 ```
 
@@ -284,12 +284,12 @@ The values are as follow
   - Where mariadb is running, usually locally 
 - db_name
   - The mariad database where the data is stored
-- eng_servers
-  - List of LPAR name/engineering servers' host name pairs
 - home_dir
   - The home directory where the ``zlmainfo`` script will be stored and run from
 - log_level
   - Log file verbosity: error (lowest verbosity), warning, info, debug (highest verbosity)
+- zlma_srvrs
+  - List of LPAR/zlma server pairs - one zlma server per LPAR is required
 
 #
 # zlma configuration file
