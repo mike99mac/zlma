@@ -4,15 +4,17 @@
 #
 #+--------------------------------------------------------------------------+
 function regMsg
-# write a message to stdout and log file
+# write a regular message to stdout and log file unless in silent mode
 # Args: the message 
 #+--------------------------------------------------------------------------+
  {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  local timeStamp=`date +"%Y-%m-%d %H:%M:%S,%3N"`
-  echo -e "$timeStamp ${0##*/}/${FUNCNAME[1]}()/$USER: $@" | tee -a $logFile
+  if [ "$verbose" -gt 0 ]; then            # not in silent mode
+    local timeStamp=`date +"%Y-%m-%d %H:%M:%S,%3N"`
+    echo -e "$timeStamp ${0##*/}/${FUNCNAME[1]}()/$USER: $@" | tee -a $logFile
+  fi
  }                                         # verboseMsg()
 
 #+--------------------------------------------------------------------------+
@@ -57,9 +59,8 @@ function readConfFile
   lpars=($lpars)                           # convert to array
   zlmaSrvrs=($zlmaSrvrs)                   # convert to array
   numLPARs="${#lpars[@]}"
-  logLevel=`echo "$confFileData" | grep log_level | awk '{print $2}'`
-  if [ "$logLevel" = '"debug"' ]; then     # in debug mode
-    verboseMsg "logLevel = debug: increasing verbosity"
+  logLevel=`echo "$confFileData" | grep log_level | awk -F'"' '{print $4}'`
+  if [ "$logLevel" = debug ]; then         # in debug mode
     verbose=2                              # increase verbosity
   fi
   local sysinfo=`cat /proc/sysinfo`        # get sysinfo in memory
