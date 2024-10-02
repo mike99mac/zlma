@@ -1,0 +1,6 @@
+#!/bin/bash
+#
+#  qprivclas - do a CP QUERY PRIVCLAS
+#
+sudo vmcp Q PRIVCLAS | grep Currently: | awk '{print $2}'
+
