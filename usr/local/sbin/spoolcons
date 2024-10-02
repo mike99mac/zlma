@@ -222,7 +222,9 @@ function makeConsoleFile
 
 #+--------------------------------------------------------------------------+
 function getRemoteConsole
-# Get console data from a different z/VM LPAR 
+# Get console data from a different z/VM LPAR by:
+# 1. Calling spoolcons on the remote zlma server
+# 2. Copying the temp spool file back
 # Args: none
 #+--------------------------------------------------------------------------+
  {
@@ -230,25 +232,30 @@ function getRemoteConsole
   : STACK:  ${FUNCNAME[@]}
 
   verboseMsg "remote server: $tgtServer  local server: $thisServer"
-# cmd="$sshCmd $tgtServer /usr/local/sbin/spoolcons $flags -F $thisServer $tmpConsFile $tgtUserID"
   cmd="$sshCmd $tgtServer /usr/local/sbin/spoolcons $flags -F $thisServer $tgtUserID"
-  verboseMsg "calling remote server: $cmd"
-  $cmd                                     # run this command on the remote server
+  verboseMsg "calling remote server with cmd: $cmd"
+  $cmd                                     # run on remote server
   rc=$?
   if [ "$rc" != 0 ]; then                  # issue warning
-    echo "WARNING: $cmd returned $rc"
+    regMsg "ERROR: $cmd returned $rc"
     return $rc                             # all done
-  else                                     # success - wait for temp file to show up
-    for i in .2 .3 .5 1 2 3 5; do          # wait for remote console file to be copied back
-      if [ -f $tmpConsFile ]; then         # remote console file exists
-        verboseMsg "found remote console file $tmpConsFile" 
-        break                              # out of for loop
-      else                                 # remote file has not shown up yet
-        verboseMsg "waiting $i seconds for remote console file $tmpConsFile"
-        sleep $i                           # wait a bit longer
-      fi
-    done
   fi
+  sleep 1                                  # allow time for SPOOL
+  cmd="/usr/bin/scp -q $tgtServer:$tmpConsFile $tmpConsFile" # copy temp console file back to calling server
+  verboseMsg "Copying temp console file back to calling server with: $cmd"
+  local i
+  for i in .2 .3 .5 1 2 3 5; do            # wait for remote console file to be copied back
+    eval $cmd                              # copy remote console data back to calling server
+    rc=$?
+    if [ -f $tmpConsFile ]; then           # remote console file exists
+      verboseMsg "found remote console file $tmpConsFile" 
+      cmd="cp $tmpConsFile $consDir/$tgtSysID/$tgtUserID"
+      eval $cmd
+      break                                # out of for loop
+    fi
+    verboseMsg "scp rc: $rc - trying again in $i seconds"
+    sleep $i                               # wait a bit longer
+  done
  }                                         # getRemoteConsole
 
 #+--------------------------------------------------------------------------+
