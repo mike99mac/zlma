@@ -122,6 +122,8 @@ id
 uid=1000(mikemac) gid=1000(mikemac) groups=1000(mikemac),10(wheel),48(apache)
 ```
 
+This shows that the group ``apache`` has been added to the user ``mikemac``.
+
 ## Upgrade Python
 Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. In this example, AlmaLinux 9.4 ships with a base Python version of 3.9 which is not sufficient.
 
