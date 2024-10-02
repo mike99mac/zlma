@@ -29,6 +29,8 @@ Following is a block diagram of zlma:
 
 The script ``instzlma`` is included for easier installation.  There is some preparation before it can be run.
 
+This code has been tested on Debian-based (Ubuntu server 22.04) and RHEL-based (AlmaLinux 9.4) distros.  When there are differences, separate steps are given for each. 
+
 ## Set up SSH access
 Key-based authentication, or *Passwordless* SSH access is needed for one user from the zlma server to all systems that will be managed.  ``zlma`` commands must be run by that user and they must have ``sudo`` access.  
 
@@ -37,7 +39,7 @@ Details on it are outside the scope of this document, howerver, there is a scrip
 Once SSH access is set up, the solution can be installed. 
 
 ## Update your system
-To update your system, perform the following steps:
+If this is a fresh install, it is best to update your system. To do so, perform the following steps:
 
 - Login as a non-root user with sudo privileges. 
 
@@ -67,28 +69,22 @@ sudo update-alternatives --install /usr/bin/editor editor /usr/bin/vim 100
 sudo visudo
 ```
 
-   - For Debian-based, it is usually the ``sudo`` group:
+  - For Debian-based, it is usually the ``sudo`` group:
+    ```
+    ...
+    %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
+    ...
+    ```
 
-   ```
-   ...
-   %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
-   ...
-   ```
-
-   - For RHEL-based, it is the usually the ``wheel`` group:
-
-   ```
-   ...
-   %wheel  ALL=(ALL)       NOPASSWD: ALL
-   ...
-   ```
+  - For RHEL-based, it is the usually the ``wheel`` group:
+    ```
+    ...
+    %wheel  ALL=(ALL)       NOPASSWD: ALL
+    ...
+    ```
 
 # Automated Installation
-These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
-
-This code has been tested on Debian-based (Ubuntu server 22.04) and RHEL-based (AlmaLinux 9.4) distros.  When there are differences, separate steps are given for each. 
-
-To install zlma, perform the following steps.
+To install zlma using the ``instzlma`` script, perform the following steps.
 
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
@@ -96,13 +92,11 @@ To install this ``zlma`` repository, some basic packages are first needed.
 - Install git, vim and Apache on RHEL:
 
  - For Debian-based:
-
    ```
    sudo apt install -y git vim apache2
    ```
 
  - For RHEL-based:
-
    ```
    sudo dnf install -y git vim httpd 
    ```
@@ -113,7 +107,8 @@ To install this ``zlma`` repository, some basic packages are first needed.
 git clone https://github.com/mike99mac/zlma
 ```
 
-- Add the group which will be running apache to that user.  In this exmple the user is ``youruser`` and the group is ``apache``, which is common for Red Hat-based distros. For Debian, the group ``www-data`` is common.
+## Update the main user 
+- Add the group which will be running apache to the main non-root user. The group ``apache`` is used on Red Hat-based distros, and for Debian, the group ``www-data`` is used.
 
 ```
 sudo usermod -aG <apache|www-data> <your-user>
@@ -128,8 +123,7 @@ uid=1000(mikemac) gid=1000(mikemac) groups=1000(mikemac),10(wheel),48(apache)
 ```
 
 ## Upgrade Python
-
-This step is optional.  
+Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. In this example, AlmaLinux 9.4 ships with a base Python version of 3.9 which is not sufficient.
 
 - First, determine the Python version of your system: 
 
@@ -138,7 +132,6 @@ python -V
 Python 3.9.18
 ```
 
-Python must be at level 3.10 or greater because zlma code uses ``match/case`` statements which are not supported in Python 3.9 or earlier. In this example, AlmaLinux 9.4 ships with a base Python version of 3.9 which is not sufficient.
 
 To install Python 3.11 on a RHEL based distro, perform the following steps.
 
