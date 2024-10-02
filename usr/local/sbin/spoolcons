@@ -86,8 +86,6 @@ function parseArgs
       -F)                                  # "From server" - undocumented
         shift
         fromServer=$1                      # engineering server being called from
-#       shift
-#       tmpConsFile=$1                     # where to copy temp console file to 
         verboseMsg "on server $thisServer fromServer = $fromServer" 
         ;;
       -h|--help)
@@ -155,10 +153,10 @@ function parseArgs
     esac
     shift
   done
-  if [ "$cmdCalled" != lscons -a ${#tgtUserID} = 0 ]; then # user ID not specified 
+  if [ "$cmdCalled" = spoolcons -a ${#tgtUserID} = 0 ]; then # user ID not specified 
     tgtUserID=$thisUserID                # assume 'self' 
   fi
-  if [ "$cmdCalled" != lscons -a ${#tgtSysID} = 0 ]; then # system ID not specified 
+  if [ "$cmdCalled" = spoolcons -a ${#tgtSysID} = 0 ]; then # system ID not specified 
     tgtSysID=$thisSysID                  # assume 'self' 
   fi
   if [ "$cmdCalled" = grepcons -a ${#pattern} = 0 ]; then # no search pattern supplied
@@ -461,30 +459,37 @@ function spoolConsole
 
 #+--------------------------------------------------------------------------+
 function catConsole
-# Print a console file for specified user ID 
+# Print console file(s) for specified user ID 
 # Args: none
 #+--------------------------------------------------------------------------+
  {
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  local cmd                                # a command
-
-  cmd="/bin/ls -d $consDir/*:$tgtSysID"
-  verboseMsg "checking for LPAR directory with: $cmd"
-  local LPARdir=`$cmd`                     # run the command
-  if [ ${#LPARdir} = 0 ]; then 
-    echo "No console data found for LPAR $tgtSysID" | tee -a $logFile
-    exit 1                                 # object not found
+  local cmd
+  local files
+  if [ ${#tgtSysID} = 0 ]; then            # no LPAR specified
+    cmd="/bin/ls $consDir/*/$tgtUserID 2>/dev/null"
+  else                                     # an LPAR was specified
+    cmd="/bin/ls $consDir/$tgtSysID/$tgtUserID 2>/dev/null"
   fi
-  consFile="$LPARdir/$tgtUserID"              # set the console file name
-  verboseMsg "Checking for console file: $consFile" | tee -a $logFile
-  if [ -f $consFile ]; then                # there is a console file
-    cat $consFile                          # show it
-  else
-    echo "No console data found for user ID $tgtUserID at $tgtSysID" | tee -a $logFile
-    exit 1                                 # object not found
+  verboseMsg "checking for consoles with cmd: $cmd"
+  files=`eval $cmd`
+  if [ ${#files} = 0 ]; then               # no consoles found
+    if [ ${#tgtSysID} = 0 ]; then
+      echo "No conosoles found for user ID $tgtUserID"
+    else
+      echo "No conosoles found for LPAR: $tgtSysID user ID: $tgtUserID"
+    fi
+    return 1
   fi
+  local nextFile
+  for nextFile in "$files"; do
+    echo "Console file: $nextFile:"
+    echo
+    cat $nextFile                          # show contents
+    echo
+  done 
  }                                         # catConsole()
 
 #+--------------------------------------------------------------------------+
@@ -529,7 +534,6 @@ function listConsoles
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  local foundOne=no
   if [ ! -d $consDir ]; then           # base directory does not exist
     verboseMsg "Base directory $consDir not found"
     exit 1                                 # object not found
@@ -546,19 +550,21 @@ function listConsoles
       systemIDs="${systemIDs##*/}"         # chop off FQ file name
     fi
   fi
+  local foundOne=no
   local userIDs
   local nextSystemID
   for nextSystemID in $systemIDs; do       # loop through all LPARs
-    verboseMsg "Listing consoles for System ID : $nextSystemID"
+    echo "Consoles for LPAR: $nextSystemID"
     cd $consDir/$nextSystemID
     if [ "$outputType" = short ]; then 
       userIDs=`/bin/ls | xargs`  
-      echo "$nextSystemID $userIDs"        # short output
+      echo "$userIDs"        # short output
     else                                   # assume long
-      echo "$nextSystemID:"
+      # echo "$nextSystemID:"
       /bin/ls -lth
     fi
     foundOne=yes
+    echo
   done 
   if [ "$foundOne" = no ]; then 
     verboseMsg "Did not find any consoles in $consDir"
