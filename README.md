@@ -14,6 +14,7 @@ It consists of four main components:
 - Linux line commands
   - ``zlma`` - manage DB of zLinux data 
   - ``vif`` - manage many aspects of z/VM
+  - console related commands such as ``spoolcons`` and ``lscons`` 
 - A RESTful API 
   - So other apps can get to the data
 
@@ -74,7 +75,7 @@ sudo visudo
    ...
    ```
 
-    - For RHEL-based, it is the usually the ``wheel`` group:
+   - For RHEL-based, it is the usually the ``wheel`` group:
 
    ```
    ...
@@ -85,34 +86,12 @@ sudo visudo
 # Automated Installation
 These steps set up a virtual environment under ``/srv/venv``. The python files reference this directory. 
 
-This code has been tested on Debian-based (Ubuntu server 22.04) and RHEL-based (AlmaLinux 9.4) Linux's.  When there are differences, separate steps are given for each variant.
+This code has been tested on Debian-based (Ubuntu server 22.04) and RHEL-based (AlmaLinux 9.4) distros.  When there are differences, separate steps are given for each. 
 
 To install zlma, perform the following steps.
 
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
-
-- Allow members of a certain group to be able to run **``sudo``** commands without a password, by adding **``NOPASSWD:``** to the line near the bottom of the file.
-
-- Edit the sudoers file:
- 
-```
-sudo visudo
-```
-
-  - For Debian-based, it is the ``sudo`` group:
-    ```
-    ...
-    %sudo   ALL=(ALL:ALL) NOPASSWD: ALL
-    ...
-    ```
-
-  - For RHEL-based, it is the ``wheel`` group:
-    ```
-    ...
-    %wheel  ALL=(ALL)       NOPASSWD: ALL
-    ...
-    ```
 
 - Install git, vim and Apache on RHEL:
 
