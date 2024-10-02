@@ -490,7 +490,7 @@ function mkCustom
     cd /usr/share/vim/vim9*/colors
     if [ -f desert.vim -a ! -f desert.vim.orig ]; then      # replace desert.vim with strange colors
       runCmd sudo cp desert.vim desert.vim.orig
-      runCmd sudo cp $HOME/zlma/desert.vim ./desert.vim 
+      runCmd sudo cp $HOME/zlma/desert.vim . 
     fi
   fi	    
   runCmd sudo cp $HOME/zlma/zlma.conf /etc/                       
