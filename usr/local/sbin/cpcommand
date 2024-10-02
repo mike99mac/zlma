@@ -121,20 +121,19 @@ function sendCPcommand
   : STACK:  ${FUNCNAME[@]}
 
   local cmd                                # a command
-  local engServer 
+  local tgtServer 
   local rc                                 # a return code
 
   if [ ${#tgtSysID} = 0 ]; then            # target LPAR not specified
     cmd="sudo vmcp $cpCmd"                 # run locally
   else
     verboseMsg "trying to get engineering server with: getEngServer $tgtSysID"
-    local engServer
-    engServer=`getEngServer $tgtSysID`
+    tgtServer=`getEngServer $tgtSysID`
     if [ $? != 0 ]; then 
       echo "ERROR: did not find LPAR $tgtSysID in $confFile" | tee -a $logFile
       exit 1                               # object not found
     fi
-    cmd="$sshCmd $engServer sudo vmcp $cpCmd" # run remotely
+    cmd="$sshCmd $tgtServer sudo vmcp $cpCmd" # run remotely
   fi
   verboseMsg "Executing CP command: $cmd"
   eval $cmd                                # run command locally or remotely
