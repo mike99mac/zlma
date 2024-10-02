@@ -95,13 +95,13 @@ To install this ``zlma`` repository, some basic packages are first needed.
 
 - Install git, vim and Apache on RHEL:
 
-   - For Debian-based:
+ - For Debian-based:
 
    ```
    sudo apt install -y git vim apache2
    ```
 
-   - For RHEL-based:
+ - For RHEL-based:
 
    ```
    sudo dnf install -y git vim httpd 
@@ -110,14 +110,13 @@ To install this ``zlma`` repository, some basic packages are first needed.
 - Clone this repo to your home directory:
 
 ```
-cd;
 git clone https://github.com/mike99mac/zlma
 ```
 
 - Add the group which will be running apache to that user.  In this exmple the user is ``youruser`` and the group is ``apache``, which is common for Red Hat-based distros. For Debian, the group ``www-data`` is common.
 
 ```
-sudo usermod -aG <apache|www-data> <youruser>
+sudo usermod -aG <apache|www-data> <your-user>
 ```
 
 - Use the ``su -`` command to start a new shell which will reflect the group added. In this example, the user is ``mikemac`` and the new group is ``apache``.
