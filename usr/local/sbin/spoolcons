@@ -86,9 +86,9 @@ function parseArgs
       -F)                                  # "From server" - undocumented
         shift
         fromServer=$1                      # engineering server being called from
-        shift
-        tmpConsFile=$1                     # where to copy temp console file to 
-        verboseMsg "on $thisServer: set fromServer to $fromServer and tmpConsFile to $tmpConsFile"
+#       shift
+#       tmpConsFile=$1                     # where to copy temp console file to 
+        verboseMsg "on server $thisServer fromServer = $fromServer" 
         ;;
       -h|--help)
         usage
@@ -232,7 +232,8 @@ function getRemoteConsole
   : STACK:  ${FUNCNAME[@]}
 
   verboseMsg "remote server: $tgtServer  local server: $thisServer"
-  cmd="$sshCmd $tgtServer /usr/local/sbin/spoolcons $flags -F $thisServer $tmpConsFile $tgtUserID"
+# cmd="$sshCmd $tgtServer /usr/local/sbin/spoolcons $flags -F $thisServer $tmpConsFile $tgtUserID"
+  cmd="$sshCmd $tgtServer /usr/local/sbin/spoolcons $flags -F $thisServer $tgtUserID"
   verboseMsg "calling remote server: $cmd"
   $cmd                                     # run this command on the remote server
   rc=$?
@@ -363,7 +364,6 @@ function makeTempConsFile
 
   local cmd                                # a command
   local rc                                 # a return code
-  tmpConsFile="$HOME/temp-console-file"
  
   verboseMsg "making temporary console file $tmpConsFile"
   if [ -f $tmpConsFile ]; then             # an old file exists
@@ -376,7 +376,7 @@ function makeTempConsFile
       exit 4                               # cannot perform operation
     fi
   fi
-  cmd="sudo /bin/touch $tmpConsFile"      # command to create the file
+  cmd="sudo /bin/touch $tmpConsFile"       # command to create the file
   eval $cmd                                # run the command
   rc=$?
   if [ "$rc" != 0 ]; then                  # error
@@ -657,7 +657,7 @@ sshCmd="/usr/bin/ssh -q"                   # command to SSH to other nodes
 tgtServer=""                               # target zlma server
 tgtSysID=""                                # target LPAR
 tgtUserID=""                               # target user ID 
-tmpConsFile=""                             # temp file to store latest console data 
+tmpConsFile="$HOME/tmp-cons-file"          # temp file to store latest console data 
 thisServer=`/bin/hostname -f`              # get FQDN of this server
 thisUser=""                                # user running this script
 tgtCEC="none"                              # target CEC 
