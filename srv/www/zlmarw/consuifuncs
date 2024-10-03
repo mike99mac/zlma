@@ -1,10 +1,5 @@
 #!/bin/bash
 #
-# This code is shipped under the Artistic License 2.0. See the file
-# Artistic-License-2.0.txt or http://opensource.org/licenses/Artistic-2.0
-#
-#+--------------------------------------------------------------------------+
-#
 # consuifuncs - functions common to consolez Web UI interface  
 #
 #---------------------------------------------------------------------------
@@ -82,7 +77,7 @@ function drawButtons
 
   # add a 'Home' to all pages except consolez 
   if [ "$cmdCalled" != consolez ]; then    # add the button
-    echo "<td><form action='/ldap/consolez' accept-charset=utf-8>"
+    echo "<td><form action='/zlmarw/consolez' accept-charset=utf-8>"
     echo "<button class=button $yellowStyle>Home</button>"
     echo "</form></td>"                    # end form, cell
   fi
@@ -96,14 +91,14 @@ function drawButtons
   fi
  
   # add a 'CP commands' button to all pages but consolez
-  echo "<td><form action=\"/ldap/cpcmds\" accept-charset=utf-8>"
+  echo "<td><form action=\"/zlmarw/cpcmds\" accept-charset=utf-8>"
   echo "<button class=button $greenStyle>CP commands</button>"
   # echo "<input type=hidden name=systemID value=\"$systemID\">"
   echo "</form></td>"                    # end form and cell
 
   # add a 'Search' button
   if [ "$cmdCalled" != searchcons ]; then  # add the button
-    echo "<td><form action=\"/ldap/searchcons\" accept-charset=utf-8>"
+    echo "<td><form action=\"/zlmarw/searchcons\" accept-charset=utf-8>"
     echo "<button class=button $greenStyle>Search</button>"
     echo "</form></td>"                    # end form and cell
   fi
@@ -140,21 +135,9 @@ function uudecode
   : "${*//+/ }"; echo -e "${_//%/\\x}";    # have no idea HOW this works just THAT it does
  }                                         # uudecode()
 
-#+--------------------------------------------------------------------------+
-function setWebUIvars
-# If the file /etc/consolez-webui.conf exists, these values override defaults 
-# Args: none
-#+--------------------------------------------------------------------------+
- {
-  local uiConfFile="/etc/consolez-webui.conf"
-  if [ -f $uiConfFile ]; then              # file exists
-    source $uiConfFile                     # override defaults
-  fi
- }                                         # setWebUIvars()
-
 #---------------------------------------------------------------------------
-function setRole
-# get the uid and gid of the logged in user and determine their role 
+function checkUser
+# Check that REMOTE_USER is set 
 # Args: none
 #---------------------------------------------------------------------------
  {
@@ -167,45 +150,7 @@ function setRole
     echo "</td></tr></table>"              # end cell, row and table
     exit 3                                 # internal server error
   fi
-  if [ "$adminGID" = 0 ]; then             # all users are full admins
-    role="admin"
-    return                                 # all done
-  fi
-
-  # determine user's role based on their GID
-  local idOut=`id $REMOTE_USER`
-  local groups=`echo $idOut | awk -F'gid=' '{print $2}'`
-  if [ ${#groups} = 0 ]; then
-    startPage ERROR
-    startTable
-    startRow "#FF6666"                     # draw row in light red
-    echo "<td><h2>Sorry!</h2><p>You are not authorized to use $cmdCalled</h2>"
-    echo "Unexpected, no groups found in $idOut"
-    echo "<p>REMOTE_USER = $REMOTE_USER idOut = $idOut </p>"
-    echo "</td></tr></table>"              # end cell, row and table
-    exit 2                                 # not authorized
-  fi
-  echo "$groups" | grep $adminGID >/dev/null
-  if [ $? = 0 ]; then
-    role="admin" 
-  else
-    echo "$groups" | grep $netadminGID >/dev/null
-    if [ $? = 0 ]; then
-      role="netadmin"
-    else
-      startPage ERROR
-      startTable
-      startRow "#FF6666"                     # draw row in light red
-      echo "<td><h2>Sorry!</h2><p>You are not authorized to use $cmdCalled</h2>"
-      echo "<p>REMOTE_USER = $REMOTE_USER idOut = $idOut gid = $gid</p>"
-      echo "</td></tr></table>"              # end cell, row and table
-      exit 2                                 # not authorized 
-    fi
-  fi
-
-  # get the user Apache is running as
-#  USER=`ps -ef|egrep '(httpd|apache2|apache)'|grep -v root|head -n1|awk '{print $1}'`
- }                                         # setRole()
+ }                                         # checkUser()
 
 #+--------------------------------------------------------------------------+
 function addScrollButton
@@ -280,7 +225,7 @@ function drawSearchBar
     return                                 # all done
   fi
   echo '<table class="consolezTable">'
-  echo "<tr><form method=GET action=/ldap/searchforcons accept-charset=utf-8>"
+  echo "<tr><form method=GET action=/zlmarw/searchforcons accept-charset=utf-8>"
   echo "<td><b>Search for z/VM consoles by host name or user ID:</b></td>" # what to search for
   echo "<td><input type=text id=searchString name=searchString></td>"
   echo "</form>"                           # end form
@@ -291,14 +236,8 @@ function drawSearchBar
 # global variables
 cmdCalled=`basename $0`                    # get the name of the script called
 color1="#DAEAFF"                           # first background color 
-headerColor="#fff2e6"                      # color of env divider rows - a muted orange
-role="none"                                # user's role - 'admin' or 'netadmin'
-
-# any of the following values can be overridden by creating the file /etc/consolez-webui.conf
+headerColor="#fff2e6"                      # color of divider rows - a muted orange
 adminGID=0                                 # GID of full administrators (0 = all users are admins)
-netadminGID=0                              # GID of network administrators
-# user IDs network admins can see:
-netadminIDs="DTCVSW1 DTCVSW2 DTCVSW3 DTCVSW4 FTPSERVE SSL00001 SSL00002 SSL00003 SSL00004 SSL00005 TCPIP TCPMAINT" 
 numCols=14                                 # number of columns in main tables
 webIcon="consolez.ico"                     # browser tab icon in /srv/www/htdocs
 

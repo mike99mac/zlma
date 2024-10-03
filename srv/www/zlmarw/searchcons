@@ -1,10 +1,5 @@
 #!/bin/bash
 #
-# This code is shipped under the Artistic License 2.0. See the file
-# Artistic-License-2.0.txt or http://opensource.org/licenses/Artistic-2.0
-#
-#+--------------------------------------------------------------------------+
-#
 # searchcons - Draw a page that enables the searching of saved console data
 #              on the Linux side 
 #
@@ -35,7 +30,7 @@ function drawClearButton
  {
   echo "<tr>" 
   echo "<td style=\"text-align:center\"; colspan=\"3\">"
-  echo '<form method=GET action="/ldap/searchcons" accept-charset=utf-8>'
+  echo '<form method=GET action="/zlmarw/searchcons" accept-charset=utf-8>'
   echo "<input class=button type=submit style=\"background-color:$color1\"; value=\"Clear filters\">&nbsp;"
   if [ ${#userIDflt} != 0 ]; then
     echo "<input type=hidden name=hostFlt value=\"\">"
@@ -89,7 +84,7 @@ function drawMainTable
   drawClearButton                          # draw a button to clear filters
 
   # row 2 - start the form to run searchcons again with filters
-  echo "<tr><form method=GET action=/ldap/searchcons accept-charset=utf-8>"
+  echo "<tr><form method=GET action=/zlmarw/searchcons accept-charset=utf-8>"
   echo "<td>User ID</td>"
   echo "<td><input type=text id=userIDflt name=userIDflt value=\"$userIDflt\"></td>"
   echo "<td></td>"                         # empty cell
@@ -164,8 +159,7 @@ title="Search saved z/VM console data"     # page title
 # main()
 source /usr/local/sbin/consfuncs           # import common line command functions
 source consuifuncs                         # import common Web UI functions
-setWebUIvars                               # override defaults with user's preferences
-setRole                                    # set user's role based on login credentials
+checkUser  
 getArgs                                    # get arguments passed in
 drawMainTable                              # show table with all user IDs that have data 
 drawButtons                                # add custom navigation buttons

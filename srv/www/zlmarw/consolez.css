@@ -20,7 +20,6 @@ font-family: arial;
 .wrapper {
   text-align: center;
 }
-
 .button {
   border:solid #1323a7 1px;
   border-radius: 6px;
@@ -60,5 +59,4 @@ form {
 .consolezTable tr:hover { /* Define the hover highlight color for the table row */
   background-color: #CCBBDD;
   }
-  
 </style>
