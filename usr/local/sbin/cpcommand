@@ -86,10 +86,8 @@ echo "tgtSysID = $tgtSysID"
     echo "ERROR: CP-COMMAND not specified"
     usage
   fi
-  echo "verbose = $verbose"
   readConfFile
-  echo "AFTER: verbose = $verbose"
-  echo "cpCmd = $cpCmd logLevel = $logLevel"
+  verboseMsg "cpCmd = $cpCmd logLevel = $logLevel"
  }                                         # parseArgs()
 
 #+--------------------------------------------------------------------------+

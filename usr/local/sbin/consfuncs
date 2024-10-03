@@ -46,7 +46,7 @@ function readConfFile
     exit 1
   fi
   local confFileData=`cat $confFile`
-  lpars=`echo "$confFileData" | jq -r '.zlma_srvrs[].lpar' | xargs`        # read engineering servers with jq
+  lpars=`echo "$confFileData" | jq -r '.zlma_srvrs[].lpar' | xargs` # read engineering servers with jq
   if [ ${#lpars} = 0 ]; then
     regMsg "ERROR: did not find .lpar values in $confFile"
     exit 1

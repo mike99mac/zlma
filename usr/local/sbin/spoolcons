@@ -481,9 +481,10 @@ function catConsole
     return 1
   fi
   local nextFile
-  for nextFile in "$files"; do
+  for nextFile in $files; do
+    echo $dashes 
     echo "Console file: $nextFile:"
-    echo
+    echo $dashes
     cat $nextFile                          # show contents
     echo
   done 
@@ -643,7 +644,8 @@ cmdCalled=`basename $0`                    # get the name of the script called
 confFile="/etc/zlma.conf"                  # configuration file 
 consFile=""                                # file with all console data of target userID
 consDir="/srv/consolez"                    # default data directory
-equals="================================================================================" # a divider
+dashes="--------------------------------------------------------------------------------" # a divider
+equals="================================================================================" # a different divider
 flags=""                                   # flags to pass on to remote calls
 fromServer=""                              # if called from another engineering server
 grepFlags="-H -n"                          # always include file name and line numbers, optional -i flag
