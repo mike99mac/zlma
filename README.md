@@ -83,9 +83,6 @@ sudo visudo
     ...
     ```
 
-# Automated Installation
-To install zlma using the ``instzlma`` script, perform the following steps.
-
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
 
@@ -154,6 +151,9 @@ Python 3.11.7
 
 If you need to use Python 3.11, it will be specified later.
 
+
+# Automated Installation
+To install zlma, perform the following sections. 
 
 ## Run the install script
 The script ``instzlma`` is provided to save you time and improve reliability. 
