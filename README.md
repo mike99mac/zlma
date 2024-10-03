@@ -155,11 +155,8 @@ Python 3.11.7
 If you need to use Python 3.11, it will be specified later.
 
 
-## Choose manual install or install script
-Choose either to install manually or use the install script (recommended).
-
-### Install automatically
-The script ``instzlma`` is provided in the ``zlma`` repo to save you time and improve reliability. 
+## Run the install script
+The script ``instzlma`` is provided to save you time and improve reliability. 
 
 - Run the script 
 
@@ -186,6 +183,7 @@ ALTER USER 'root'@'localhost' IDENTIFIED BY 'new_password';
 exit
 ```
 
+### Update the zlma.conf file
 The ``zlma.conf`` configuration file was copied to ``/etc``.  Set the following values: 
 - db_user
   - The SQL database user, usually ``root``
@@ -218,157 +216,17 @@ The ``zlma.conf`` configuration file was copied to ``/etc``.  Set the following 
 }
 ```
 
-# zlma configuration file
+# Apache configuration file
 For reference, following is an Apache configuration file for a **Debian-based Linux**:
 
 ```
-User pi
-Group pi
-<VirtualHost *:80>
-  ServerAdmin mmacisaac@example.com 
-  DocumentRoot /srv/www/zlma
-  ServerName model1500
-  LogLevel error
-  LoadModule cgi_module /usr/lib/apache2/modules/mod_cgi.so
-
-  <Directory "/srv/www/html">
-    Options Indexes FollowSymLinks
-    AllowOverride all
-    Require all granted
-  </Directory>
-
-  <Directory /srv/www/zlma>
-    Options +ExecCGI
-    DirectoryIndex restapi.py
-    Require all granted
-  </Directory>
-  AddHandler cgi-script .py
-
-  ErrorLog ${APACHE_LOG_DIR}/error.log
-  CustomLog ${APACHE_LOG_DIR}/access.log combined
-</VirtualHost>
+TODO: update
 ```
 
 - Following is an Apache configuration file for a **RHEL-based Linux** in the file ``/etc/httpd/conf/httpd.conf``:
 ```
-#
-# Apache configuration file for zlma
-#
-Include conf.modules.d/*.conf
-User apache
-Group apache
-ServerName your.server.fqdn
-ServerRoot /etc/httpd
-Listen *:80
-ServerAdmin admin@example.com
-DocumentRoot /srv/www/zlma
-LogLevel error
-
-<Directory "/srv/www/html">
-  Options Indexes FollowSymLinks
-  AllowOverride all
-  Require all granted
-</Directory>
-
-# Read-Only queries do not require credentials
-AddHandler cgi-script .py
-Alias /zlma /srv/www/zlma
-<Directory /srv/www/zlma>
-  Options +ExecCGI
-  Require all granted
-</Directory>
-
-# Read-Write operations require credentials
-ScriptAlias /zlmarw/ /srv/www/zlmarw/
-<Directory /srv/www/zlmarw/>
-  AllowOverride None
-  Options +ExecCGI -Includes
-  AuthType Basic
-  AuthName "zlma - Enter password"
-  AuthType Basic
-  AuthName "Restricted Access"
-  AuthUserFile /srv/www/zlmarw/.htpasswd
-  Require valid-user
-  # Replace above if using LDAP
-  # AuthBasicProvider ldap
-  # AuthLDAPURL ldap://<your.orgs.ldap.server:389/ou=people,ou=linux_systems,dc=example,dc=com?uid
-  # Require ldap-filter objectClass=posixAccount
-</Directory>
-
-ErrorLog /var/log/httpd/error.log
-CustomLog /var/log/httpd/access.log combined
+TODO: update
 ```
-
-- Enable the site for Debian-based Linuxes:
-
-```
-sudo a2ensite zlma.conf
-```
-
-- Following is the systemd ``service`` file. 
-
-```
-cat /etc/systemd/system/apache2.service
-```
-
-```
-[Unit]
-Description=The Apache HTTP Server
-After=network.target remote-fs.target nss-lookup.target
-Documentation=https://httpd.apache.org/docs/2.4/
-
-[Service]
-Type=forking
-Environment=APACHE_STARTED_BY_SYSTEMD=true
-ExecStartPre=/usr/local/sbin/mklogdir
-ExecStart=/usr/sbin/apachectl start
-ExecStop=/usr/sbin/apachectl graceful-stop
-ExecReload=/usr/sbin/apachectl graceful
-KillMode=mixed
-PrivateTmp=true
-Restart=on-abort
-
-[Install]
-WantedBy=multi-user.target
-```
-
-- Set Apache to start at boot time and start it in the current environment. 
-
-  - For Debian-based:
-
-   ```
-   sudo systemctl enable apache2
-   ```
-
-   ```
-   sudo systemctl start apache2
-   ```
-
-  - For RHEL-based:
-
-   ```
-   sudo systemctl enable httpd
-   ```
-
-   ```
-   sudo systemctl start httpd
-   ```
-
-## Create a configuration file
-The zlma configuration file allows you to set local values such as the database credentials, the home directory and the logging level.
-
-There is a sample configuration file named ``zlma.conf`` in the repo.  The code expects it to be in ``/etc/``.
-
-- Copy it to ``/etc/``:
-
-```
-sudo cp ~/zlma/zlma.conf /etc
-```
-
-- The first four variables are the database user, password, host name or IP address, and the database name which will store the table ``servers``.
-- ``homeDir`` is the directory where the ``serverinfo`` script will be copied to and run from.
-- ``logLevel``, in order of severity, are ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR`` and ``CRITICAL``.
-
 
 # Using zlma
 The following sections describe the line command, the Web interface and the RESTful API.
