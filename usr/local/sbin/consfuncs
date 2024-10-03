@@ -65,7 +65,7 @@ function readConfFile
   fi
   local sysinfo=`cat /proc/sysinfo`        # get sysinfo in memory
   thisUserID=`echo "$sysinfo" | grep "VM00 Name:" | awk '{print $3}'` # user ID of this server
-  thisSysID=`echo "$sysinfo" | grep "LPAR Name:" /proc/sysinfo | awk '{print $3}'` # system ID (LPAR) 
+  thisSysID=`echo "$sysinfo" | grep "LPAR Name:" | awk '{print $3}'` # system ID (LPAR) 
  }                                         # readConfFile()
 
 #+--------------------------------------------------------------------------+

@@ -204,10 +204,7 @@ function instPackages
     runCmd $cmd
 
     echo | tee -a $outFile
-    #echo "Step 2): Setting Apache and mariadb to start at boot time ..." | tee -a $outFile
-    echo "Step 2): Setting mariadb to start at boot time ..." | tee -a $outFile
-
-    # no apache2.service file?
+    echo "Step 2): Setting Apache and mariadb to start at boot time ..." | tee -a $outFile
     runCmd sudo systemctl enable apache2   # set Apache to start at boot
   else                                     # no apt, check for dnf
     which dnf >/dev/null 2>&1

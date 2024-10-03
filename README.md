@@ -168,7 +168,7 @@ Output will be written to a file of the form ``$HOME/<yr-mon-day-hr-min-sec>-ins
 
 
 ### Set mariadb root password
-The install script does not set the mariadb root password, so this step must be performed manually.
+The mariadb root password is set manually.
 
 - Set the mariadb root password. This must be the same user and password as in ``/etc/zlma.conf``. Enter the MariaDB command-line tool:
 
@@ -220,13 +220,62 @@ The ``zlma.conf`` configuration file was copied to ``/etc``.  Set the following 
 For reference, following is an Apache configuration file for a **Debian-based Linux**:
 
 ```
-TODO: update
+User www-data
+Group www-data
+<VirtualHost *:80>
+  ServerAdmin your-email@example.com
+  DocumentRoot /srv/www/zlma
+  ServerName your-server
+  LogLevel error
+  LoadModule cgi_module /usr/lib/apache2/modules/mod_cgi.so
+
+  <Directory "/srv/www/html">
+    Options Indexes FollowSymLinks
+    AllowOverride all
+    Require all granted
+  </Directory>
+
+  # directory for R/O scripts - open to all
+  <Directory /srv/www/zlma>
+    Options +ExecCGI
+    DirectoryIndex restapi.py
+    Require all granted
+  </Directory>
+  AddHandler cgi-script .py
+
+  # directory for R/W scripts - password challenged
+  <Directory /srv/www/zlmarw>
+    Options +ExecCGI
+    AuthType Basic
+    AuthName "Restricted Area"
+    AuthUserFile /srv/www/zlmarw/.htpasswd
+    Require valid-user
+  </Directory>
+
+  ScriptAlias /zlma/ /srv/www/zlma/
+  ScriptAlias /zlmarw/ /srv/www/zlmarw/
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
 ```
 
 - Following is an Apache configuration file for a **RHEL-based Linux** in the file ``/etc/httpd/conf/httpd.conf``:
 ```
 TODO: update
 ```
+
+$ sudo a2en zlma.conf
+a2enconf  a2enmod   a2ensite
+mikemac@zlnx1:/etc/apache2/sites-available/$ sudo a2ensite zlma.conf
+Enabling site zlma.
+To activate the new configuration, you need to run:
+  systemctl reload apache2
+mikemac@zlnx1:/etc/apache2/sites-available/$ systemctl reload apache2
+==== AUTHENTICATING FOR org.freedesktop.systemd1.manage-units ====
+Authentication is required to reload 'apache2.service'.
+Authenticating as: mikemac
+Password:
+mikemac@zlnx1:/etc/apache2/sites-available/$ sudo systemctl reload apache2
 
 # Using zlma
 The following sections describe the line command, the Web interface and the RESTful API.

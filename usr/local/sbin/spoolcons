@@ -551,17 +551,15 @@ function listConsoles
   local userIDs
   local nextSystemID
   for nextSystemID in $systemIDs; do       # loop through all LPARs
-    echo "Consoles for LPAR: $nextSystemID"
     cd $consDir/$nextSystemID
+    echo -n "$nextSystemID "
     if [ "$outputType" = short ]; then 
       userIDs=`/bin/ls | xargs`  
-      echo "$userIDs"        # short output
+      echo "$userIDs"                      # short output
     else                                   # assume long
-      # echo "$nextSystemID:"
       /bin/ls -lth
     fi
     foundOne=yes
-    echo
   done 
   if [ "$foundOne" = no ]; then 
     verboseMsg "Did not find any consoles in $consDir"
@@ -660,7 +658,7 @@ sshCmd="/usr/bin/ssh -q"                   # command to SSH to other nodes
 tgtServer=""                               # target zlma server
 tgtSysID=""                                # target LPAR
 tgtUserID=""                               # target user ID 
-tmpConsFile="$HOME/tmp-cons-file"          # temp file to store latest console data 
+tmpConsFile="$consDir/tmp-cons-file"       # temp file for latest console data 
 thisServer=`/bin/hostname -f`              # get FQDN of this server
 thisUser=""                                # user running this script
 tgtCEC="none"                              # target CEC 
