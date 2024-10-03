@@ -39,7 +39,7 @@ Details on it are outside the scope of this document, howerver, there is a scrip
 Once SSH access is set up, the solution can be installed. 
 
 ## Update your system
-If this is a fresh install, it is best to update your system. To do so, perform the following steps:
+If this is a fresh install of Linux, it is best to update your system. To do so, perform the following steps:
 
 - Login as a non-root user with sudo privileges. 
 
@@ -89,7 +89,7 @@ To install zlma using the ``instzlma`` script, perform the following steps.
 ## Install this repository
 To install this ``zlma`` repository, some basic packages are first needed.
 
-- Install git, vim and Apache on RHEL:
+- Install git, vim and Apache.
 
   - For Debian-based:
     ```
@@ -108,7 +108,9 @@ git clone https://github.com/mike99mac/zlma
 ```
 
 ## Update the main user 
-- Add the group which will be running apache to the main non-root user. The group ``apache`` is used on Red Hat-based distros, and for Debian, the group ``www-data`` is used.
+The main user should not be root.  When ``zlma`` processes are running from Apache, they will run as a different user that usually cannot log on interactively. Add this group to the main user. The group ``apache`` is used on Red Hat-based distros, and for Debian, the group ``www-data`` is used.
+
+- Add the group which will be running apache to the main non-root user. 
 
 ```
 sudo usermod -aG <apache|www-data> <your-user>
@@ -165,13 +167,13 @@ The script ``instzlma`` is provided in the ``zlma`` repo to save you time and im
 $HOME/zlma/instzlma 
 ```
 
-Output will be written to a file of the form ``$HOME/<yr-mon-day-hr-min-sec>-instzlma.out``.
+Output will be written to a file of the form ``$HOME/<yr-mon-day-hr-min-sec>-instzlma.out``.  It is recommended you review the output file checking for warnings or errors.
 
 
 ### Set mariadb root password
 The install script does not set the mariadb root password, so this step must be performed manually.
 
-- Set the mariadb root password. This must be the same user and password as in ``/etc/mariadb.conf``. Enter the MariaDB command-line tool:
+- Set the mariadb root password. This must be the same user and password as in ``/etc/zlma.conf``. Enter the MariaDB command-line tool:
 
 ```
 sudo mariadb
@@ -184,98 +186,7 @@ ALTER USER 'root'@'localhost' IDENTIFIED BY 'new_password';
 exit
 ```
 
-## Create a virtual environment
-Now that the co-requisites are satisfied, the virtual environment can be created with the following steps:
-
-- Change to the ``/srv/`` directory:
-
-```
-cd /srv
-```
-
-- Create a virtual environment in one of two ways:
-
-  - where the base Python version is 3.10 or greater:
-
-   ```
-   sudo python3 -m venv venv
-   ```
-
-  - Where Python 3.11 was added:
-
-   ```
-   sudo python3.11 -m venv venv
-   ```
-
-- Recursively change the group of the new virtual environment.
-
-  - For Debian-based:
-    ```
-    sudo chgrp -R www-data venv
-    ```
-
-  - For RHEL-based:
-    ```
-    sudo chgrp -R apache venv
-    ```
-
-- Recursively add group write permissions to the new virtual environment:
-
-```
-sudo chmod -R g+w venv
-```
-
-- Activate the environment which the current user will now be able to write to with group privileges:
-
-```
-. venv/bin/activate
-```
-
-You should see the text ``(venv)`` prefixed on the command prompt.
-
-- Upgrade pip:
-
-  - On systems where the base Python version is 3.10 or greater:
-
-   ```
-   /srv/venv/bin/python3 -m pip install --upgrade pip
-   ```
-
-  - On systems where Python 3.11 was added:
-
-   ```
-   /srv/venv/bin/python3.11 -m pip install --upgrade pip
-   ```
-
-- Install Mariadb, the Python connector and the Lex-Yacc library:
-
-```
-python3 -m pip install mariadb mysql-connector-python ply
-```
-
-- Issue the following command and answer the many security questions:
-```
-mysql_secure_installation
-```
-
-Following is the ``zlma.conf`` file copied to ``/etc``. Set the database root password and the home directory of the user you are running as.
-```
-# cat /etc/zlma.conf
-{
-  "db_user":   "root",
-  "db_pw":     "your_pw",
-  "db_host":   "127.0.0.1",
-  "db_name":   "zlma",
-  "home_dir":  "/home/your_user",
-  "log_level": "debug",
-  "zlma_srvrs": [
-    {"lpar": "LPAR1", "zlma_srvr": "zlnx1.domainname.com"},
-    {"lpar": "LPAR2", "zlma_srvr": "zlnx2.domainname.com"}
-  ]
-}
-```
-
-The values are as follow
+The ``zlma.conf`` configuration file was copied to ``/etc``.  Set the following values: 
 - db_user
   - The SQL database user, usually ``root``
 - db_pw
@@ -291,9 +202,23 @@ The values are as follow
 - zlma_srvrs
   - List of LPAR/zlma server pairs - one zlma server per LPAR is required
 
-#
+```
+# vi /etc/zlma.conf
+{
+  "db_user":   "root",
+  "db_pw":     "your_pw",
+  "db_host":   "127.0.0.1",
+  "db_name":   "zlma",
+  "home_dir":  "/home/your_user",
+  "log_level": "debug",
+  "zlma_srvrs": [
+    {"lpar": "LPAR1", "zlma_srvr": "zlnx1.domainname.com"},
+    {"lpar": "LPAR2", "zlma_srvr": "zlnx2.domainname.com"}
+  ]
+}
+```
+
 # zlma configuration file
-#
 For reference, following is an Apache configuration file for a **Debian-based Linux**:
 
 ```

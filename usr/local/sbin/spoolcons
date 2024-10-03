@@ -248,8 +248,8 @@ function getRemoteConsole
     eval $cmd                              # copy remote console data back to calling server
     rc=$?
     if [ -f $tmpConsFile ]; then           # remote console file exists
-      verboseMsg "found remote console file $tmpConsFile" 
-      cmd="cp $tmpConsFile $consDir/$tgtSysID/$tgtUserID"
+      cmd="cat $tmpConsFile >> $consDir/$tgtSysID/$tgtUserID"
+      verboseMsg "remote console $tmpConsFile now local - appending with cmd: $cmd" 
       eval $cmd
       break                                # out of for loop
     fi
