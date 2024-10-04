@@ -14,72 +14,12 @@ function drawLPARchooser
   local thisColor
 
   startTable
-  echo "<h3>Choose LPARs</h3>"
-  allLPARs=`/usr/local/sbin/lscons | awk '{print $1}'`
+  allLPARs=`/usr/local/sbin/lscons -L`     # list just LPARs
   for nextLPAR in $allLPARs; do
-    CEC=`echo $nextLPAR | awk -F: '{print $1}'`
-    systemID=`echo $nextLPAR | awk -F: '{print $2}'`
-    if [ "$evenOdd" = even ]; then       # toggle
-      evenOdd=odd
-    else
-      evenOdd=even
-    fi
-    if [ "$curCol" != 1 ]; then  
-      for i in `seq $curCol $numCols`; do # fill up empty cells
-        echo "<td style=\"background-color:$color1;\">&nbsp;</td>" # empty cell
-      done
-    fi
-
-    # get all CECs and add a checkbox for each
-    CECs=`echo "$allLPARs" | awk -F: '{print $2}' | sort | uniq`
-    CEClist=`echo "$CECs" | xargs`       # CECs with no newlines
-    echo "<td style=\"background-color:$color1;\">CECs:</td>"
-    local nextCEC
-    local newIndex                       # either the index or the inverse
-    local i=0                            # counter
-    for nextCEC in $CEClist; do          # loop through each CEC
-      if [ "$evenOdd" = odd ]; then      # forward colors
-        newIndex=$i
-      else                               # reverse colors
-        let newIndex=7-$i
-      fi
-      thisColor="${colors[$newIndex]}"
-      echo "<td style=\"background-color:$thisColor;\">"
-      echo "<input type='checkbox' name='c' value=\"$nextCEC\">$nextCEC"
-      echo "</td>"                       # end cell
-      let i=$i+1                         # increment counter
-    done
-    local j                              # counter
-    local endCell
-    let endCell=$numCols-2
-    for j in `seq $i $endCell`; do       # fill in empty cells
-      echo "<td style=\"background-color:$color1;\">&nbsp;</td>"
-    done
-    echo "</td></tr>"                    # end cell and row
-    curCol=1                             # reset counter
-
-    # add a check box and the LPAR
-    local colorIndex
-    colorIndex=`echo "$CECs" | grep -n $CEC | awk -F: '{print $1}'`
-    let colorIndex=$colorIndex-1           # arrays start at 0
-    if [ "$evenOdd" = odd ]; then          # forward colors
-      newIndex=$colorIndex
-    else                                   # reverse colors
-      let newIndex=7-$colorIndex
-    fi
-    thisColor="${colors[$newIndex]}"
-    echo "<td style=\"background-color:$thisColor;\">&nbsp;&nbsp<input type='checkbox' name='l' value='$systemID'>$systemID"
+    echo "<tr>"                            # start new row
+    echo "<td>&nbsp;&nbsp;<input type='checkbox' name='l' value='$nextLPAR'>$nextLPAR"
     echo "</td>"                           # end cell
-    let curCol=$curCol+1                   # increment counter
-    if [ "$curCol" -gt "$numCols" ]; then  # row is full
-      local i
-      echo "</tr>"                         # end current row
-      echo "<tr>"                          # start new row
-      curCol=1                             # reset counter
-    fi
-  done
-  for i in `seq $curCol $numCols`; do # fill up empty cells
-    echo "<td style=\"background-color:$color1;\">&nbsp;</td>" # empty cell
+    echo "</tr>"
   done
   echo "</table><br>"                      # end table, leave room
  }                                         # drawLPARchooser()
@@ -106,18 +46,17 @@ function addOneLPAR
 #+--------------------------------------------------------------------------+
 function addToLPARlist
 # Add an LPARs to LPARlist 
-# Arg 1: CEC to add
+# Arg 1: LPAR to add
 # Global variables:
 #   allLPARs: all LPARs in org 
 #   LPARlist: space separated list of LPARs
 #+--------------------------------------------------------------------------+
  {
-  local CECtoAdd=$1
-  if [ ${#CECtoAdd} = 0 ]; then
-    echo "INTERNAL ERROR - no CEC passed to addToLPARlist<br>"
+  local LPARtoAdd=$1
+  if [ ${#LPARtoAdd} = 0 ]; then
+    echo "INTERNAL ERROR - nothing passed to addToLPARlist<br>"
     exit 3
   fi
-  local nextCEC
   local nextLPAR
   local nextSystemID
 
@@ -141,11 +80,10 @@ function setLPARlist
  {
   local lineSep=`echo "$QUERY_STRING" | sed 's/&/\n/g'`    # inject newlines into list
   LPARlist=`echo "$lineSep" | grep '^l=' | sed 's/l=/ /g'`
-  CEClist=`echo "$lineSep" | grep '^c=' | sed 's/c=/ /g'`
-  CEClist=`uudecode $CEClist`
+  # LPARlist=`uudecode $LPARlist`  is this needed?
   if [ ${#adminCmd} != 0 ]; then           # there is a command to run
-    if [ ${#LPARlist} = 0 -a ${#CEClist} = 0 ]; then # nothing was selected
-      echo "<h2>Whoops! You need to check at least one box</h2>"
+    if [ ${#LPARlist} = 0 ]; then          # nothing was selected
+      echo "<h2>Whoops! Check at least one box</h2>"
       return
     fi
   fi
@@ -169,12 +107,13 @@ function drawCPcmdButtons
   echo "<p><b>CP command:</b></p>"
   echo "</td></tr>"
   echo "<tr><td>"
-
   echo "<input type=text style=\"width: 300px;\" id=adminCmd name=adminCmd>"
+  echo "&nbsp;&nbsp;<input type='checkbox' name='verbose' value='-v'>verbose"
+  echo "</td></tr>"
 
   # finish the table for either type of user
   echo "<tr><td><br>"
-  echo "<input class=button $greenStyle <font size=\"+2\" type=submit value=\"RUN COMMAND\">&nbsp;"
+  echo "<input class=button $greenStyle <font size=\"+2\" type=submit value=\"Run Command\">&nbsp;"
   echo "</td></tr></table>"                # end cell, row, table 
   echo "<br><br>"                          # leave some room
  }                                         # drawCPcmdButtons()
@@ -189,27 +128,25 @@ function runCommand
   local cmd                                # a command
   local rc                                 # a return code
 
-  if [ "$role" = admin ]; then             # user is a full admin 
-    if [ ${#adminCmd} = 0 ]; then          # no command has yet been specified
-      return                               # all done
-    fi
-    CPcmd=`uudecode $adminCmd`             # UU-decode the command
-  fi 
+  if [ ${#adminCmd} = 0 ]; then            # no command has yet been specified
+    "Enter a command!<br>"
+    return                                 # all done
+  fi
+  CPcmd=`uudecode $adminCmd`               # UU-decode the command
 
-  # button not working:
-  # addScrollButton                          # add a 'Scroll to bottom' button
+  # addScrollButton                        # button not working?
   echo '<table class="greenScreenTable">'  # start a 'green screen' table 
   echo "<tr><td><pre>"                     # start row, cell, preformatted text
 
   # run CP commands on each LPAR selected
   local nextLPAR
   for nextLPAR in $LPARlist; do            # loop through each LPAR
-    cmd="/usr/local/sbin/cpcommand -w $nextLPAR $CPcmd" # command to send
-    echo "calling: $cmd"
-    eval $cmd | sed "s/^/${nextLPAR}: /g"  # run command prefixing each line with LPAR:
-    echo                                   # leave some room
+    cmd="/usr/local/sbin/cpcommand $verbose -l $nextLPAR $CPcmd" # command to send
+    echo "calling: $cmd<br>"
+    #eval $cmd 2>&1 | sed "s/^/${nextLPAR}: /g"  # run command prefixing each line with LPAR:
+    $cmd 2>&1 | sed "s/^/${nextLPAR}: /g"  # run command prefixing each line with LPAR:
   done
-  echo "</td></tr></table>"                # end cell, row, table
+  echo "</pre></td></tr></table>"          # end preformatted, cell, row, table
  }                                         # runCommand()
 
 #+--------------------------------------------------------------------------+
@@ -240,10 +177,9 @@ function doTheWork
 # global variables
 adminCmd=`echo "$QUERY_STRING" | sed -n 's/^.*adminCmd=\([^&]*\).*$/\1/p'`
 systemID=`echo "$QUERY_STRING" | sed -n 's/^.*systemID=\([^&]*\).*$/\1/p'`
+verbose=`echo "$QUERY_STRING" | sed -n 's/^.*verbose=\([^&]*\).*$/\1/p'`
 allLPARs=""                                # all z/VM LPARs in org
-CEClist=""                                 # all CECs chosen
 colors=("#F6D9ED" "#FBF5E6" "#FEF0C9" "#F1EDC2" "#FEE0C9" "#DED0C6" "#FFEECA" "#EEF3E2") # to color-code CECs
-evenOdd="even"                  
 LPARlist=""                                # all z/VM LPARs chosen
 
 # main()

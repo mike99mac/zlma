@@ -50,7 +50,6 @@ function parseArgs
           usage
         fi
         tgtSysID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
-echo "tgtSysID = $tgtSysID"
         ;;
       -s|--silent)
         verbose=0
@@ -64,9 +63,9 @@ echo "tgtSysID = $tgtSysID"
         verbose=3
         flags="$flags -V"
         ;;
-      -w)                                  # undocumented - called from Web UI
-        webUI=yes
-        ;;
+#     -w)                                  # undocumented - called from Web UI
+#       webUI=yes
+#       ;;
       -x|--debug)
         flags="$flags -x"
         set -vx
@@ -122,16 +121,21 @@ function sendCPcommand
   local tgtServer 
   local rc                                 # a return code
 
-  if [ ${#tgtSysID} = 0 ]; then            # target LPAR not specified
+  verboseMsg "thisServer: $thisServer tgtSysID: $tgtSysID cpCmd: $cpCmd"
+  if [ ${#tgtSysID} = 0 ]; then 
     cmd="sudo vmcp $cpCmd"                 # run locally
   else
-    verboseMsg "trying to get engineering server with: getEngServer $tgtSysID"
-    tgtServer=`getEngServer $tgtSysID`
+    verboseMsg "trying to get engineering server with: getZlmaServer $tgtSysID"
+    tgtServer=`getZlmaServer $tgtSysID`
     if [ $? != 0 ]; then 
       echo "ERROR: did not find LPAR $tgtSysID in $confFile" | tee -a $logFile
       exit 1                               # object not found
     fi
-    cmd="$sshCmd $tgtServer sudo vmcp $cpCmd" # run remotely
+    if [ "$tgtServer" = "$thisServer" ]; then # run locally
+      cmd="sudo vmcp $cpCmd"
+    else                                      # run remotely
+      cmd="sudo su - mikemac; $sshCmd $tgtServer sudo vmcp $cpCmd" 
+    fi
   fi
   verboseMsg "Executing CP command: $cmd"
   eval $cmd                                # run command locally or remotely
@@ -143,21 +147,21 @@ function sendCPcommand
 
 #+--------------------------------------------------------------------------+
 # Global variables
-declare -A arr                             # array of environments/eng'g servers/LPARs/
 cmdCalled=`basename $0`                    # get the name of the script called
 confFile="/etc/zlma.conf"                  # configuration file
 cpCmd=""                                   # the CP command to execute
 flags=""                                   # flags to pass on to remote calls
 logFile="/var/log/zlma/consolez.log"       # log file 
 logLevel="info"                            # log level
+sshCmd="/usr/bin/ssh -q"                   # command to SSH to other nodes
 tgtSysID=""                                # target z/VM LPAR
 tgtUserID=""                               # target user ID 
+thisServer=`/bin/hostname -f`              # get FQDN of this server
 thisSysID=""                               # this z/VM LPAR
 thisUserID=""                              # this user ID 
-verb=""                                    # operation being performed
 verbose="1"                                # default verbosity level
 vmcpCmd="sudo vmcp --buffer=1M"            # command to issue "vmcp"
-webUI="no"                                 # called from the Web UI?
+# webUI="no"                                 # called from the Web UI?
 
 # main()
 source /usr/local/sbin/consfuncs           # import common functions

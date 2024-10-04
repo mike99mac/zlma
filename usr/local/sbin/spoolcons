@@ -42,6 +42,9 @@ function usage
   if [ "$cmdCalled" = lscons -o "$cmdCalled" = catcons ]; then 
     echo "  -l|--long             Long listing" 
   fi
+  if [ "$cmdCalled" = lscons ]; then 
+    echo "  -L|--lpars            List just LPARs with console data" 
+  fi
   echo "  -s|--silent           Minimal output"
   echo "  -v|--verbose          Include additional output"
   echo "  -V|--veryverbose      Include even more output"
@@ -104,6 +107,13 @@ function parseArgs
           usage
         fi
         outputType="long" 
+        ;;
+      -L|--lpars)
+        if [ "$cmdCalled" != lscons ]; then 
+          echo "ERROR: unrecognized flag $1"
+          usage
+        fi
+        outputType="lpars" 
         ;;
       -s|--silent)
         verbose=0
@@ -407,7 +417,7 @@ function spoolConsole
     if [ "$verbose" -ge 1 ]; then          # not in silent mode
       verboseMsg "Spooling console of $tgtUserID at $tgtSysID" 
     fi
-    tgtServer=`getTgtServer $tgtSysID`           
+    tgtServer=`getZlmaServer $tgtSysID`           
     if [ ${#tgtServer} = 0 ]; then         # not found
       regMsg "ERROR: did not find LPAR $tgtSysID in $confFile" 
       exit 1                               # object not found
@@ -548,6 +558,10 @@ function listConsoles
       systemIDs="${systemIDs##*/}"         # chop off FQ file name
     fi
   fi
+  if [ "$outputType" = "lpars" ]; then     # just list LPARs
+    echo $systemIDs
+    return                                 # all done
+  fi
   local foundOne=no
   local userIDs
   local nextSystemID
@@ -579,7 +593,7 @@ function removeConsole
 
   local rc                                 # a return code
 
-  tgtServer=`getTgtServer $tgtSysID`
+  tgtServer=`getZlmaServer $tgtSysID`
   if [ $? = 0 ]; then 
     echo "ERROR: did not find LPAR $tgtSysID in $confFile"
     exit 1                               # object not found
