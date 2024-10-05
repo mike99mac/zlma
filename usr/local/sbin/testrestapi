@@ -2,7 +2,9 @@
 #
 # testrestapi - test various Mariacmdb RESTful APIs
 #
-baseURL="http://z-graf1.devlab.sinenomine.net/restapi"
+hostName=`hostname`
+#baseURL="http://$hostName.devlab.sinenomine.net/restapi.py"
+baseURL=" http://zlnx1.devlab.sinenomine.net/restapi.py"
 let numTests=0
 let numSuccesses=0
 testClauses="count hostname ping query count&cpus=4&mem_gb=4 update&model100&newApp&newGroup&newOwner"

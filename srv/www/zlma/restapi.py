@@ -34,28 +34,26 @@ import os
 import re
 import subprocess
 from urllib.parse import urlparse, parse_qs
-from zlma_conf import Zlma_conf
 
 class ZlmaAPI():
   def __init__(self):
-    self.conf = Zlma_conf()                # configuration variables
-    self.conf.load_config_file()           # read the config file
     logging.basicConfig(filename='/var/log/zlma/restapi.log', format='%(asctime)s %(levelname)s %(message)s')
     self.log = logging.getLogger(__name__)
-    self.log.setLevel(self.conf.log_level) # set log level from config file
     self.conn = None 
     self.cursor = None 
-    self.DBuser = "root"                   # default database user
-    self.DBpw = "pi"                       # default database password
-    self.DBhost = "127.0.0.1"              # default database host
-    self.DBname = "zlma"        
-    self.script_dir = "/home/pi"
-    self.log_level = "debug"
-    logging.basicConfig(filename='/home/pi/restapi.log',
+    self.db_user = "none"
+    self.db_pw = "none"  
+    self.db_host = "none"
+    self.db_name = "none"
+    self.log_level = "DEBUG" 
+    logging.basicConfig(filename='/var/log/zlma/restapi.log',
                         format='%(asctime)s %(levelname)s %(message)s',
                         level=self.log_level)
     self.log = logging.getLogger(__name__)
-    # self.log.setLevel(logging.DEBUG)
+    self.load_config_file()                # read the config file
+    self.log.setLevel(self.log_level) # set log level from config file
+
+    # start the web page
     print("Content-Type: text/html")       # print MIME type
     print()                                # required empty line
 
@@ -73,12 +71,28 @@ class ZlmaAPI():
     print("</pre>")
     print("")
 
+  def load_config_file(self):
+    """
+    read the JSON config file /etc/zlma.conf
+    """
+    try:
+      conf_file = open("/etc/zlma.conf", 'r')
+    except Exception as e:
+      self.log.error("load_config_file(): could not open configuration file /etc/zlma.conf - using defaults")
+      return
+    confJSON = json.loads(conf_file.read())
+    self.db_user = confJSON['db_user']
+    self.db_pw = confJSON['db_pw']
+    self.db_host = confJSON['db_host']
+    self.db_name = confJSON['db_name']
+    self.log_level = confJSON['log_level'].upper()
+
   def connect_to_cmdb(self):
     """
     Connect to mariadb, use datase cmdb and establish a cursor
     """
     try:
-      self.conn = mariadb.connect(user=self.DBuser, password=self.DBpw, host=self.DBhost, database=self.DBname)
+      self.conn = mariadb.connect(user=self.db_user, password=self.db_pw, host=self.db_host, database=self.db_name)
       self.cursor = self.conn.cursor(dictionary=True) # open cursor returning dictionary
     except mariadb.Error as e:
       self.log.error(f"initialize(): Exception creating database: {e}")
@@ -91,9 +105,9 @@ class ZlmaAPI():
     self.log.info(f"ZlmaAPI.run_sql_query(): cmd = {cmd}")
     self.connect_to_cmdb()                 # connect to DB
     try:   
-      self.cursor.execute(f"use {self.DBname}")
+      self.cursor.execute(f"use {self.db_name}")
     except mariadb.Error as e:
-      print(f"ERROR changing database to {self.DBname}: {e}")
+      print(f"ERROR changing database to {self.db_name}: {e}")
       print("</body></html>")
       self.conn.close()                    # cannot contiue
       exit(1)
@@ -238,11 +252,15 @@ class ZlmaAPI():
     - Group
     - Owner
     """
+    self.log.debug(f"ZlmaAPI.update_record(): query_str: {query_str}") 
     list_len = len(query_str)
     if list_len != 4:                       # error
       self.log.error(f"ZlmaAPI.update_record(): len(query_str): {list_len}, expected 4") 
       return
-    cmd = f"UPDATE servers SET app = '{query_str[1]}', grp = '{query_str[2]}', owner = '{query_str[3]}' WHERE host_name = '{query_str[0]}'"
+    cmd = f"""UPDATE servers SET app = '{query_str[1]}', env = '{query_str[2]}', 
+      grp = '{query_str[3]}', owner = '{query_str[4]}' 
+      WHERE host_name = '{query_str[0]}'
+    """
     self.connect_to_cmdb()                 # connect to DB
     try:   
       self.cursor.execute(cmd)             # run SQL command 

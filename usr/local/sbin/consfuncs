@@ -106,7 +106,7 @@ function CPcmd
  }                                         # CPcmd()
 
 #+--------------------------------------------------------------------------+
-function getTgtServer
+function getZlmaServer
 # Given a z/VM system ID, return the engineering server
 # Arg 1: LPAR being queried
 # Return: engineering server host name
@@ -117,7 +117,7 @@ function getTgtServer
 
   local theLPAR=$1                         # target z/VM System ID
   if [ ${#theLPAR} = 0 ]; then             # unexpected
-    echo "INTERNAL ERROR: no args passed to getEngServer" | tee -a $logFile
+    echo "INTERNAL ERROR: no args passed to getZlmaServer" | tee -a $logFile
     exit 3                                 # internal server error
   fi
 
@@ -131,7 +131,7 @@ function getTgtServer
     fi
   done
   return 1                                 # object not found 
- }                                         # getTgtServer()
+ }                                         # getZlmaServer()
 
 #+--------------------------------------------------------------------------+
 function getPrivClass

@@ -9,7 +9,7 @@ class Finder:
     """
     self.pattern = ""                      # search pattern
     self.rows = []                         # resulting rows
-    self.headers = ['Host name', 'LPAR', 'User ID', 'IP address', 'CPUs', 'GB Mem', 'Arch', 'Common arch', 'OS', 'OS ver', 'Kernel ver', 'Kernel rel', 'RootFS % full', 'Last ping', 'Created', 'Env', 'App', 'Group', 'Owner']
+    self.headers = ['Host name', 'LPAR', 'User ID', 'IP address', 'CPUs', 'GB Mem', 'Arch', 'Common arch', 'OS', 'OS ver', 'Kernel ver', 'Kernel rel', 'RootFS % full', 'Last ping', 'Created', 'App', 'Env', 'Group', 'Owner']
 
 
     # start the HTML page
