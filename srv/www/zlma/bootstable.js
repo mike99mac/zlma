@@ -34,11 +34,25 @@ $.fn.SetEditable = function (options) {
   }
 };
 
+function getLocalWebserverURL() {
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
+  const port = window.location.port;
+  let url = `${protocol}//${hostname}`;
+  if (port !== "") {
+    url += `:${port}`;
+  }
+  return url;
+}
+
 async function onEdit(fields) {            // update SQL row after field edits in a browser
   console.log("typeof(fields):", typeof(fields));
   // var uuFields = encodeURIComponent(fields); // uuencode new values 
-  var url = "http://model1500/mariacmdb/restapi.py?update"+fields;
-  console.log("url: ", url);
+  var url = getLocalWebserverURL(); 
+  console.log("url before: ", url);
+  url = url+"/zlma/restapi.py?update"+fields;
+  console.log("url after: ", url);
+  // const rawResponse = await response.text();
   const requestBody = {                    // set request body
     data: "fubar"
   };
@@ -54,7 +68,6 @@ async function onEdit(fields) {            // update SQL row after field edits i
     if (!response.ok) {                    // Check if response is OK (status code 200-299)
       throw new Error(`ERROR: ${response.status} - ${response.statusText}`);
     }
-    const result = await response.json();  // Parse and return response as JSON
     return result;
   }
   catch (error) {
