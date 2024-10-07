@@ -50,9 +50,9 @@ async function onEdit(fields) {            // update SQL row after field edits i
   // var uuFields = encodeURIComponent(fields); // uuencode new values 
   var url = getLocalWebserverURL(); 
   console.log("url before: ", url);
+  // url = url+"/zlma/restapi.py?update"+encodeURIComponent(fields);
   url = url+"/zlma/restapi.py?update"+fields;
   console.log("url after: ", url);
-  // const rawResponse = await response.text();
   const requestBody = {                    // set request body
     data: "fubar"
   };
@@ -68,6 +68,7 @@ async function onEdit(fields) {            // update SQL row after field edits i
     if (!response.ok) {                    // Check if response is OK (status code 200-299)
       throw new Error(`ERROR: ${response.status} - ${response.statusText}`);
     }
+    const result = await response.json();  // Parse and return response as JSON
     return result;
   }
   catch (error) {

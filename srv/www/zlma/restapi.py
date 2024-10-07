@@ -254,8 +254,8 @@ class ZlmaAPI():
     """
     self.log.debug(f"ZlmaAPI.update_record(): query_str: {query_str}") 
     list_len = len(query_str)
-    if list_len != 4:                       # error
-      self.log.error(f"ZlmaAPI.update_record(): len(query_str): {list_len}, expected 4") 
+    if list_len != 5:                       # error
+      self.log.error(f"ZlmaAPI.update_record(): len(query_str): {list_len}, expected 5") 
       return
     cmd = f"""UPDATE servers SET app = '{query_str[1]}', env = '{query_str[2]}', 
       grp = '{query_str[3]}', owner = '{query_str[4]}' 
