@@ -1,6 +1,8 @@
 #!/srv/venv/bin/python3
 import subprocess
 import sys
+sys.path.append('/srv/www/zlma')
+from zlma_buttons import Zlma_buttons
 
 class Finder:
   def __init__(self):
@@ -22,16 +24,75 @@ class Finder:
     print('<script type="text/javascript" src="/jquery-3.7.1.slim.min.js"></script>')
     print('<script type="text/javascript" src="/popper.min.js"></script>')
     print('<script type="text/javascript" src="/bootstrap.min.js"></script>')
-    # TO DO: minimize bootstable when is stable
+    # TO DO: minimize bootstable when it is stable
     # print('<script type="text/javascript" src="/bootstable.min.js"></script>')
     print('<script type="text/javascript" src="/bootstable.js"></script>')
     print('<link rel="icon" type="image/png" href="/finder.ico">')
-    print('<link rel="stylesheet" href="/finder.css">')           # Finder's CSS's
+    print('<link rel="stylesheet" href="/zlma.css">') # common CSS's
     print('<link rel="stylesheet" href="/glyphicons-free.css">')   
     print('</head>')
 
     # Start page body with background of Ukrainian flag colors
-    print('<body style="background-image: url(/ukr_flag_bg.png); background-repeat: no-repeat; background-size: cover; background-position: center; height: 100vh;">')
+    #print('<body style="background-image: url(/ukr_flag_bg.png); background-repeat: no-repeat; background-size: cover; background-position: center; height: 100vh;">')
+    print('<body>') 
+    # print('<body style="background-repeat: no-repeat; background-size: cover; background-position: center; height: 100vh;">')
+    # self.add_menu_bar() # Add the navigation bar (menu bar) with dropdowns
+    zlma_buttons = Zlma_buttons("finder")  # add navigation buttons
+
+  def add_menu_bar(self):
+    """
+    Add a menu bar with dropdowns for File, Edit, View, and Help
+    """
+    print('''
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <a class="navbar-brand" href="#">Finder</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNavDropdown">
+        <ul class="navbar-nav">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="fileDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">File</a>
+            <div class="dropdown-menu" aria-labelledby="fileDropdown">
+              <a class="dropdown-item" href="#">New</a>
+              <a class="dropdown-item" href="#">Open</a>
+              <a class="dropdown-item" href="#">Save</a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" href="#">Exit</a>
+            </div>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="editDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Edit</a>
+            <div class="dropdown-menu" aria-labelledby="editDropdown">
+              <a class="dropdown-item" href="#">Cut</a>
+              <a class="dropdown-item" href="#">Copy</a>
+              <a class="dropdown-item" href="#">Paste</a>
+              <a class="dropdown-item" href="#">Delete</a>
+            </div>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="viewDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              View
+            </a>
+            <div class="dropdown-menu" aria-labelledby="viewDropdown">
+              <a class="dropdown-item" href="#">Zoom In</a>
+              <a class="dropdown-item" href="#">Zoom Out</a>
+              <a class="dropdown-item" href="#">Full Screen</a>
+            </div>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="helpDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Help
+            </a>
+            <div class="dropdown-menu" aria-labelledby="helpDropdown">
+              <a class="dropdown-item" href="#">Documentation</a>
+              <a class="dropdown-item" href="#">About</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    ''')
 
   def print_env(self):
     """
@@ -71,7 +132,7 @@ class Finder:
     """
     Given a list of table headers, and table data, produce an HTML table
     """
-    html = "<table id='server-table'>\n" 
+    html = "<table id='zlma-table'>\n" 
     html += "<tr>\n"
     for aHeader in headers:
       html += "  <th>"+aHeader+"</th>\n"
@@ -128,11 +189,6 @@ class Finder:
     print('  <input value="Submit" type="submit">')
     print('</form><br>')
 
-    # add an "Update all" button
-    print('<form action="/finder.py?action=update" method="get" enctype="multipart/form-data">')
-    print('  <input type="hidden" name="action" value="update">')  # add "action=update" to QUERY_STRING
-    print('  <input value="Update all servers" type="submit">')
-    print('</form><br>')
 
     # show the current search pattern if one exists
     if len(self.pattern) > 1:              # there is a current search pattern
@@ -141,7 +197,7 @@ class Finder:
 
     # make the table editable
     print('<script>')
-    print('$("#server-table").SetEditable({columnsEd: "15,16,17,18", onEdit:function(){}})')
+    print('$("#zlma-table").SetEditable({columnsEd: "15,16,17,18", onEdit:function(){}})')
     print('</script>')
     print('</body></html>')                # end page
 

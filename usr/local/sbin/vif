@@ -17,12 +17,12 @@ class Vif:
   Proess all VIF commands 
   """
   tokens = (                               # VIF keywords and phrases
-    'active', 'all', 'collect', 'configuration', 'copy', 'create', 'delete', 'echo', 
+    'active', 'all', 'collect', 'configuration', 'copy', 'create', 'delete', 'disk', 'disks',
     'errors', 'export', 'help', 'hypervisor', 'image', 'image_create', 'image_delete', 
     'image_help', 'image_network', 'image_set_storage', 'image_set_cpus', 'image_start', 
-    'image_stop', 'image_stopall', 'import', 'level', 'network', 'paging', 'partition', 
-    'performance', 'query', 'query_image', 'restart', 'service', 'share', 'shutdown', 
-    'to', 'verify', 'version', 'volume', 'with', 'MINIDISK_SIZE', 'MINIDISK'
+    'image_stop', 'image_stopall', 'import', 'level', 'network', 'paging',  'performance', 
+    'query', 'query_image', 'restart', 'service', 'share', 'shutdown', 'to', 'verify', 
+    'version', 'volume', 'with', 'MINIDISK_SIZE', 'MINIDISK'
     )
   t_active = r'active'                     # Regular expression rules
   t_all = r'all'
@@ -31,7 +31,8 @@ class Vif:
   t_copy = r'copy'
   t_create = r'create'
   t_delete = r'delete'
-  t_echo = r'echo'
+  t_disk = r'disk'
+  t_disks = r'disks'
   t_errors = r'errors'
   t_export = r'export'
   t_help = r'help'
@@ -50,7 +51,6 @@ class Vif:
   t_level = r'level'
   t_network = r'network'
   t_paging = r'paging'
-  t_partition = r'partition(s?)'           # partition or partitions
   t_performance = r'performance'
   t_query = r'query'
   t_query_image = r'query\s+image\s+[a-zA-Z0-9#$@]{1,8}'
@@ -70,7 +70,7 @@ class Vif:
     return t
 
   def t_MINIDISK(self, t):                 # 'USERID VADDR' without preceding commands
-    r'(?!help|image|query\s+)[a-zA-Z0-9#$@]{1,8}\s+[a-fA-F0-9]{1,4}' 
+    r'(?!disk|help|image|query\s+)[a-zA-Z0-9#$@]{1,8}\s+[a-fA-F0-9]{1,4}' 
     print(f"t_MINIDISK() t: {t}")
     return t
   
@@ -110,10 +110,10 @@ class Vif:
 
   # Parsing rules
   def p_command(self, p):
-    '''command : help_command
+    '''command : disk_command 
+               | help_command
                | hypervisor_command
                | image_command
-               | partition_command
                | query_command'''
 
   def p_help_command(self, p):
@@ -122,19 +122,19 @@ class Vif:
 
   def p_help_action(self, p):
     '''help_action : all
+                   | disk
                    | hypervisor 
                    | image                                  
-                   | partition
                    | query'''  
     match p[1]:
       case 'all':
         self.handle_help_all()
+      case 'disk':
+        self.handle_help_disk()  
       case 'hypervisor':
         self.handle_help_hypervisor()
       case 'image':
         self.handle_help_image()
-      case 'partition':
-        self.handle_help_partition()  
       case 'query':
         self.handle_help_query()
       case _:                              # give basic help
@@ -162,7 +162,7 @@ class Vif:
     print()
     self.handle_help_image()
     print()
-    self.handle_help_partition()
+    self.handle_help_disk()
     print()
     self.handle_help_query()
 
@@ -171,7 +171,6 @@ class Vif:
     print("vif hypervisor: manage and maintain z/VM")
     print("  Subcommands:")
     print("      collect: gather problem determination info - could this also send hardware errors?")
-    print("         echo: verify connectivity with vif - not needed with localhost, but perhaps cross LPAR")
     print("       errors: report on hardware errors - could this also send problem determination info?")
     print("       export: create a backup of configuration info")
     print("       import: restore a backup of configuration info")
@@ -200,18 +199,18 @@ class Vif:
     print("      stopall: shutdown all Linux images on LPAR")
     print("               Syntax: vif image stopall")
 
-  def handle_help_partition(self):
-    self.log.debug(f"handle_help_partition(): user: {self.conf.user}")
-    print("vif partition: manage disk partitions")
+  def handle_help_disk(self):
+    self.log.debug(f"handle_help_disk(): user: {self.conf.user}")
+    print("vif disk: manage disks")
     print("  Subcommands:")
-    print("         copy: copy source partition to newly added target partition")
-    print("               Syntax: vif partition copy <image1> <device1> [to] <image2> <device2>")
-    print("       create: add a new partition")
-    print("               Syntax: vif partition create <image> <device> <size>")
-    print("       delete: delete an existing partition")
-    print("               Syntax: vif partition delete <image1> <device1>")
-    print("        share: give read-only access to the partition of another Linux image")
-    print("               Syntax: vif partition share <image1> <device1> [with] <image2> <device2>")
+    print("         copy: copy source disk to newly added target disk")
+    print("               Syntax: vif disk copy <image1> <device1> [to] <image2> <device2>")
+    print("       create: add a new disk")
+    print("               Syntax: vif disk create <image> <device> <size>")
+    print("       delete: delete an existing disk")
+    print("               Syntax: vif disk delete <image1> <device1>")
+    print("        share: give read-only access to the disk of another Linux image")
+    print("               Syntax: vif disk share <image1> <device1> [with] <image2> <device2>")
    
   def handle_help_query(self):
     self.log.debug(f"handle_help_query(): user: {self.conf.user}")
@@ -220,24 +219,24 @@ class Vif:
     print("       active: report which Linux images are running")
     print("          all: invoke all other query subcommands")
     print("configuration: display current vif settings")
+    print("        disks: display Linux image DASD utilization")
     print("       errors: report on hardware errors")
     print("        image: display configuration of a Linux image")
-    print("               Syntax: vif query <image>")
+    print("               Syntax: vif query image <image>")
     print("        level: report the vif level (version)")
     print("      network: display network configuration")
     print("       paging: report on amount of page space and how much is being used")
-    print("   partitions: display Linux image DASD utilization")
     print("  performance: display current CPU, paging and I/O utilization")
-    print("       shared: display Linux images that share partitions")
+    print("       shared: display Linux images that share disks")
     print("      volumes: display image and paging DASD volumes")
 
   def handle_help(self):
     self.log.debug(f"handle_help(): user: {self.conf.user}")
     print(" vif commands:")
+    print("         disk: manage disks")
     print("         help: give help")
     print("   hypervisor: manage z/VM")
     print("        image: manage instances of Linux")
-    print("    partition: manage disk partitions")
     print("        query: display many types of z/VM information")
 
   def p_hypervisor_command(self, p):
@@ -245,7 +244,7 @@ class Vif:
 
   def p_hypervisor_action(self, p):
     '''hypervisor_action : collect
-                         | echo                                 
+                         | disk                                 
                          | errors       
                          | export
                          | help       
@@ -258,6 +257,8 @@ class Vif:
     match p[1]:
       case 'collect':
         self.handle_hypervisor_collect()
+      case 'disk':
+        self.handle_hypervisor_disk()
       case 'echo':
         self.handle_hypervisor_echo()
       case 'errors':
@@ -285,6 +286,9 @@ class Vif:
   # 'vif hypervisor' command handlers
   def handle_hypervisor_collect(self):
     self.log.debug(f"handle_hypervisor_collect(): user: {self.conf.user}  Write problem determination data to /var/log/vif/data.collect.YY-MM-DD-HH:MM:SS`")
+
+  def handle_hypervisor_disk(self):
+    self.log.debug(f"handle_hypervisor_disk(): user: {self.conf.user} give overall status of disks") 
 
   def handle_hypervisor_echo(self):
     self.log.debug(f"handle_hypervisor_echo(): user: {self.conf.user} verify connectivity with VIF")
@@ -376,30 +380,30 @@ class Vif:
   def handle_image_stopall(self):
     self.log.debug(f"handle_image_stopall(): user: {self.conf.user} SIGNAL SHUTDOWN to all user IDs running Linux'")
 
-  def p_partition_command(self, p):
-    '''partition_command : partition partition_action'''
+  def p_disk_command(self, p):
+    '''disk_command : disk disk_action'''
 
-  def p_partition_action(self, p):
-    '''partition_action : copy copy_qualifiers
-                        | create MINIDISK_SIZE
-                        | delete MINIDISK
-                        | help
-                        | share share_qualifiers'''
+  def p_disk_action(self, p):
+    '''disk_action : copy copy_qualifiers
+                   | create MINIDISK_SIZE
+                   | delete MINIDISK
+                   | help
+                   | share share_qualifiers'''
     match p[1]:
       case 'copy':
-        self.handle_partition_copy(p[2])
+        self.handle_disk_copy(p[2])
       case 'create':
-        self.handle_partition_create(p[2])
+        self.handle_disk_create(p[2])
       case 'delete':
-        self.handle_partition_delete(p[2])
+        self.handle_disk_delete(p[2])
       case 'help':
-        self.handle_help_partition()
+        self.handle_help_disk()
       case 'share':
-        self.handle_partition_share(p[2])
+        self.handle_disk_share(p[2])
 
-  # 'vif partition' command handlers
-  def handle_partition_copy(self, args):
-    self.log.debug(f"handle_partition_copy(): user: {self.conf.user} run 'partition copy' args: {args}")
+  # 'vif disk' command handlers
+  def handle_disk_copy(self, args):
+    self.log.debug(f"handle_disk_copy(): user: {self.conf.user} run 'disk copy' args: {args}")
 
   def p_copy_qualifiers(self, p):
     '''copy_qualifiers : MINIDISK MINIDISK 
@@ -409,14 +413,14 @@ class Vif:
     elif len(p) == 4:
       p[0] = (p[1], p[3])
 
-  def handle_partition_create(self, args):
-    self.log.debug(f"handle_partition_create(): user: {self.conf.user} run 'partition create' args: {args}")
+  def handle_disk_create(self, args):
+    self.log.debug(f"handle_disk_create(): user: {self.conf.user} run 'disk create' args: {args}")
 
-  def handle_partition_delete(self, args):
-    self.log.debug(f"handle_partition_delete(): user: {self.conf.user} run 'partition delete' args: {args}")
+  def handle_disk_delete(self, args):
+    self.log.debug(f"handle_disk_delete(): user: {self.conf.user} run 'disk delete' args: {args}")
 
-  def handle_partition_share(self, args):
-    self.log.debug(f"handle_partition_share(): user: {self.conf.user} run 'partition share' with args: {args}")
+  def handle_disk_share(self, args):
+    self.log.debug(f"handle_disk_share(): user: {self.conf.user} run 'disk share' with args: {args}")
 
   def p_share_qualifiers(self, p):
     '''share_qualifiers : MINIDISK MINIDISK 
@@ -439,12 +443,12 @@ class Vif:
     '''query_action : active         
                     | all                     
                     | configuration  
+                    | disks  
                     | errors  
                     | help            
                     | level          
                     | network        
                     | paging         
-                    | partition   
                     | performance 
                     | share     
                     | version     
@@ -454,6 +458,8 @@ class Vif:
         self.handle_query_active()
       case 'all':
         self.handle_query_all()
+      case 'disks':
+        self.handle_query_disks()
       case 'configuration':
         self.handle_query_configuration()
       case 'errors':
@@ -468,8 +474,6 @@ class Vif:
         self.handle_query_network()
       case 'paging':
         self.handle_query_paging()
-      case 'partitions':
-        self.handle_query_partitions()
       case 'performance':
         self.handle_query_performance()
       case 'shared':
@@ -487,7 +491,7 @@ class Vif:
     Ping each server (1 packet, 500 ms max) and show which are up and which are down
     """
     self.get_lpar_userid()                 # save LPAR and user ID we are running on
-    url = "http://z-graf1/restapi.py?hostname" # URL with hostname endpoint and query parameters
+    url = "http://zlnx1/restapi.py?hostname" # URL with hostname endpoint and query parameters
     params = {
       'arch': 's390x',                     # must be zLinux
       'lpar': self.lpar                    # on this LPAR
@@ -505,6 +509,8 @@ class Vif:
       self.log.error(f"Timeout error occurred: {timeout_err}") # Handle timeout errors
     except requests.exceptions.RequestException as req_err:
       self.log.error(f"An error occurred: {req_err}")          # Handle any other request errors
+    self.log.debug(f"Response headers: {resp.headers}")
+    self.log.debug(f"Response content: {resp.text}")
 
     # ping each server 
     down_count = 0
@@ -547,8 +553,8 @@ class Vif:
   def handle_query_paging(self):
     self.log.debug(f"handle_query_paging() user: {self.conf.user} run 'query paging'")
 
-  def handle_query_partitions(self):
-    self.log.debug(f"handle_query_partitions() user: {self.conf.user} run 'query partitions'")
+  def handle_query_disks(self):
+    self.log.debug(f"handle_query_disks() user: {self.conf.user} run 'query disks'")
 
   def handle_query_performance(self):
     self.log.debug(f"vif.handle_query_performance(): user: {self.conf.user} run 'query performance'")
@@ -571,14 +577,14 @@ class Vif:
     cmd =  " ".join(self.args.cmd)
     self.log.debug(f"parse_command(): user: {self.conf.user} cmd: {cmd}")
     match cmd:                             # check for VIF commands with no args => give help on that command
+      case "disk":
+        self.handle_help_disk()
       case "help":
         self.handle_help()
       case "hypervisor":
         self.handle_help_hypervisor()
       case "image":
         self.handle_help_image()
-      case "partition":
-        self.handle_help_partition()
       case "query":
         self.handle_help_query()
       case _:                              # there are args - process command

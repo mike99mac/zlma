@@ -1,0 +1,27 @@
+#zlma-table {
+  border-collapse: collapse; /* Ensures borders collapse between cells */
+  border-spacing: 0; /* Ensures no extra space between cells */
+}
+
+#zlma-table th, #zlma-table td {
+  border: 1px solid black; 
+}
+
+#zlma-table tr:nth-of-type(odd) {
+  background-color:rgba(255, 221, 0, 0.1); /* odd rows light yellow */
+}
+
+#zlma-table tr:nth-of-type(even) {
+  background-color:rgba(0, 87, 183, 0.1)  /* even rows light blue */
+}
+
+th, td {
+  overflow-wrap: break-word;
+  word-wrap: break-word; 
+  text-align: left;
+}
+
+h1 {
+  color: #0073e6;
+}
+
