@@ -12,25 +12,25 @@ class Zlma_buttons:
     self.yellow="style=\"background-color:#FFDB4D\""
 
     self.html = '<br><table align=center border="0" cellpadding="0" cellspacing="0"><tr>\n' # start a table
-    self.html += "<td><form action='/zlmarw/commands.py' accept-charset=utf-8>"
-    self.html += f"<button class=button {self.green}>Commands</button>"
+    self.html += "<td><form action='/zlmarw/cpcmds' accept-charset=utf-8>"
+    self.html += f"<button class=button {self.green}>Commands</button>&nbsp; "
     self.html += "</form></td>\n"
 
-    self.html += "<td><form action='/zlmarw/consolez.py' accept-charset=utf-8>"
-    self.html += f"<button class=button {self.green}>Consoles</button>"
+    self.html += "<td><form action='/zlmarw/consolez' accept-charset=utf-8>"
+    self.html += f"<button class=button {self.green}>Consoles</button>&nbsp; "
     self.html += "</form></td>\n" 
 
-    self.html += "<td><form action='/zlmarw/finder.py' accept-charset=utf-8>"
-    self.html += f"<button class=button {self.green}>Finder</button>"
+    self.html += "<td><form action='/zlma/finder.py' accept-charset=utf-8>"
+    self.html += f"<button class=button {self.green}>Finder</button>&nbsp; "
     self.html += "</form></td>\n" 
 
-    self.html += "<td><form action='/zlma/vif.py' accept-charset=utf-8>"
-    self.html += f"<button class=button {self.green}>Vif</button>"
+    self.html += "<td><form action='/zlmarw/vif.py' accept-charset=utf-8>"
+    self.html += f"<button class=button {self.green}>Vif</button>&nbsp; "
     self.html += "</form></td>\n"
 
-    self.html += "<td><form action='https://github.com/mike99mac/zlma#{page}' accept-charset=utf-8>"
-    self.html += f"<button class=button {self.yellow}>Help</button>"
-    self.html += "</form></td></tr></table>\n" 
+    self.html += f"<td><a href='https://github.com/mike99mac/zlma#{page}' target='_blank'> "
+    self.html += f"<button class=button {self.yellow}>Help</button><br>"
+    self.html += "</a></td></tr></table><br>\n" 
 
     print(self.html)
 
