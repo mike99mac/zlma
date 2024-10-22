@@ -1,32 +1,36 @@
 #zlma-table {
-  border-collapse: collapse; /* Ensures borders collapse between cells */
-  border-spacing: 0; /* Ensures no extra space between cells */
+  border-collapse: collapse;               /* borders collapse between cells */
+  border-spacing: 0;                       /* no extra space between cells */
 }
-
 #zlma-table th, #zlma-table td {
   border: 1px solid black; 
 }
-
 #zlma-table tr:nth-of-type(odd) {
   background-color:rgba(255, 221, 0, 0.1); /* odd rows light yellow */
 }
-
 #zlma-table tr:nth-of-type(even) {
-  background-color:rgba(0, 87, 183, 0.1)  /* even rows light blue */
+  background-color:rgba(0, 87, 183, 0.1);  /* even rows light blue */
 }
-
 th, td {
   overflow-wrap: break-word;
   word-wrap: break-word; 
   text-align: left;
 }
-
 h1 {
   color: #0073e6;
 }
-
 .button {
   border:solid #1323a7 1px;
   border-radius: 6px;
 }
+body {
+    font-family: Verdana, arial;
+}
+h1, h2, h3 {
+    font-family: Verdana, arial;
+}
+p {
+    font-family: Verdana, arial;
+}
+
 

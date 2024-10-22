@@ -152,7 +152,6 @@ function runCommand
 #+--------------------------------------------------------------------------+
 function doTheWork 
 # Draw the entire page 
-# Args: none
 #+--------------------------------------------------------------------------+
  {
   if [ ${#systemID} = 0 ]; then            # no LPAR ID passed in
@@ -162,14 +161,14 @@ function doTheWork
   fi
   startPage $title                         # start the Web page
   cat consolez.css                         # inline cascading style sheets
-  echo "<h2>$title</h2>"                   # draw title
+  drawButtons                              # add navigation buttons
+  echo "<h3>LPAR</h3>"    
   echo "<form action=\"/zlmarw/cpcmds\" method=\"GET\">" # rerun this script
   drawLPARchooser                          # if no system ID passed in, allow choosing of LPARs
   setLPARlist                              # set which LPARs have been set
   drawCPcmdButtons                         # add custom navigation buttons
   runCommand                               # run CP command and show output
   echo "</form><table>"                    # end form and table
-  drawButtons                              # add navigation buttons
   echo "</body></html>"                    # end the page
  }                                         # doTheWork()
 

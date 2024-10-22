@@ -146,17 +146,17 @@ function parseArgs
           echo "ERROR: unrecognized flag $1"
           usage 
         fi
-        if [ ${#tgtUserID} = 0 ]; then    # first arg 
+        if [ ${#tgtUserID} = 0 ]; then     # first arg 
           tgtUserID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
-        elif [ ${#tgtSysmID} = 0 ]; then   # second arg 
+        elif [ ${#tgtSysID} = 0 ]; then    # second arg 
           tgtSysID=`echo $1 | tr [:lower:] [:upper:]` # fold to upper case
         else                            
           if [ "$cmdCalled" != grepcons ]; then # too many args
             echo "ERROR: Too many arguments"
             usage
-          else                           # grepcons remaining args are search pattern
+          else                             # grepcons remaining args are search pattern
             pattern="$@"
-            break                        # all done 
+            break                          # all done 
           fi
         fi
         ;;
@@ -173,7 +173,7 @@ function parseArgs
     echo "ERROR: required argument PATTERN missing" | tee -a $logFile
     usage
   fi
-  verboseMsg "tgtUserID = $tgtUserID tgtSysID = $tgtSysID thisUserID = $thisUserID thisSysID = $thisSysID"
+  # verboseMsg "tgtUserID = $tgtUserID tgtSysID = $tgtSysID thisUserID = $thisUserID thisSysID = $thisSysID"
  }                                         # parseArgs()
 
 #+--------------------------------------------------------------------------+
@@ -510,21 +510,19 @@ function searchConsoles
   : STACK:  ${FUNCNAME[@]}
 
   local systemSearch
-  if [ "$tgtSysID" = '*' ]; then  
+  if [ "$tgtSysID" = ':' ]; then  
     systemSearch="*"  
   else                    
     systemSearch="*${tgtSysID}*"
   fi    
   local userSearch
-  if [ "$tgtUserID" = ':' ]; then             # search all user IDs
+  if [ "$tgtUserID" = ':' ]; then          # search all user IDs
     userSearch="*"
   else
     userSearch="*$tgtUserID*"
   fi
   local cmd="grep $grepFlags \"$pattern\" $systemSearch/$userSearch" 
-  if [ "$verbose" -ge 1 ]; then            # show grep command unless in silent mode
-    verboseMsg "Searching from $consDir with: $cmd" 
-  fi
+  verboseMsg "Searching from directory $consDir with: $cmd" 
   cd $consDir
   eval $cmd                                # run the command
   if [ $? = 1 ]; then                      # pattern not found
