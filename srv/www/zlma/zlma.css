@@ -25,3 +25,8 @@ h1 {
   color: #0073e6;
 }
 
+.button {
+  border:solid #1323a7 1px;
+  border-radius: 6px;
+}
+

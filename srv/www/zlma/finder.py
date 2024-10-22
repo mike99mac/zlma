@@ -32,11 +32,7 @@ class Finder:
     print('<link rel="stylesheet" href="/glyphicons-free.css">')   
     print('</head>')
 
-    # Start page body with background of Ukrainian flag colors
-    #print('<body style="background-image: url(/ukr_flag_bg.png); background-repeat: no-repeat; background-size: cover; background-position: center; height: 100vh;">')
     print('<body>') 
-    # print('<body style="background-repeat: no-repeat; background-size: cover; background-position: center; height: 100vh;">')
-    # self.add_menu_bar() # Add the navigation bar (menu bar) with dropdowns
     zlma_buttons = Zlma_buttons("finder")  # add navigation buttons
 
   def add_menu_bar(self):
