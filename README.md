@@ -571,5 +571,16 @@ sudo systemctl enable mariadb
 ```
 sudo systemctl start mariadb
 ```
+# Using zlma web interface
+TODO: 
+## Using commands 
+TODO: describe 
+## Using consoles
+TODO: describe 
+## Using finder 
+TODO: describe 
+## Using vif 
+TODO: describe 
+
 # Colophon
 Zelma is a feminine given name that originated in the late 19th century in the United States. It's believed to be a variant of the German name Selma, which is derived from the Old Norse word "selmr," meaning "protection" or "shelter."

@@ -108,6 +108,27 @@ class Vif:
     self.lexer = lex.lex(module=self)
     self.parser = yacc.yacc(module=self, debug=False, outputdir='/tmp') # write intermediate code to /tmp
 
+  def run_cp_cmd(self, cp_cmd: str):      # run a CP command using vmcp
+    print(f"Running CP command: {cp_cmd}")
+    cmd = f"sudo /usr/sbin/vmcp {cp_cmd}"
+    try:
+      result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+      self.log.error(f"run_cp_cmd(): cmd {cmd} returned subprocess exception: {e}")
+      sys.exit(1)
+    vmcp_out = result.stdout
+    print(vmcp_out)
+
+  def check_privclas(self, class_to_check: str):
+    cmd = f"/usr/local/sbin/qprivclas {class_to_check}"
+    try:
+      result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as e:
+      self.log.error(f"check_privclas(): cmd {cmd} returned subprocess exception: {e}")
+      sys.exit(1)
+    self.log.debug(f"rc from {cmd}: {result.returncode}")
+    return int(result.returncode)
+
   # Parsing rules
   def p_command(self, p):
     '''command : disk_command 
@@ -142,12 +163,13 @@ class Vif:
 
   def get_lpar_userid(self):               # get LPAR and user ID we are running on
     cmd = "sudo /usr/sbin/vmcp query userid" # call CP QUERY USERID
-    try:
-      result = subprocess.check_output(cmd, shell=True)
-    except subprocess.CalledProcessError as e:
-      self.log.error(f"get_lpar_userid(): cmd {cmd} returned subprocess exception: {e}")
-      sys.exit(1)
-    vmcp_out = result.decode('utf-8')      # <USERID> at <LPAR>
+    vmcp_out = self.run_cp_cmd(cmd)
+    #ry:
+    #  result = subprocess.run(cmd, shell=True, capture_output=True, text=True) 
+    #except subprocess.CalledProcessError as e:
+    #  self.log.error(f"get_lpar_userid(): cmd {cmd} returned subprocess exception: {e}")
+    #  sys.exit(1)
+    #vmcp_out = result.decode('utf-8')      # <USERID> at <LPAR>
     words = vmcp_out.split()               # split string into words
     self.lpar = words[2] 
     self.user_id = words[0] 
@@ -170,15 +192,15 @@ class Vif:
     self.log.debug(f"handle_help_hypervisor(): user: {self.conf.user}")
     print("vif hypervisor: manage and maintain z/VM")
     print("  Subcommands:")
-    print("      collect: gather problem determination info - could this also send hardware errors?")
-    print("       errors: report on hardware errors - could this also send problem determination info?")
+    print("      collect: create report on z/VM problem determination info")
+    print("         disk: add paging or image disk space ")
+    print("       errors: create report on hardware errors")
     print("       export: create a backup of configuration info")
     print("       import: restore a backup of configuration info")
     print("      restart: SHUTDOWN REIPL z/VM")
     print("      service: install the latest VIF service (git pull?)")
     print("     shutdown: SHUTDOWN z/VM")
     print("       verify: performs consistency checks of vif")
-    print("       volume: add paging or image disk space ")
 
   def handle_help_image(self):
     self.log.debug(f"handle_help_image(): user: {self.conf.user}")
@@ -270,11 +292,11 @@ class Vif:
       case 'help':
         self.handle_help_hypervisor()
       case 'restart':
-        self.handle_hypervisor_restart()
+        self.handle_hypervisor_shutdown("restart") # different flavor of SHUTDOWN
       case 'service':
         self.handle_hypervisor_service()
       case 'shutdown':
-        self.handle_hypervisor_shutdown()
+        self.handle_hypervisor_shutdown("shutdown")
       case 'verify':
         self.handle_hypervisor_verify()
       case 'volume':
@@ -285,7 +307,8 @@ class Vif:
 
   # 'vif hypervisor' command handlers
   def handle_hypervisor_collect(self):
-    self.log.debug(f"handle_hypervisor_collect(): user: {self.conf.user}  Write problem determination data to /var/log/vif/data.collect.YY-MM-DD-HH:MM:SS`")
+    self.log.debug(f"handle_hypervisor_collect(): user: {self.conf.user}  Write problem determination data to /var/log/zlma/data.collect.YY-MM-DD-HH:MM:SS")
+    print("TODO: Write problem determination data to /var/log/zlma/data.collect.YY-MM-DD-HH:MM:SS")
 
   def handle_hypervisor_disk(self):
     self.log.debug(f"handle_hypervisor_disk(): user: {self.conf.user} give overall status of disks") 
@@ -294,28 +317,41 @@ class Vif:
     self.log.debug(f"handle_hypervisor_echo(): user: {self.conf.user} verify connectivity with VIF")
 
   def handle_hypervisor_errors(self):
-    self.log.debug(f"handle_hypervisor_errors(): user: {self.conf.user} write hardware errors to /var/log/vif/ereprept.YY-MM-DD-HH:MM:SS")
+    self.log.debug(f"handle_hypervisor_errors(): user: {self.conf.user} write hardware errors to /var/log/zlma/ereprept.YY-MM-DD-HH:MM:SS")
+    print("TODO: write hardware errors to /var/log/zlma/ereprept.YY-MM-DD-HH:MM:SS")
 
   def handle_hypervisor_export(self):
     self.log.debug(f"handle_hypervisor_export(): user: {self.conf.user} backup system configuration to /etc/vif/config.save")
+    print("TODO: delete hypervisor export and import?")
 
   def handle_hypervisor_import(self):
     self.log.debug(f"handle_hypervisor_import(): user: {self.conf.user} restore system configuration from /etc/vif/config.save")
-
-  def handle_hypervisor_restart(self):
-    self.log.debug(f"handle_hypervisor_restart(): user: {self.conf.user} run 'CP SHUTDOWN REIPL'")
+    print("TODO: delete hypervisor export and import?")
 
   def handle_hypervisor_service(self):
-    self.log.debug(f"handle_hypervisor_service(): user: {self.conf.user} how to service z/VM similar to 'apt update/apt upgrade'?")
+    self.log.debug(f"handle_hypervisor_service(): user: {self.conf.user} how to service z/VM from Linux?")
+    print("TODO: how to service z/VM from Linux?")
 
-  def handle_hypervisor_shutdown(self):
+  def handle_hypervisor_shutdown(self, flavor: str):
+    """
+    hypervisor 'restart' and 'shutdown' both invoke CP SHUTDOWN
+    """
     self.log.debug(f"handle_hypervisor_shutdown(): user: {self.conf.user} run 'CP SHUTDOWN'")
+    rc = self.check_privclas("A")          # SHUTDOWN requires privilege class A
+    if rc == 1:                            # is privileged
+      self.log.debug(f"handle_hypervisor_shutdown(): user: {self.conf.user} running SHUTDOWN REIPL")
+      self.run_cp_cmd("SHUTDOWN REIPL")
+    elif rc == 0:                          # is not privileged
+      self.log.debug(f"handle_hypervisor_shutdown(): user: {self.conf.user} does not have A privclas")
+      print("You don't have the privilege to do a 'restart'")
+
 
   def handle_hypervisor_verify(self):
     self.log.debug(f"handle_hypervisor_verify(): user: {self.conf.user} do consistency checks, args FULL, BRIef, or NETwork <image>'")
+    print("TODO: what checks can this do?")
 
   def handle_hypervisor_volume(self):
-    self.log.debug(f"handle_hypervisor_volume(): user: {self.conf.user} add PAGE and minidisk space (feilong?)")
+    self.log.debug(f"handle_hypervisor_volume(): user: {self.conf.user} add PAGE and minidisk space")
 
   def p_image_command(self, p):
     '''image_command : image_create
@@ -363,7 +399,7 @@ class Vif:
     self.log.debug(f"handle_image_create(): user: {self.conf.user} create user ID {image} and clone Linux to it")
 
   def handle_image_delete(self, image):
-    self.log.debug(f"handle_image_delete(): user: {self.conf.user} PURGE {image} (feilong?)")
+    self.log.debug(f"handle_image_delete(): user: {self.conf.user} PURGE {image}")
 
   def handle_image_network(self, args):
     self.log.debug(f"handle_image_network(): user: {self.conf.user} add/delete network adapters - args: {args}'")
@@ -379,6 +415,7 @@ class Vif:
 
   def handle_image_stopall(self):
     self.log.debug(f"handle_image_stopall(): user: {self.conf.user} SIGNAL SHUTDOWN to all user IDs running Linux'")
+    print("stop all Linux images on LPAR")
 
   def p_disk_command(self, p):
     '''disk_command : disk disk_action'''
@@ -545,16 +582,27 @@ class Vif:
     self.log.debug(f"handle_query_image() user: {self.conf.user} query image {image}")
 
   def handle_query_level(self):
-    self.log.debug(f"handle_query_level() user: {self.conf.user} vif version: 0.1")
+    self.log.debug(f"handle_query_level() user: {self.conf.user} calling CP QUERY CPLEVEL")
+    self.run_cp_cmd("QUERY CPLEVEL")
 
   def handle_query_network(self):
-    self.log.debug(f"handle_query_network() user: {self.conf.user} run 'query network'")
+    self.log.debug(f"handle_query_network() user: {self.conf.user} running QUERY VSWITCH DETAILS")
+    self.run_cp_cmd("QUERY VSWITCH DETAILS")
 
   def handle_query_paging(self):
-    self.log.debug(f"handle_query_paging() user: {self.conf.user} run 'query paging'")
+    self.log.debug(f"handle_query_paging() user: {self.conf.user} running 'QUERY ALLOC PAGE'")
+    rc = self.check_privclas("D")          # Q ALLOC requires privilege class D
+    if rc == 1:                            # is privileged
+      self.log.debug(f"handle_query_paging(): user: {self.conf.user} running QUERY ALLOC PAGE")
+      self.run_cp_cmd("QUERY ALLOC PAGE")
+    elif rc == 0:                          # is not privileged
+      self.log.debug(f"handle_query_paging(): user: {self.conf.user} does not have D privclas")
+      print("You don't have the privilege to query paging")
 
   def handle_query_disks(self):
     self.log.debug(f"handle_query_disks() user: {self.conf.user} run 'query disks'")
+    self.run_cp_cmd("QUERY DASD")
+    self.run_cp_cmd("QUERY DASD FREE")
 
   def handle_query_performance(self):
     self.log.debug(f"vif.handle_query_performance(): user: {self.conf.user} run 'query performance'")

@@ -54,12 +54,13 @@ function drawOneRow
 
 #+--------------------------------------------------------------------------+
 function drawMainTable
-# Produce a report from the most recent health check
+# Produce a table with console data 
 # Args: none 
 #+--------------------------------------------------------------------------+
  {
   startPage $title                         # start the Web page
-  cat consolez.css                         # inline consolez cascading style sheets
+  echo '<link rel="stylesheet" href="/zlma.css">'
+  drawButtons 
 
   local consoleData
   consoleData=`/usr/local/sbin/lscons`     # list all saved consoles from the Web UI
@@ -68,9 +69,9 @@ function drawMainTable
     startTable
     startRow "#FF6666"                     # draw row in light red
     if [ "$rc" = 1 ]; then
-      echo "<td><h2>ERROR!</h2><p>No data found by lscons</p>"
+      echo "<td><h3>ERROR!</h3><p>No data found by lscons</p>"
     else
-      echo "<td><h2>Unexpected!</h2><p>/usr/local/sbin/lscons returned $rc</p>"
+      echo "<td><h3>Unexpected!</h3><p>/usr/local/sbin/lscons returned $rc</p>"
     fi
     echo "<p>$consoleData</p>"             # error message is the data
     echo "</td></tr></table>"              # end cell, row and table
@@ -78,9 +79,9 @@ function drawMainTable
   fi  
 
   # draw the table
-  echo "<h2>$title</h2>"
+  echo "<h3 align='center'>$title</h3>"
   drawSearchBar                            # enable searching for consoles
-  echo '<table class="consolezTable" align="center">' # start consolez table aligned in center 
+  echo '<table class="consolezTable">'     # start a consolez table 
   local nextRow                            # next row from test 
   exec 3<&0                                # Link file descriptor #3 with stdin
   while read -u 3 nextRow; do              # read from file descriptor 3
@@ -100,7 +101,6 @@ title="z/VM Console data"                  # page title
 # main()
 source /usr/local/sbin/consfuncs           # import common line command functions
 source consuifuncs                         # import common Web UI functions
-checkUser      
-drawMainTable $rc                          # show table with all LPARs and tests 
-drawButtons                                # add buttons at bottom
+#checkUser      
+drawMainTable                              # show table with all LPARs and tests 
 

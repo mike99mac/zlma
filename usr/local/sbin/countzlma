@@ -6,8 +6,9 @@ SBN="/usr/local/sbin"
 ZRW="/srv/www/zlmarw"
 python="/srv/www/zlma/finder.py /srv/www/zlma/restapi.py $SBN/zlma $SBN/zlma_conf.py $SBN/vif"
 javascript="/srv/www/zlma/bootstable.js"
-bash="$HOME/zlmainfo $SBN/testrestapi $SBN/testvif $SBN/spoolcons $SBN/cpcommand $SBN/consfuncs $ZRW/one* $ZRW/consolez $ZRW/searchcons $ZRW/cpcmds $ZRW/consuifuncs"
-css="/srv/www/zlma/finder.css $ZRW/consolez.css" 
+bash="$HOME/zlmainfo $SBN/test* $SBN/spoolcons $SBN/cpcommand $SBN/consfuncs $SBN/qprivclas \
+  $ZRW/one* $ZRW/consolez $ZRW/searchcons $ZRW/cpcmds $ZRW/consuifuncs"
+css="/srv/www/zlma/zlma.css"
  
 echo
 echo "Lines of code in zlma:"
@@ -24,4 +25,5 @@ echo
 echo "CSS:"
 wc -l $css
 echo
+# get total lines
 wc -l $python $javascript $bash $css | tail -1 | sed 's/^  //g'

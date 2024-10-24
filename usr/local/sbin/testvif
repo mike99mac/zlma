@@ -12,15 +12,15 @@ function oneTest
  
   local args="$@"
   let tests=$tests+1
-  printf "%-3s %-30s\n" "$tests)" "Running: vif $args ..."
-  vif $args 2>&1
+  printf "%-3s %-30s\n" "$tests)" "Running: vif $args ..." | tee -a $outFile 2>&1
+  vif $args | tee -a $outFile 2>&1
   rc=$?
   if [ "$rc" = 0 ]; then
     let successes=$successes+1
   else
-    echo "ERROR: vif returned $rc"
+    echo "ERROR: vif returned $rc" | tee -a $outFile 2>&1
   fi 
-  echo
+  echo | tee -a $outFile 2>&1
  }                                         # oneTest()
 
 #+--------------------------------------------------------------------------+
@@ -63,7 +63,7 @@ function allTests
   oneTest query active
   oneTest query all
   oneTest query configuration
-  oneTest query disk 
+  oneTest query disks 
   oneTest query errors
   oneTest query image linux1
   oneTest query level
@@ -77,7 +77,8 @@ function allTests
  }                                         # allTests()
 
 # main
-#outFile="/tmp/testvif.txt"                 # output file
+timeStamp=`date +"%y-%m-%d-%H-%M-%S"`      # current date and time
+outFile="$HOME/$timeStamp-testvif.out"     # log file
 successes=0                                # good tests
 tests=0                                    # total tests
 
