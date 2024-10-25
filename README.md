@@ -5,7 +5,7 @@ z/VM and Linux Modern Administration (**zlma**, pronounced "zelma") enables Linu
 1. Linux command line
 1. 3270 ("green screen")
 
-It consists of four main components:
+It consists of these main components:
 - A relational database 
   - Containing pertinent up-to-date data about Linux servers on z
 - Web browser interfaces
@@ -15,6 +15,8 @@ It consists of four main components:
   - ``zlma`` - manage DB of zLinux data 
   - ``vif`` - manage many aspects of z/VM
   - console related commands such as ``spoolcons`` and ``lscons`` 
+- Virtual Image Facility (VIF)
+  - An abstraction of all z/VM function and administration
 - A RESTful API 
   - So other apps can get to the data
 
@@ -24,6 +26,12 @@ Following is a block diagram of zlma:
 ![](zlma-block-diagram.png) 
 
 **zlma block diagram**
+
+# Items TO DO 
+- Write equivalent of SMAPI to support DirMaint and VMSECURE (BIG ONE!)
+- Add code so all writes go to two places
+- Allow Web UI "green screens" to be more conventional with CSSs
+- Finish vif pages to gather parameters, example: vif image set => choose memory/CPUs
 
 # Preparing for installation 
 
