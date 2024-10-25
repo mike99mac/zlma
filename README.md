@@ -32,8 +32,12 @@ Zlma strives to attain these goals:
   - No drop-down menus
 - To be well-architected
   - Centralized data in a fast, reliable relational database
-  - Allow cross-LPAR communication 
-  - Use mostly Python code, version 3.10 or greater
+  - Allow cross-LPAR communication using ssh: and https:
+  - Mostly object-oriented Python code, version 3.10 or greater
+  - Roles
+    - Web UI performs presentation
+    - Line commands do the heavy lifting
+    - Inter-communicaiton through a RESTful API 
   - Context-sensitive help documentation, all pointing to this README
 - To be secure
   - Cheyenne is going to help me with this :)) Web-facing Linux user IDs only have G priv class
