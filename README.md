@@ -35,6 +35,8 @@ Zlma strives to attain these goals:
   - Allow cross-LPAR communication 
   - Use mostly Python code, version 3.10 or greater
   - Context-sensitive help documentation, all pointing to this README
+- To be secure
+  - Cheyenne is going to help me with this :)) Web-facing Linux user IDs only have G priv class
 
 # Overview
 Following is a block diagram of zlma:
@@ -48,6 +50,7 @@ Following is a block diagram of zlma:
 - Add code so all writes go to two places
 - Allow Web UI "green screens" to be more conventional with CSSs
 - Finish vif pages to gather parameters, example: vif image set => choose memory/CPUs
+- Create certificates and switch from http: to https:
 
 # Preparing for installation 
 
