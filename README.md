@@ -1,10 +1,7 @@
 # z/VM and Linux Modern Administration 
-z/VM and Linux Modern Administration (**zlma**, pronounced "zelma") enables Linux servers running under the z/VM hypervisor on IBM Mainframes to be managed in a more modern fashion. The priority of how servers are managed is:
+z/VM and Linux Modern Administration (**zlma**, pronounced "zelma") enables Linux servers running under the z/VM hypervisor on IBM Mainframes to be managed in a more modern fashion. 
 
-1. Browser-based
-1. Linux command line
-1. 3270 ("green screen")
-
+## Components
 It consists of these main components:
 - A relational database 
   - Containing pertinent up-to-date data about Linux servers on z
@@ -19,6 +16,24 @@ It consists of these main components:
   - An abstraction of all z/VM function and administration
 - A RESTful API 
   - So other apps can get to the data
+
+## Goals
+Zlma strives to attain these goals:
+
+- Modern
+  - Perform much administration from a browser 
+  - Avoid 3270 "green screens" as much as possible 
+- Centralized
+  - Keep all CMDB data in two places
+  - Keep all z/VM Console data in two places
+- Simple 
+  - Use as few web pages and menu items as possible 
+  - Use a simple 5-button menu at the top of all web pages 
+  - No drop-down menus
+- Well architected
+  - Centralized data 
+  - Allow cross-LPAR communication 
+  - Use mostly Python code, version 3.10 or greater
 
 # Overview
 Following is a block diagram of zlma:
