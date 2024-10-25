@@ -20,20 +20,21 @@ It consists of these main components:
 ## Goals
 Zlma strives to attain these goals:
 
-- Modern
-  - Perform much administration from a browser 
+- To be modern
+  - Perform most z/VM and Linux administration from a browser 
   - Avoid 3270 "green screens" as much as possible 
-- Centralized
-  - Keep all CMDB data in two places
-  - Keep all z/VM Console data in two places
-- Simple 
+- To be centralized
+  - Keep all CMDB data on two servers
+  - Keep all z/VM Console data in the same two places
+- To be simple 
   - Use as few web pages and menu items as possible 
   - Use a simple 5-button menu at the top of all web pages 
   - No drop-down menus
-- Well architected
-  - Centralized data 
+- To be well-architected
+  - Centralized data in a fast, reliable relational database
   - Allow cross-LPAR communication 
   - Use mostly Python code, version 3.10 or greater
+  - Context-sensitive help documentation, all pointing to this README
 
 # Overview
 Following is a block diagram of zlma:
