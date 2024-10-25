@@ -20,27 +20,30 @@ It consists of these main components:
 ## Goals
 Zlma strives to attain these goals:
 
-- To be modern
+- To be **modern**:
   - Perform most z/VM and Linux administration from a browser 
   - Avoid 3270 "green screens" as much as possible 
-- To be centralized
+- To be **centralized**:
   - Keep all CMDB data on two servers
   - Keep all z/VM Console data in the same two places
-- To be simple 
-  - Use as few web pages and menu items as possible 
-  - Use a simple 5-button menu at the top of all web pages 
-  - No drop-down menus
-- To be well-architected
+- To be **simple**:
+  - As few web pages and menu items with no drop-down menus 
+  - A simple 5-button menu at top of all web pages 
+  - One config file: ``/etc/zlma.conf``
+  - One log file directory: ``/var/log/zlma``
+- To be **well-architected**:
   - Centralized data in a fast, reliable relational database
   - Allow cross-LPAR communication using ssh: and https:
+  - One Linux administration server per z/VM LPAR
   - Mostly object-oriented Python code, version 3.10 or greater
-  - Roles
+  - Roles:
     - Web UI performs presentation
     - Line commands do the heavy lifting
-    - Inter-communicaiton through a RESTful API 
+    - RESTful API for cross-LPAR communicaiton
   - Context-sensitive help documentation, all pointing to this README
-- To be secure
+- To be **secure**:
   - Cheyenne is going to help me with this :)) Web-facing Linux user IDs only have G priv class
+  - Detailed log files with audit trail of all operations
 
 # Overview
 Following is a block diagram of zlma:
