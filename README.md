@@ -29,6 +29,7 @@ Zlma strives to attain these goals:
 - To be **simple**:
   - As few web pages and menu items with no drop-down menus 
   - A simple 5-button menu at top of all web pages 
+  - No fancy frameworks to create Web pages, just plain basic code 
   - One config file: ``/etc/zlma.conf``
   - One log file directory: ``/var/log/zlma``
 - To be **well-architected**:
@@ -606,14 +607,30 @@ sudo systemctl enable mariadb
 sudo systemctl start mariadb
 ```
 # Using zlma web interface
-TODO: 
+Following is a decription of using each of the four main zlma web pages.
+
 ## Using commands 
 TODO: describe 
+
 ## Using consoles
 TODO: describe 
+
 ## Using finder 
 TODO: describe 
+
 ## Using vif 
+TODO: describe 
+
+### Using vif hypervisor 
+TODO: describe 
+
+### Using vif image 
+TODO: describe 
+
+### Using vif disk 
+TODO: describe 
+
+### Using vif query
 TODO: describe 
 
 # Colophon
