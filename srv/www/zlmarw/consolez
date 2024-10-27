@@ -32,7 +32,7 @@ function drawOneRow
   
   # draw LPAR column and up to $numCols more user IDs
   local color="green"
-  echo "<td><a style=\"color:$color;\" href=onelpar?$systemID>$systemID</a></td>" # column 1 - the LPAR
+  echo "<tr><td><a style=\"color:$color;\" href=onelpar?$systemID>$systemID</a></td>" # column 1 - the LPAR
   local nextUserID
   let colNum=2                             # current column 
   for nextUserID in $userIDs; do           # loop through max number of user IDs
@@ -60,7 +60,7 @@ function drawMainTable
  {
   startPage $title                         # start the Web page
   echo '<link rel="stylesheet" href="/zlma.css">'
-  drawButtons 
+  drawButtons using-consoles
 
   local consoleData
   consoleData=`/usr/local/sbin/lscons`     # list all saved consoles from the Web UI
@@ -87,7 +87,7 @@ function drawMainTable
   while read -u 3 nextRow; do              # read from file descriptor 3
     drawOneRow $nextRow
   done 3< <(echo "$consoleData")           # all rows from last test are input
-  echo "</tr></table>"                     # end row and table
+  echo "</table>"       
  }                                         # drawMainTable()
 
 #+--------------------------------------------------------------------------+
@@ -96,7 +96,7 @@ consolezUser="none"                        # user this script is running as
 curCEC="none"                              # the current CEC being processed
 flags="-s"                                 # default is succinct output
 role="none"
-title="z/VM Console data"                  # page title
+title="zlma Console data"                  # page title
 
 # main()
 source /usr/local/sbin/consfuncs           # import common line command functions

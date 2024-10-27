@@ -24,7 +24,7 @@ Zlma strives to attain these goals:
   - Perform most z/VM and Linux administration from a browser 
   - Avoid 3270 "green screens" as much as possible 
 - To be **centralized**:
-  - Keep all CMDB data on two servers
+  - Keep all CMDB data on two servers (primary and hot standby)
   - Keep all z/VM Console data in the same two places
 - To be **simple**:
   - As few web pages and menu items with no drop-down menus 
@@ -34,7 +34,7 @@ Zlma strives to attain these goals:
   - One log file directory: ``/var/log/zlma``
 - To be **well-architected**:
   - Centralized data in a fast, reliable relational database
-  - Allow cross-LPAR communication using ssh: and https:
+  - Cross-LPAR communication using ssh: and https:
   - One Linux administration server per z/VM LPAR
   - Mostly object-oriented Python code, version 3.10 or greater
   - Roles:
@@ -59,6 +59,7 @@ Following is a block diagram of zlma:
 - Allow Web UI "green screens" to be more conventional with CSSs
 - Finish vif pages to gather parameters, example: vif image set => choose memory/CPUs
 - Create certificates and switch from http: to https:
+- Change all consolezTable's to zlma-table's
 
 # Preparing for installation 
 

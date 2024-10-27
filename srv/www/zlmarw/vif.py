@@ -12,33 +12,20 @@ class Vif:
     """
     self.pattern = ""                      # search pattern
     self.rows = []                         # resulting rows
+    self.title = "zlma vif - Virtual Image Facility"
 
     # start the HTML page
     print('Content-Type: text/html')
     print()
     print('<!DOCTYPE html>')  
-    print('<html><head>')
-    # print('<link rel="icon" type="image/png" href="/finder.ico">')
+    print(f'<html><head><title>{self.title}</title>\n')
+    print('<link rel="icon" type="image/png" href="/zlma.ico">')
     print('<link rel="stylesheet" href="/zlma.css">') # common CSS's`
     print('</head>')
     print('<body>')
-    zlma_buttons = Zlma_buttons("finder")  # add navigation buttons
+    zlma_buttons = Zlma_buttons("using-vif")  # add navigation buttons
 
-  def print_env(self):
-    """
-    Show all environment variables with the 'env' command
-    """
-    proc = subprocess.run("env", shell=True, capture_output=True, text=True)
-    rc = proc.returncode
-    env_vars = []
-    env_vars = proc.stdout
-    print('<pre>')
-    for line in env_vars.split("\n"):
-      print(str(line))
-    print('</pre>')
-    print()
-
-  def create_table(self, vif_cmd, data):
+  def create_table(self, vif_cmd, data): # create one of four vif tables
     """
     Create an HTML table 
     Args:
@@ -62,7 +49,7 @@ class Vif:
           elif vif_cmd == "image" and (cell == "start" or cell == "stop" or cell == "stopall"):
             script = f"vifimgpower.py?sub_cmd={cell}"      
           elif vif_cmd == "disk":
-            script = f"vifdiskset.py?sub_cmd={cell}"      
+            script = f"vifdisk.py?sub_cmd={cell}"      
           else:                            # no arguments needed
             script = "vifcmd.py" 
           html_code += f"<td><form action='/zlmarw/{script}' target='_blank' accept-charset='utf-8'>\n"
@@ -76,13 +63,7 @@ class Vif:
     html_code += "</tbody></table>&nbsp;\n"
     return html_code
   
-  def create_page(self):
-    """
-    Create an HTML page with four tables: hypervisor, image, disk, and query.
-    """
-    html_code = "<title>Vif commands</title>\n"
-  
-    # Data for each table
+  def create_page(self):                   # Create page body with 4 tables: hypervisor, image, disk, and query
     hyper_data = [["collect", "Gather problem determination info"], 
                   ["disk", "Add paging or Linux disk space"],
                   ["errors", "Report on hardware errors"], 
@@ -93,7 +74,6 @@ class Vif:
                  ]
     image_data = [["create", "Define a new Linux image"], 
                   ["delete", "Delete an existing image"],
-                  # ["network", "Manage network connections for an image"],
                   ["set", "Change memory or #CPUs of a image"],
                   ["start", "Boot a Linux image"],
                   ["stop", "Shut down a Linux image"],
@@ -114,8 +94,7 @@ class Vif:
                   ["volumes", "Display image and paging DASD volumes"]
                  ]
   
-    # start surrounding table
-    #html_code += "<table style='border: 1px solid black; border-collapse: collapse;'><tr><td>\n" 
+    html_code = f"<h2>{self.title}</h2>\n"
     html_code += "<table id='surroundingTable'><tr><td>\n" 
     html_code += self.create_table("hypervisor", hyper_data)
     html_code += "</td><td>\n"             # start new cell
@@ -130,5 +109,4 @@ class Vif:
   
 # main()
 vif = Vif()                                # create a singleton
-# vif.print_env() 
 vif.create_page()                          # create a web page

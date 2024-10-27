@@ -5,7 +5,7 @@ Note the above "shebang" - this must be run from virtual environment /srv/venv/
 restapi.py - the zlma RESTful API - accesses the table 'servers' in the mariadb database 'zlma'.
 Format: http://<hostname>/restapi.py?<operation>&param1&param2 ...
 
-INPUT:
+Input:
 Operation   Return                              Parameters
 ---------   ------                              ----------
 - active    Number of servers that ping         <col>=<value>&...
@@ -13,11 +13,12 @@ Operation   Return                              Parameters
 - hostname  Host names of servers               <col>=<value>&...
 - ping      Servers pinged out of total         <col>=<value>&...
 - query     All server data                     <col>=<value>&...
-- update    Update server's env/app/grp/owner   hostname&app&grp&owner
+- update    Update server's env/app/grp/owner   hostname&app&env&grp&owner
+- webdata   host_name, lpar, userid, ip_addr, cpus, mem_gb          
 
-OUTPUT: JSON
+Output: JSON
 
-EXAMPLES: 
+Examples: 
 http://<server>/restapi.py?update&model1000&myApp&myGroup&myOwner => update metadata in "servers" table
 http://<server>/restapi.py?count => { "num_servers": 4 }
 http://<server>/restapi.py?count&cpus=4&mem_gb=4 => number of servers with 4 CPUs and 4 GB of memory
@@ -102,7 +103,7 @@ class ZlmaAPI():
     """
     run the SQL command passed in
     """
-    self.log.info(f"ZlmaAPI.run_sql_query(): cmd = {cmd}")
+    self.log.info(f"ZlmaAPI.run_sql_query(): using database: {self.db_name}")
     self.connect_to_cmdb()                 # connect to DB
     try:   
       self.cursor.execute(f"use {self.db_name}")
@@ -155,7 +156,7 @@ class ZlmaAPI():
     sql_json = json.loads(sql_out)
     self.log.debug(f"ping_servers() sql_json: {sql_json}")
     self.close_conn()
-    self.log.info(f"ZlmaAPI.ping_servers(): sql_out = {sql_out} type(sql_out) = {type(sql_out)}")
+    self.log.info(f"ZlmaAPI.ping_servers(): sql_out:  {sql_out} type(sql_out) = {type(sql_out)}")
     up_servers = 0
     num_servers = 0
     if sql_out == "":                      # no records found
@@ -214,11 +215,33 @@ class ZlmaAPI():
     Return: list of servers
     """
     sql_cmd = f"SELECT host_name FROM servers {where_clause}"
-    self.log.debug(f"ZlmaAPI.get_host_names(): hostname sql_cmd = {sql_cmd}")
+    self.log.debug(f"ZlmaAPI.get_host_names(): hostname sql_cmd: {sql_cmd}")
     sql_out = self.run_sql_query(sql_cmd)
     self.close_conn()
-    self.log.debug(f"ZlmaAPI.get_host_names(): sql_out = {sql_out}")
+    self.log.debug(f"ZlmaAPI.get_host_names(): sql_out: {sql_out}")
     return sql_out
+
+  def get_webdata(self, where_clause: str) -> str:
+    """
+    Send SQL command to return host_name, lpar, userid, ip_addr, cpus, mem_gb of specified servers
+    Return: list of servers
+    """
+    sql_cmd = f"SELECT host_name, lpar, userid, ip_addr, cpus, mem_gb FROM servers {where_clause}"
+    self.log.debug(f"ZlmaAPI.get_webdata(): sql_cmd: {sql_cmd}")
+    sql_out = self.run_sql_query(sql_cmd)
+    self.close_conn()
+    self.log.debug(f"ZlmaAPI.get_webdata(): sql_out: {sql_out}")
+    
+    # Convert tuples to a list of dictionaries
+    keys = ["host_name", "lpar", "userid", "ip_addr", "cpus", "mem_gb"]
+    sql_json = [dict(zip(keys, row)) for row in sql_out]  # Build list of dictionaries
+    #try:
+    #  sql_json = json.loads(sql_out)          # convert to list of dictionaries
+    #except json.JSONDecodeError as e:
+    #  self.log.error("Failed to decode JSON: ", e)
+    #  sql_json = []
+    #return sql_json 
+    return json.dumps(sql_json)  # Convert list of dictionaries to JSON string
 
   def get_linux_ips(self, where_clause: str) -> str:
     """
@@ -226,7 +249,7 @@ class ZlmaAPI():
     Return: list of servers
     """
     sql_cmd = f"SELECT host_name, ip_addr FROM servers {where_clause}"
-    self.log.debug(f"ZlmaAPI.get_linux_ips(): hostname sql_cmd = {sql_cmd}")
+    self.log.debug(f"ZlmaAPI.get_linux_ips(): hostname sql_cmd: {sql_cmd}")
     sql_out = self.run_sql_query(sql_cmd) 
     self.close_conn()
     self.log.debug(f"ZlmaAPI.get_linux_ips(): sql_out: {sql_out}")
@@ -238,10 +261,9 @@ class ZlmaAPI():
     Return: JSON output
     """
     sql_cmd = f"SELECT * FROM servers {where_clause}"
-    self.log.debug(f"ZlmaAPI.get_records(): query sql_cmd = {sql_cmd}")
+    self.log.debug(f"ZlmaAPI.get_records(): query sql_cmd: {sql_cmd}")
     sql_out = self.run_sql_query(sql_cmd) 
     self.close_conn()
-    #return '{"servers": '+'"'+str(sql_out)+'"}'  
     return sql_out  
 
   def update_record(self, query_str: str):
@@ -265,7 +287,7 @@ class ZlmaAPI():
     try:   
       self.cursor.execute(cmd)             # run SQL command 
     except mariadb.Error as e:
-      self.log.error(f"ZlmaAPI.run_sql_query(): e: {e}")  
+      self.log.error(f"ZlmaAPI.update_record(): e: {e}")  
     self.conn.commit()                     # commit changes
     self.close_conn()                      # close connection
    
@@ -284,20 +306,20 @@ class ZlmaAPI():
       where_clause = "WHERE arch=\"s390x\"" # search only zLinux
     match operation:
       case "count":                        # number of servers in table
-        JSONout = self.count_servers(where_clause)
-        print(JSONout)
+        json_out = self.count_servers(where_clause)
+        print(json_out)
       case "hostname":                     # all host names in table
-        JSONout = self.get_host_names(where_clause)
-        print(JSONout)
+        json_out = self.get_host_names(where_clause)
+        print(json_out)
       case "linuxips":                     # all host names in table
-        JSONout = self.get_linux_ips(where_clause)
-        print(JSONout)
+        json_out = self.get_linux_ips(where_clause)
+        print(json_out)
       case "ping":
-        JSONout = self.ping_servers(where_clause)
-        print(JSONout)
+        json_out = self.ping_servers(where_clause)
+        print(json_out)
       case "query":                        # all rows in table
-        JSONout = self.get_records(where_clause)
-        print(JSONout)
+        json_out = self.get_records(where_clause)
+        print(json_out)
       case "update":
         self.update_record(query_parms)    # parms are hostname&newEnv&newApp&newGroup&newOwner
       case _:  

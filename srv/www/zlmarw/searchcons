@@ -30,7 +30,7 @@ function drawClearButton
  {
   echo "<tr>" 
   echo "<td style=\"text-align:center\"; colspan=\"3\">"
-  echo '<form method=GET action="/zlmarw/searchcons" accept-charset=utf-8>'
+  echo '<form method=GET action="/zlmarw/searchcons" accept-charset='utf-8'>'
   echo "<input class=button type=submit style=\"background-color:$color1\"; value=\"Clear filters\">&nbsp;"
   if [ ${#userIDflt} != 0 ]; then
     echo "<input type=hidden name=hostFlt value=\"\">"
@@ -57,18 +57,17 @@ function getArgs
   pattern=`echo "$QUERY_STRING" | sed -n 's/^.*pattern=\([^&]*\).*$/\1/p'`
   pattern=`uudecode $pattern`
   nocase=`echo "$QUERY_STRING" | sed -n 's/^.*nocase=\([^&]*\).*$/\1/p'`
+  verbose=`echo "$QUERY_STRING" | sed -n 's/^.*verbose=\([^&]*\).*$/\1/p'`
  }                                         # setArgs()
 
 #+--------------------------------------------------------------------------+
 function drawMainTable
 # Draw a table with search criteria for user ID, system ID/environment 
 #   the text patter to search form and a 'Search consoles' button
-# Args: none 
 #+--------------------------------------------------------------------------+
  {
   startPage $title                         # start the Web page
-  cat consolez.css                         # inline cascading style sheets
-
+  echo '<link rel="stylesheet" href="/zlma.css">' # CSS's
   if [ ${#pattern} != 0 ]; then 
     pattern=`uudecode $pattern`            # uu-decode the string
   fi
@@ -76,7 +75,6 @@ function drawMainTable
   # draw table with the search criteria
   echo "<h2>$title</h2>"
   echo "<h3 align=center>Enter a search pattern</h3>"
-  echo "<h4 align=center>Blank User ID or Environment:CEC:LPAR means search all</h4>"
   echo '<table class="consolezTable" align=center>'         # leave room, start table and row
   headerRow 3 Search filters               # first header row
 
@@ -84,14 +82,14 @@ function drawMainTable
   drawClearButton                          # draw a button to clear filters
 
   # row 2 - start the form to run searchcons again with filters
-  echo "<tr><form method=GET action=/zlmarw/searchcons accept-charset=utf-8>"
+  echo "<tr><form method=GET action=/zlmarw/searchcons accept-charset='utf-8'>"
   echo "<td>User ID</td>"
   echo "<td><input type=text id=userIDflt name=userIDflt value=\"$userIDflt\"></td>"
   echo "<td></td>"                         # empty cell
   echo "</tr><tr>"                         # end row, start row
 
   # row 3
-  echo "<td>Environment:CEC:LPAR</td>"
+  echo "<td>LPAR</td>"
   echo "<td><input type=text id=systemIDflt name=systemIDflt value=\"$systemIDflt\"></td>"
   echo "<td></td>"                         # empty cell
   echo "</tr><tr>"                         # end row, start row
@@ -99,7 +97,8 @@ function drawMainTable
   # row 4
   echo "<td>Search pattern</td>"
   echo "<td><input type=text id=pattern name=pattern value=\"$pattern\"></td>"
-  echo '<td><input type="radio" name="nocase" id="nocase" value="yes">Case insensitive</td>'
+  echo '<td><input type="radio" name="nocase" id="nocase" value="yes">Case insensitive'
+  echo     '<input type="radio" name="verbose" id="verbose" value="yes">Verbose</td>'
   echo "</tr><tr>"                         # end row, start row
 
   # row 5
@@ -122,8 +121,11 @@ function drawMainTable
     if [ "$nocase" = yes ]; then           # case insensitive search
       args="-i $args"                      # add -i arg to grepcons
     fi
+    if [ "$verbose" = yes ]; then          # add verbosity 
+      args="-v $args"                      # add -v arg to grepcons
+    fi
     local cmd="/usr/local/sbin/grepcons $args" # command to send
-    # echo "Searching with: $cmd"
+    # echo "Searching with: $cmd <br>"
     local cmdOut                           # output from command
     local rc                               # a return code
     echo '<pre align="center">'            # preformatted text
@@ -153,8 +155,9 @@ function drawMainTable
 userIDflt=""                               # user ID filter
 systemIDflt=""                             # env:CEC:LPAR filter
 pattern=""                                 # search patter
-nocase=""                                  # Case insensitive flag
-title="Search saved z/VM console data"     # page title
+nocase=""                                  # case insensitive flag
+title="Search z/VM console data"           # page title
+verbose=""                                 # verbosity flag
 
 # main()
 source /usr/local/sbin/consfuncs           # import common line command functions
@@ -162,5 +165,5 @@ source consuifuncs                         # import common Web UI functions
 checkUser  
 getArgs                                    # get arguments passed in
 drawMainTable                              # show table with all user IDs that have data 
-drawButtons                                # add custom navigation buttons
+drawButtons using-consoles                 # add custom navigation buttons
 

@@ -30,6 +30,7 @@ It supports the following commands:
 - query <PATTERN>   If no PATTERN is supllied, return all rows
 - remove <SERVER>   Remove row for specified server
 - update            Refresh entire database
+- webdata           Return host_name, lpar, userid, ip_addr, cpus and mem_gb for web pages
 
 Return codes:
 0 - Success
@@ -136,6 +137,7 @@ class Zlma:
         OR owner LIKE ptrn;
         """
     self.select_all_cmd = "SELECT * FROM servers"
+    self.select_webdata_cmd = "SELECT host_name, lpar, userid, ip_addr, cpus, mem_gb FROM servers WHERE arch='s390x'"
     self.select_host_names_cmd = "SELECT host_name FROM servers"
     self.server_data = []
     self.use_cmd = f"USE {self.conf.db_name}" 
@@ -153,22 +155,25 @@ class Zlma:
       print("Run 'zlma init'?")            # give a hint
       exit(3)
     
-  def query_zlma(self):
+  def query_zlma(self, search_type: str):
     """
     Search CMDB for specified pattern 
+    Arg 1: search_type: can be "all" or "webdata" which returns a subset of the columns
     """
     pattern = str(self.args.pattern).replace("'", "").replace("[", "").replace("]", "")
     self.log.debug(f"query_zlma(): user: {self.conf.user} self.args.pattern = {self.args.pattern}")
     cmd = ""
-    if self.args.column:                   # search is based on one column
+    if self.args.column:                 # search is based on one column
       if self.args.pattern == None:        # no pattern to search on
         self.log.error("query_zlma(): user: {self.conf.user} if COLUMN is specified there must be a search PATTERN")
         return 1
       self.log.debug(f"query_zlma(): TODO: search on args.column = {self.args.column} args.pattern = {self.args.pattern}")
       return 2 # for now
-    if self.args.pattern == None:          # no search pattern
+    if search_type == "webdata":
+      cmd = self.select_webdata_cmd        # return subset of data for web pages
+    elif self.args.pattern == None:        # no search pattern
       self.log.debug("query_zlma(): user: {self.conf.user} No search PATTERN - returning all records")
-      cmd = self.select_all_cmd            # return all rows
+      cmd = self.select_all_cmd          # return all rows
     else:  
       cmd = self.select_cmd.replace("ptrn", "'%"+pattern+"%'") # put search pattern in query
     self.log.debug(f"query_zlma(): user: {self.conf.user} searching for '{pattern}' with command: {cmd}")
@@ -426,9 +431,11 @@ class Zlma:
           return 1
         rc = self.delete_row()  
       case "query":
-        rc = self.query_zlma()
+        rc = self.query_zlma("all")
       case "update":
         rc = self.update_zlma()
+      case "webdata":
+        rc = self.query_zlma("webdata")
       case _:
         self.log.error(f"run_command() user: {self.conf.user} unrecognized subcommand {self.args.subcommand}")  
         rc = 9

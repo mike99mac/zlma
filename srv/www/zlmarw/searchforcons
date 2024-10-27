@@ -29,7 +29,7 @@ function drawClearButton
  {
   echo "<tr>" 
   echo "<td style=\"text-align:center\"; colspan=\"3\">"
-  echo '<form method=GET action="/zlmarw/searchcons" accept-charset=utf-8>'
+  echo '<form method=GET action="/zlmarw/searchcons" accept-charset='utf-8'>'
   echo "<input class=button type=submit style=\"background-color:$color1\"; value=\"Clear filters\">&nbsp;"
   if [ ${#userIDflt} != 0 ]; then
     echo "<input type=hidden name=hostFlt value=\"\">"
@@ -76,44 +76,17 @@ function showOneRow
 
 #+--------------------------------------------------------------------------+
 function showSavedConsoles
-# If the finder search fails, the fallback is to search for saved consoles. 
 # This function is  to search form and a 'Search consoles' button
 # Args: none
 #+--------------------------------------------------------------------------+
  {
   local envSysID 
   local foundOne="no"                      # has there been one hit?
-  local lastEnvSysID="none"
   local nextLine
   local nextUserID
-  local userID                             # aka vmname
+  local userID 
   local hits=""                            # user IDs that match
 
-  # loop through all LPARs
-  exec 3<&0                                # Link file descriptor #3 with stdin.
-  while read -u 3 nextLine; do             # read from file descriptor 3
-    envSysID=`echo $nextLine | awk '{print $1}'`
-    if [ "$envSysID" != "$lastEnvSysID" ]; then 
-      if [ "$lastEnvSysID" != none ]; then # there is a row to display
-        if [ ${#hits} != 0 ]; then 
-          showOneRow $foundOne ${lastEnvSysID#*:} $hits
-          foundOne="yes"
-        fi
-      fi
-      lastEnvSysID="$envSysID"             # keep a copy of current env:LPAR
-      hits=""                              # reset hit list
-    fi
-    for nextUserID in $nextLine; do
-      local substr=`echo $nextUserID | sed "s/$searchString//g"`
-      if [ "$substr" != "$nextUserID" ]; then # hit 
-        hits="$hits $nextUserID"
-      fi
-    done
-  done 3< <(echo "$finderData")             # input is output of search
-  if [ ${#hits} != 0 ]; then 
-    foundOne="yes"
-    showOneRow $foundOne ${lastEnvSysID#*:} $hits
-  fi
   if [ "$foundOne" = no ]; then            # no hits
     echo "<h4>No consoles found matching '$searchString'</h4>"
   else                                     # at least one hit
@@ -122,81 +95,20 @@ function showSavedConsoles
  }                                         # showSavedConsoles()
 
 #+--------------------------------------------------------------------------+
-function showFinderConsoles
-# Multiple hits in finder - records are of the form:
-#   cdlengzs0101 51.19.230.246 ENGZS01 ZS01 none none 1 1 2G 8G 00866000 Rhel83 ... 
-# Loop through hits and add to the table
-# Args: none
-#+--------------------------------------------------------------------------+
- {
-  # found multiple hits in finder
-  local hostName
-  local nextLine
-  local systemID                           # aka LPAR
-  local userID                             # aka vmname
-
-  echo "<h4 align=\"center\">Found $numHits matching servers</h4>"
-  echo '<table class="consolezTable">'   # start table 
-  echo "<tr><th>Host name</th>"          # start header row
-  echo "<th>User ID</th>"       
-  echo "<th>LPAR</th></tr>"              # end row
-  exec 3<&0                                # Link file descriptor #3 with stdin.
-  while read -u 3 nextLine; do             # read from file descriptor 3
-    if [ ${nextLine:0:1} = '<' ]; then     # line is HTML
-      continue                             # iterate loop
-    fi 
-    hostName=`echo $nextLine | awk '{print $1}'`
-    userID=`echo $nextLine | awk '{print $3}'`
-    systemID=`echo $nextLine | awk '{print $4}'`
-    if [ "$numHits" = 1 ]; then            # show one console 
-      # echo "calling showOneConsole $userID $systemID spool<br>"
-      showOneConsole $userID $systemID spool
-    else                                   # open 
-      echo "<tr><td>$hostName</td>"        # start header row
-      echo "<td><a href=onecons?$userID&amp;$systemID&amp;spool>$userID</a></td>"
-      echo "<td>$systemID</td></tr>"       # end row
-    fi
-  done 3< <(echo "$finderData")
- }                                         # showFinderConsoles()
-
-#+--------------------------------------------------------------------------+
 function drawMainTable
 # Draw a table with search criteria for user ID, system ID/environment 
 #   the text patter to search form and a 'Search consoles' button
-# Args: none 
 #+--------------------------------------------------------------------------+
  {
   if [ ${#searchString} != 0 ]; then       # a search string passed in
     title="$title with pattern '$searchString'" # append pattern searched on
   fi
   startPage $title                         # start the Web page
-  cat consolez.css                         # inline cascading style sheets
+  echo '<link rel="stylesheet" href="/zlma.css">' # CSS's
 
-  # modify below as needed to perform your search
   drawSearchBar
   if [ ${#searchString} = 0 ]; then        # no search string passed in
     return                                 # all done
-  fi
-# echo "calling curl -k -s http://engweb01.mf.adp.com/finder.php?id=$searchString"
-  finderData=`curl -k -s http://engweb01.mf.adp.com/finder.php?id=$searchString`
-  finderData=`echo "$finderData" | grep $searchString` # remove HTML
-# echo "finderData = $finderData <br>"
-  local numChars=${#finderData}            # number of characters in output
-  local numHits=`echo "$finderData" | wc -l` # number of lines of output
-# echo "numChars = $numChars<br>"
-# echo "numHits = $numHits<br>"
-  if [ "$numChars" = 0 ]; then              # nothing found in finder
-    echo "<h3>Sorry, no consoles found matching: $searchString</h3>"
-  elif [ "$numHits" = 1 ]; then            # found one system
-    echo "<h3>Found one server matching: $searchString</h3>"
-    hostName=`echo "$finderData" | awk '{print $1}'`
-    userID=`echo "$finderData" | awk '{print $3}'`
-    systemID=`echo "$finderData" | awk '{print $4}'`
-#   echo "calling showOneConsole $userID $systemID spool<br>"
-    showOneConsole $userID $systemID spool
-  elif [ "$numHits" -gt 1 ]; then          # multiple servers found
-# echo "calling: showFinderConsoles<br>" 
-    showFinderConsoles                       # draw a table of all found systems
   fi
   if [ "$numHits" -gt 1 ]; then            # multiple servers found
     echo "</table><br>"                    # end table, leave some room
@@ -207,7 +119,6 @@ function drawMainTable
 # global variables
 numHits=0                                  # number of servers matching pattern
 searchString=`echo "$QUERY_STRING" | sed -n 's/^.*searchString=\([^&]*\).*$/\1/p'`
-finderData=""                              # output of finder searches 
 title="Search for z/VM console"            # page title
 
 # main()
@@ -215,5 +126,5 @@ source /usr/local/sbin/consfuncs           # import common line command function
 source consuifuncs                         # import common Web UI functions
 checkUser    
 drawMainTable                              # show table with all user IDs that have data 
-drawButtons                                # add custom navigation buttons
+drawButtons using-consoles                 # add custom navigation buttons
 

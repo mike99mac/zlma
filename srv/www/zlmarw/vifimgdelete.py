@@ -8,7 +8,7 @@ from zlma_buttons import Zlma_buttons
 class Vif_img_delete:
   def __init__(self):
     """
-    get arguemnts to call the 'vif image delete' command 
+    get arguments to call the 'vif image delete' command 
     """
     print('Content-Type: text/html')       # start the HTML page
     print()
@@ -16,7 +16,7 @@ class Vif_img_delete:
     print('<html><head><title>Run vif image delete</title>')
     print('<link rel="stylesheet" href="/zlma.css">')
     print('</head><body>')
-    zlma_buttons = Zlma_buttons("using-vif")     # add navigation buttons
+    zlma_buttons = Zlma_buttons("using-vif-image") # add navigation buttons
 
   def create_page(self):                   # make the HTML page
     html_code = '<table>'

@@ -102,8 +102,9 @@ class Vif:
 
     # parse args passed in
     self.parser = argparse.ArgumentParser(description="The vif command line interface")
-    self.parser.add_argument("cmd", type=str, help="The vif command to be executed", nargs=argparse.REMAINDER) # get all args
+    self.parser.add_argument("cmd", type=str, help="The vif command to be executed (vif helpall)", nargs=argparse.REMAINDER) 
     self.parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+    self.parser.add_argument("-l", "--lpar", help="LPAR image is on", action="append")
     self.args = self.parser.parse_args()
     self.lexer = lex.lex(module=self)
     self.parser = yacc.yacc(module=self, debug=False, outputdir='/tmp') # write intermediate code to /tmp
@@ -118,6 +119,14 @@ class Vif:
       sys.exit(1)
     vmcp_out = result.stdout
     print(vmcp_out)
+    return vmcp_out
+
+  def check_lpar(self, tgt_lpar: str):
+    self.get_lpar_userid()
+    if tgt_lpar != self.lpar:              # not running on requested LPAR 
+      # TO DO: run vif on the target LPAR rather than faile
+      self.log.error(f"check_lpar(): current LPAR: {self.lpar} requesed LPAR: {tgt_lpar}")
+      sys.exit(1)
 
   def check_privclas(self, class_to_check: str):
     cmd = f"/usr/local/sbin/qprivclas {class_to_check}"
@@ -162,14 +171,8 @@ class Vif:
         self.handle_help() 
 
   def get_lpar_userid(self):               # get LPAR and user ID we are running on
-    cmd = "sudo /usr/sbin/vmcp query userid" # call CP QUERY USERID
-    vmcp_out = self.run_cp_cmd(cmd)
-    #ry:
-    #  result = subprocess.run(cmd, shell=True, capture_output=True, text=True) 
-    #except subprocess.CalledProcessError as e:
-    #  self.log.error(f"get_lpar_userid(): cmd {cmd} returned subprocess exception: {e}")
-    #  sys.exit(1)
-    #vmcp_out = result.decode('utf-8')      # <USERID> at <LPAR>
+    vmcp_out = self.run_cp_cmd("QUERY USERID")
+    print(f"vmcp_out: {vmcp_out}")
     words = vmcp_out.split()               # split string into words
     self.lpar = words[2] 
     self.user_id = words[0] 
@@ -528,26 +531,6 @@ class Vif:
     Ping each server (1 packet, 500 ms max) and show which are up and which are down
     """
     self.get_lpar_userid()                 # save LPAR and user ID we are running on
-    url = "http://zlnx1/restapi.py?hostname" # URL with hostname endpoint and query parameters
-    params = {
-      'arch': 's390x',                     # must be zLinux
-      'lpar': self.lpar                    # on this LPAR
-    }
-    self.log.debug(f"handle_query_active() user: {self.conf.user} url: {url} params: {params}")
-    try:                                   # make GET request
-      resp = requests.get(url, params=params)
-      resp.raise_for_status()          # Raises exception for 4xx/5xx errors
-      self.log.debug(f"handle_query_active() resp.text: {resp.text}")  
-    except requests.exceptions.HTTPError as http_err:
-      self.log.error(f"HTTP error occurred: {http_err}")       # Handle HTTP errors
-    except requests.exceptions.ConnectionError as conn_err:
-      self.log.error(f"Connection error occurred: {conn_err}") # Handle connection errors
-    except requests.exceptions.Timeout as timeout_err:
-      self.log.error(f"Timeout error occurred: {timeout_err}") # Handle timeout errors
-    except requests.exceptions.RequestException as req_err:
-      self.log.error(f"An error occurred: {req_err}")          # Handle any other request errors
-    self.log.debug(f"Response headers: {resp.headers}")
-    self.log.debug(f"Response content: {resp.text}")
 
     # ping each server 
     down_count = 0
@@ -612,6 +595,7 @@ class Vif:
 
   def handle_query_volumes(self):
     self.log.debug(f"handle_query_volumes(): user: {self.conf.user} run 'query volumes'")
+    self.run_cp_cmd("QUERY ALLOC MAP")
 
   def p_error(self, p):                    # Rule for syntax errors
     self.log.error(f"p_error(): user: {self.conf.user} Syntax error in input")
@@ -623,6 +607,9 @@ class Vif:
       self.console.setLevel(logging.DEBUG)
       self.log.debug("vif.parse_command() user: {self.conf.user} set log level to verbose")
     cmd =  " ".join(self.args.cmd)
+    print(f"self.lpar: {self.lpar}")
+    if self.args.lpar != None:             # LPAR specified
+      self.check_lpar(self.args.lpar[0])      # check LPAR where this is running
     self.log.debug(f"parse_command(): user: {self.conf.user} cmd: {cmd}")
     match cmd:                             # check for VIF commands with no args => give help on that command
       case "disk":

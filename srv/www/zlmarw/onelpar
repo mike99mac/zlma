@@ -7,7 +7,7 @@
 function drawRows
 # Draw table row where each row gets max of $numCols user IDs
 #   Arg 1    : Data type: 'consdata' or 'nodata'
-#   Arg 2    : Environment:CEC:LPAR
+#   Arg 2    : LPAR
 #   Args 3-n : User IDs that have console data saved
 #+--------------------------------------------------------------------------+
  {
@@ -117,9 +117,10 @@ function drawNoDataTable
     | grep -v LOGN | grep -v LOGL | grep -v LOGV | awk '{print $1}' | sort | xargs`
 
   # draw the table
-  local noDataIDs="$tgtEnv:$tgtCEC:$systemID" # user IDs that do not have saved consoles
+  local noDataIDs="$systemID" # user IDs that do not have saved consoles
   echo "<h2>$title</h2>"
-  echo '<table class="consolezTable" align="center">' # start consolez table aligned in center
+  #echo '<table class="consolezTable" align="center">' # start consolez table aligned in center
+  echo '<table class="consolezTable">'     # start consolez table aligned in center
   local nextUserID
   for nextUserID in $loggedUserIDs; do
     echo $userIDs | grep " $nextUserID " >/dev/null
@@ -150,5 +151,5 @@ drawMainTable                              # show table with all user IDs that h
 if [ "$role" = admin ]; then               # admins can add new spool files
   drawNoDataTable                          # show table with logged on users that don't have data
 fi
-drawButtons                                # add navigation buttons
+drawButtons using-consoles                 # add navigation buttons
 

@@ -12,33 +12,24 @@ class Vif_cmd:
     """
     Initialize globals, create page header, set background
     """
+    self.title = "zlma vif run command"
     print('Content-Type: text/html')       # start the HTML page
     print()
     print('<!DOCTYPE html>')
-    print('<html><head><title>Run a vif command</title>')
+    print(f'<html><head><title>{self.title}</title>')
+    print('<link rel="icon" type="image/png" href="/zlma.ico">')
     print('<link rel="stylesheet" href="/zlma.css">')
     print('</head><body>')
     zlma_buttons = Zlma_buttons("using-vif")     # add navigation buttons
+    print(f'<h2>{self.title}</h2>')
 
-  def create_table(self, table_name, data):
-    """
-    Create an HTML table
-    Args:
-      table_name: The name of the table.
-      data: A list of lists representing the table data.
-    """
-    html_code = f'<table class="greenScreenTable"><thead><tr><th>{table_name}</th></tr></thead>\n<tbody>\n'
-    for row in data:
-      html_code += f"<tr><td>{row}</td></tr>\n"
-    html_code += "</tbody></table>\n"
-    return html_code
-
-  def run_vif_cmd(self, cmd: str, sub_cmd: str) -> str:
+  def run_vif_cmd(self, cmd: str, sub_cmd: str, arg1: str, arg2: str, arg3: str, arg4: str) -> str:
     """
     Run a vif command showing command and output in preformatted text
+    All commands have a sub-command, which can have 0 - 4 args
     """
-    output = f"Running command: vif {cmd} {sub_cmd}\n"
-    the_cmd = f"/srv/venv/bin/python3 /usr/local/sbin/vif {cmd} {sub_cmd}"
+    output = f"Running command: vif {cmd} {sub_cmd} {arg1} {arg2} {arg3} {arg4}\n"
+    the_cmd = f"/srv/venv/bin/python3 /usr/local/sbin/vif {cmd} {sub_cmd} {arg1} {arg2} {arg3} {arg4}"
     proc = subprocess.run(the_cmd, shell=True, capture_output=True, text=True)
     rc = proc.returncode
     if rc != 0:
@@ -56,28 +47,14 @@ class Vif_cmd:
     query_params = parse_qs(query_string)  # Parse the query string
     cmd = query_params.get('cmd', [''])[0] # Get 'cmd', default to '' if not found
     sub_cmd = query_params.get('sub_cmd', [''])[0].rstrip()
+    arg1 = query_params.get('arg1', [''])[0].rstrip() # vif sub-commands have up to four arguments
+    arg2 = query_params.get('arg2', [''])[0].rstrip()
+    arg3 = query_params.get('arg3', [''])[0].rstrip()
+    arg4 = query_params.get('arg4', [''])[0].rstrip()
 
-    # Dictionary of commands and their valid subcommands
-    valid_commands = {
-      'hypervisor': ['collect', 'errors', 'export', 'import', 'restart', 'service', 'shutdown', 'verify', 'volume'],
-      'image': ['create', 'delete', 'network', 'set', 'start', 'stop', 'stopall'],
-      'disk': ['copy', 'create', 'delete', 'share'],
-      'query': ['active', 'all', 'configuration', 'disks', 'errors', 'image', 'level', 'network', 'paging', 'performance', 'shared', 'volumes']
-    }
-
-    # Validate the command and subcommand
-    if cmd not in valid_commands:
-      print(f"<h3>Invalid command: {cmd}</h3>")
-      return
-        
-    if sub_cmd and sub_cmd not in valid_commands[cmd]:
-      print(f"<h3>Invalid subcommand '{sub_cmd}' for command '{cmd}'</h3>")
-      return
-
-    # If both the command and subcommand are valid, execute the command
     html_code = '<table class="greenScreenTable">' # start a 'green screen' table
     html_code += "<tr><td><pre>"                   # start row, cell, preformatted text
-    html_code += self.run_vif_cmd(cmd, sub_cmd)    # run the vif command
+    html_code += self.run_vif_cmd(cmd, sub_cmd, arg1, arg2, arg3, arg4)  
     html_code += "</pre></td></tr></table>\n"       # end cell, row and table
     html_code += "</body></html>"
     print(html_code)
