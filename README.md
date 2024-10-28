@@ -607,20 +607,33 @@ sudo systemctl enable mariadb
 ```
 sudo systemctl start mariadb
 ```
-# Using zlma web interface
+# Using zlma 
 Following is a decription of using each of the four main zlma web pages.
 
+![](zlma-home.png)
+
+**zlma home page**
+
 ## Using commands 
-TODO: describe 
+
+![](zlma-commands.png)
+
+**zlma commands page**
 
 ## Using consoles
-TODO: describe 
+![](zlma-consoles.png)
+
+**zlma consoles page**
 
 ## Using finder 
-TODO: describe 
+![](zlma-finder.png)
+
+**zlma finder page**
 
 ## Using vif 
-TODO: describe 
+![](zlma-vif.png)
+
+**zlma vif page**
 
 ### Using vif hypervisor 
 TODO: describe 
