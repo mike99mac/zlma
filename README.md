@@ -63,7 +63,7 @@ Following is a block diagram of zlma:
 - Finish vif pages to gather parameters, example: vif image set => choose memory/CPUs
 - Create certificates and switch from http: to https:
 - Write equivalent of SMAPI to support DirMaint and VMSECURE - cheat sheet :
-
+```
 vif on Linux       Description
 ------------       -----------
 hyp collect        create report on z/VM problem determination info (VM dvlpmnt: old code?)
