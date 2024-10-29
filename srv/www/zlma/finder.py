@@ -12,83 +12,22 @@ class Finder:
     self.pattern = ""                      # search pattern
     self.rows = []                         # resulting rows
     self.headers = ['Host name', 'LPAR', 'User ID', 'IP address', 'CPUs', 'GB Mem', 'Arch', 'Common arch', 'OS', 'OS ver', 'Kernel ver', 'Kernel rel', 'RootFS % full', 'Last ping', 'Created', 'App', 'Env', 'Group', 'Owner']
-
+    self.title = "zlma finder search"
 
     # start the HTML page
     print('Content-Type: text/html')
     print()
     print('<!DOCTYPE html>')  
-    print('<html><head>')
+    print(f'<html><head><title>{self.title}</title>')
 
-    # include jquery and three other libraries to make table editable
+    # include javascript libraries to make table editable
     print('<script type="text/javascript" src="/jquery-3.7.1.slim.min.js"></script>')
-    print('<script type="text/javascript" src="/popper.min.js"></script>')
-    print('<script type="text/javascript" src="/bootstrap.min.js"></script>')
-    # TO DO: minimize bootstable when it is stable
-    # print('<script type="text/javascript" src="/bootstable.min.js"></script>')
     print('<script type="text/javascript" src="/bootstable.js"></script>')
-    print('<link rel="icon" type="image/png" href="/finder.ico">')
+    print('<link rel="icon" type="image/png" href="/zlma.ico">')
     print('<link rel="stylesheet" href="/zlma.css">') # common CSS's
     print('<link rel="stylesheet" href="/glyphicons-free.css">')   
-    print('</head>')
-
-    print('<body>') 
-    zlma_buttons = Zlma_buttons("finder")  # add navigation buttons
-
-  def add_menu_bar(self):
-    """
-    Add a menu bar with dropdowns for File, Edit, View, and Help
-    """
-    print('''
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="navbar-brand" href="#">Finder</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNavDropdown">
-        <ul class="navbar-nav">
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="fileDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">File</a>
-            <div class="dropdown-menu" aria-labelledby="fileDropdown">
-              <a class="dropdown-item" href="#">New</a>
-              <a class="dropdown-item" href="#">Open</a>
-              <a class="dropdown-item" href="#">Save</a>
-              <div class="dropdown-divider"></div>
-              <a class="dropdown-item" href="#">Exit</a>
-            </div>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="editDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Edit</a>
-            <div class="dropdown-menu" aria-labelledby="editDropdown">
-              <a class="dropdown-item" href="#">Cut</a>
-              <a class="dropdown-item" href="#">Copy</a>
-              <a class="dropdown-item" href="#">Paste</a>
-              <a class="dropdown-item" href="#">Delete</a>
-            </div>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="viewDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              View
-            </a>
-            <div class="dropdown-menu" aria-labelledby="viewDropdown">
-              <a class="dropdown-item" href="#">Zoom In</a>
-              <a class="dropdown-item" href="#">Zoom Out</a>
-              <a class="dropdown-item" href="#">Full Screen</a>
-            </div>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="helpDropdown" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              Help
-            </a>
-            <div class="dropdown-menu" aria-labelledby="helpDropdown">
-              <a class="dropdown-item" href="#">Documentation</a>
-              <a class="dropdown-item" href="#">About</a>
-            </div>
-          </li>
-        </ul>
-      </div>
-    </nav>
-    ''')
+    print('</head><body>') 
+    zlma_buttons = Zlma_buttons("using-finder")  # add navigation buttons
 
   def print_env(self):
     """
@@ -149,7 +88,7 @@ class Finder:
     try:
       proc = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     except Exception as e: 
-      print(f"search_cmdb(): Exception calling zlma: {e}")
+      print(f"update_all(): Exception calling zlma: {e}")
       exit(3)
 
   def process_query(self):
@@ -158,7 +97,7 @@ class Finder:
     - pattern=<pattern>
     - action=update
     """
-    print('<h1>Finder search</h1>')
+    print(f'<h2>{self.title}</h2>')
     proc = subprocess.run("echo $QUERY_STRING", shell=True, capture_output=True, text=True)
     rc = proc.returncode
     if rc != 0:
@@ -182,9 +121,8 @@ class Finder:
     # show the search pattern text box and submit button
     print('<form action="/finder.py" method="get" enctype="multipart/form-data">')
     print('  Search pattern: <input maxlength="60" size="60" value="" name="pattern">')
-    print('  <input value="Submit" type="submit">')
+    print('  <input value="Submit" class="button green-button" type="submit">')
     print('</form><br>')
-
 
     # show the current search pattern if one exists
     if len(self.pattern) > 1:              # there is a current search pattern

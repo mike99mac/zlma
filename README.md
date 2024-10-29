@@ -6,8 +6,10 @@ It consists of these main components:
 - A relational database 
   - Containing pertinent up-to-date data about Linux servers on z
 - Web browser interfaces
-  - ``finder`` - view all z/VM and Linux data with search capabilities
-  - ``consolez`` - view z/VM console data 
+  - ``Commands`` - run z/VM commands 
+  - ``Consoles`` - view z/VM console data 
+  - ``Finder`` - search the configuration management database (CMDB) 
+  - ``VIF`` - The Virtual Image Facility abstracts z/VM function 
 - Linux line commands
   - ``zlma`` - manage DB of zLinux data 
   - ``vif`` - manage many aspects of z/VM
@@ -26,6 +28,8 @@ Zlma strives to attain these goals:
 - To be **centralized**:
   - Keep all CMDB data on two servers (primary and hot standby)
   - Keep all z/VM Console data in the same two places
+    - For CMDB use mariadb master-slave
+    - For consoles, use ``rsync``
 - To be **simple**:
   - As few web pages and menu items with no drop-down menus 
   - A simple 5-button menu at top of all web pages 
@@ -54,12 +58,47 @@ Following is a block diagram of zlma:
 **zlma block diagram**
 
 # Items TO DO 
-- Write equivalent of SMAPI to support DirMaint and VMSECURE (BIG ONE!)
 - Add code so all writes go to two places
 - Allow Web UI "green screens" to be more conventional with CSSs
 - Finish vif pages to gather parameters, example: vif image set => choose memory/CPUs
 - Create certificates and switch from http: to https:
-- Change all consolezTable's to zlma-table's
+- Write equivalent of SMAPI to support DirMaint and VMSECURE - cheat sheet :
+
+vif on Linux       Description
+------------       -----------
+hyp collect        create report on z/VM problem determination info (VM dvlpmnt: old code?)
+hyp disk           add paging or image disk space
+hyp errors         create report on hardware errors (VM dvlpmnt: old code?)
+hyp restart        SHUTDOWN REIPL 
+hyp service        install z/VM service (VM dvlpmnt: is this coming?)
+hyp shutdown       SHUTDOWN 
+hyp verify         performs consistency checks (delete?) 
+
+image create       clone a Linux    
+image delete       purge a Linux 
+image network      manage interfaces (v2.0?)
+image set          add/rm CPU/memory
+image start        XAUTOLOG 
+image stop         SIGNAL SHUTDOWN 
+image stopall      SIGNAL SHUTDOWN all Linux VMs
+
+disk copy          FLASHCOPY userid1 vaddr1 userid2 vaddr2
+disk create        DIRM AMD or VMSECURE equiv 
+disk delete        DIRM DMD or VMSECURE equiv           
+disk share         DIRM add LINK statement
+
+query active       display active Linuxes (no CMS)
+query all          invoke all other query subcommands
+query disks        display Linux image DASD utilization
+query errors       report on hardware errors
+query image        display configuration of a Linux image
+query level        QUERY CPLEVEL
+query network      QUERY VSWITCH DETAILS
+query paging       QUERY ALLOC PAGE 
+query performance  display current CPU, paging and I/O utilization
+query  shared      display Linux images that share disks
+query volumes      display image and paging DASD volumes
+```
 
 # Preparing for installation 
 
@@ -422,21 +461,6 @@ __main__    : INFO     replace_row(): replaced row for server model800
 __main__    : INFO     update_cmdb() successfully updated table 'servers'
 ```
  
-## Web interface
-Following is a screen shot of the browser interface:
-
-![](finderScreenShot.png)
-**Finder browser interface**
-
-Hopefully all is intuitive.  There is one search field that will search on any column. Click the ``Submit`` button and a search will be performed, returning all matching servers.
-
-There is an ``Update all servers`` button. This will go out to all managed servers and update the values in real time. It will update the ``Last ping`` column. 
-
-On the right side of each row, there is a pencil icon. Click that to go into edit mode for the three metadata columns: ``app``, ``group`` and ``owner``.  Modify the data and click the check mark to save, or the X to discard changes.  This is shown in the following figure:
-
-![](FinderEditMode.png)
-**Finder in edit mode**
-
 
 ## RESTful API
 Following is an example of using the RESTful API to search for servers that have 4 CPUs and 4GB of memory.  Three of the four servers do.
@@ -626,6 +650,12 @@ Following is a decription of using each of the four main zlma web pages.
 **zlma consoles page**
 
 ## Using finder 
+
+There is one search field that will search on any column. Click the ``Submit`` button and a search will be performed, returning all matching servers.
+
+There is an ``Update all servers`` button. This will go out to all managed servers and update the values in real time. It will update the ``Last ping`` column. 
+
+On the right side of each row, there is a pencil icon. Click that to go into edit mode for the three metadata columns: ``app``, ``group`` and ``owner``.  Modify the data and click the check mark to save, or the X to discard changes.  This is shown in the following figure:
 ![](zlma-finder.png)
 
 **zlma finder page**

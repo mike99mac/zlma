@@ -24,14 +24,15 @@ class Zlma_home:
     zlma_buttons = Zlma_buttons("using-zlma") # add navigation buttons
     print(f'<h2>{self.title}</h2>')
     html = "<table id='zlma-table'><tr><td>"  # start table then add headers
-    html += "<p>z/VM and Linux Modern Administration (<b>zlma</b>) enables Linux servers running under the z/VM hypervisor on IBM Mainframes to be managed in a more modern fashion.</p>\n" 
-    html += "<p>Navigaion is simple - use the common 5-button menu at the top of each page:</p>\n" 
+    html += "<p><i>z/VM and Linux Modern Administration</i> (<b>zlma</b>) enables Linux servers on z/VM to be managed in a more modern fashion.</p>\n" 
+    html += "<p>Navigation is simple - use the 5-button menu at the top of each page (see above):</p>\n" 
     html += '<ul><li><span style="color:green"><b>Commands</b></span> - run z/VM comands</li>\n' 
     html += '<li><span style="color:green"><b>Consoles</b></span> - View and manage z/VM console data</li>\n' 
     html += '<li><span style="color:green"><b>Finder</b></span> - search the configuration management database (CMDB)</li>\n' 
     html += '<li><span style="color:green"><b>VIF</b></span> - The Virtual Image Facility abstracts z/VM function</li>\n' 
-    html += '<li><span style="color:#F6BE00"><b>Help</b></span> - Takes you to topic-specific documentation</li>\n' 
+    html += '<li><span style="color:#F6BE00"><b>Help</b></span> - Get topic-specific documentation in a new tab</li>\n' 
     html += "</ul></td></tr></table>\n"
+    html += '<table><tr><td align="center"><figure><img src="/zlma256.ico" alt="zlma icon image"></figure></td></tr></table>\n'
     html += "</body></html>"               # end page
     print(html)
 
