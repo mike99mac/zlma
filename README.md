@@ -28,8 +28,6 @@ Zlma strives to attain these goals:
 - To be **centralized**:
   - Keep all CMDB data on two servers (primary and hot standby)
   - Keep all z/VM Console data in the same two places
-    - For CMDB use mariadb master-slave
-    - For consoles, use ``rsync``
 - To be **simple**:
   - As few web pages and menu items with no drop-down menus 
   - A simple 5-button menu at top of all web pages 
@@ -59,8 +57,11 @@ Following is a block diagram of zlma:
 
 # Items TO DO 
 - Add code so all writes go to two places
+  - For CMDB use mariadb master-slave
+  - For consoles, use ``rsync``
 - Allow Web UI "green screens" to be more conventional with CSSs
 - Finish vif pages to gather parameters, example: vif image set => choose memory/CPUs
+- "Chunkify" console data to work in say 20000 lines with "More" and # of chunks 
 - Create certificates and switch from http: to https:
 - Write equivalent of SMAPI to support DirMaint and VMSECURE - cheat sheet :
 ```
@@ -336,21 +337,8 @@ Group www-data
 
 - Following is an Apache configuration file for a **RHEL-based Linux** in the file ``/etc/httpd/conf/httpd.conf``:
 ```
-TODO: update
+TODO: install on z-graf1 and show Apache config file
 ```
-
-$ sudo a2en zlma.conf
-a2enconf  a2enmod   a2ensite
-mikemac@zlnx1:/etc/apache2/sites-available/$ sudo a2ensite zlma.conf
-Enabling site zlma.
-To activate the new configuration, you need to run:
-  systemctl reload apache2
-mikemac@zlnx1:/etc/apache2/sites-available/$ systemctl reload apache2
-==== AUTHENTICATING FOR org.freedesktop.systemd1.manage-units ====
-Authentication is required to reload 'apache2.service'.
-Authenticating as: mikemac
-Password:
-mikemac@zlnx1:/etc/apache2/sites-available/$ sudo systemctl reload apache2
 
 # Using zlma
 The following sections describe the line command, the Web interface and the RESTful API.
