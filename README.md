@@ -64,6 +64,8 @@ Following is a block diagram of zlma:
 - "Chunkify" console data to work in say 20000 lines with "More" and # of chunks 
 - Create certificates and switch from http: to https:
 - Write equivalent of SMAPI to support DirMaint and VMSECURE - cheat sheet :
+
+```
 | Command          | Description                                  | VIFCMS call      |
 |------------------|----------------------------------------------|------------------|
 | hyp collect      | report problem determination info            | collect          |
@@ -77,8 +79,8 @@ Following is a block diagram of zlma:
 | image delete     | purge a Linux                                | delete <hostname> |
 | image network    | manage interfaces (v2.0?)                    | ? needed ?       |
 | image set        | add/rm CPU/memory                            | set <userid> <'cpus'|'memory'> <qty> |
-| image start      | XAUTOLOG                                     | start <userid>   |
-| image stop       | SIGNAL SHUTDOWN                              | stop <userid>    |
+| image start      | XAUTOLOG                                     | start <userid> <lpar> |
+| image stop       | SIGNAL SHUTDOWN                              | stop <userid> <lpar> |
 | image stopall    | SIGNAL SHUTDOWN all Linux VMs                | <iterate stops>  |
 | disk copy        | FLASHCOPY userid1 vaddr1 userid2 vaddr2      |                  |
 | disk create      | DIRM AMD or VMSECURE equiv                   |                  |
