@@ -64,14 +64,46 @@ Following is a block diagram of zlma:
 - "Chunkify" console data to work in say 20000 lines with "More" and # of chunks 
 - Create certificates and switch from http: to https:
 - Write equivalent of SMAPI to support DirMaint and VMSECURE - cheat sheet :
+| Command          | Description                                  | VIFCMS call      |
+|------------------|----------------------------------------------|------------------|
+| hyp collect      | report problem determination info            | collect          |
+| hyp disk         | add paging or image disk space               | disk <'add'|'del'> <'image'|'paging'> <rdev> |
+| hyp errors       | create report on hardware errors             | errors           |
+| hyp restart      | SHUTDOWN REIPL                               | restart          |
+| hyp service      | install z/VM service                         | service          |
+| hyp shutdown     | SHUTDOWN                                     | shutdown         |
+| hyp verify       | performs consistency checks (delete?)        | ? needed ?       |
+| image create     | clone a Linux                                | create <hostname> <distro> |
+| image delete     | purge a Linux                                | delete <hostname> |
+| image network    | manage interfaces (v2.0?)                    | ? needed ?       |
+| image set        | add/rm CPU/memory                            | set <userid> <'cpus'|'memory'> <qty> |
+| image start      | XAUTOLOG                                     | start <userid>   |
+| image stop       | SIGNAL SHUTDOWN                              | stop <userid>    |
+| image stopall    | SIGNAL SHUTDOWN all Linux VMs                | <iterate stops>  |
+| disk copy        | FLASHCOPY userid1 vaddr1 userid2 vaddr2      |                  |
+| disk create      | DIRM AMD or VMSECURE equiv                   |                  |
+| disk delete      | DIRM DMD or VMSECURE equiv                   |                  |
+| disk share       | DIRM add LINK statement                      |                  |
+| query active     | display active Linuxes (no CMS)              |                  |
+| query all        | invoke all other query subcommands           |                  |
+| query disks      | display Linux image DASD utilization         |                  |
+| query errors     | report on hardware errors                    |                  |
+| query image      | display configuration of a Linux image       |                  |
+| query level      | QUERY CPLEVEL                                |                  |
+| query network    | QUERY VSWITCH DETAILS                        |                  |
+| query paging     | QUERY ALLOC PAGE                             |                  |
+| query performance| display current CPU, paging and I/O utilization|               |
+| query shared     | display Linux images that share disks        |                  |
+| query volumes    | display image and paging DASD volumes        |                  |
+
 ```
 vif on Linux       Description
 ------------       -----------
-hyp collect        create report on z/VM problem determination info (VM dvlpmnt: old code?)
+hyp collect        report problem determination info        VIFCMS
 hyp disk           add paging or image disk space
-hyp errors         create report on hardware errors (VM dvlpmnt: old code?)
+hyp errors         create report on hardware errors
 hyp restart        SHUTDOWN REIPL 
-hyp service        install z/VM service (VM dvlpmnt: is this coming?)
+hyp service        install z/VM service 
 hyp shutdown       SHUTDOWN 
 hyp verify         performs consistency checks (delete?) 
 
@@ -103,7 +135,7 @@ query volumes      display image and paging DASD volumes
 
 # Preparing for installation 
 
-The script ``instzlma`` is included for easier installation.  There is some preparation before it can be run.
+The script ``instzlma`` is included for easier installation.  There are prerequisites as follow. 
 
 This code has been tested on Debian-based (Ubuntu server 22.04) and RHEL-based (AlmaLinux 9.4) distros, both zLinux (s390x architecture).  When there are differences, separate steps are given for each. 
 
@@ -552,7 +584,7 @@ configuration: display current vif settings
 consolez is an open-source package that allows browser access to z/VM console data and to issue CP commands. It helps alleviate the need for *green screen* access to z/VM.
 
 # Using zlma 
-Following is a decription of using each of the four main zlma web pages.
+Following is a decription of the zlma home page and each of the four main pages.
 
 ![](zlma-home.png)
 
