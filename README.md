@@ -66,73 +66,38 @@ Following is a block diagram of zlma:
 - Write equivalent of SMAPI to support DirMaint and VMSECURE - cheat sheet :
 
 ```
-| Command          | Description                                  | VIFCMS call      
-|------------------|----------------------------------------------|------------------
-| hyp collect      | report problem determination info            | hyp collect          
-| hyp disk         | add paging or image disk space               | hyp disk <'add'|'del'> <'image'|'paging'> <rdev> 
-| hyp errors       | create report on hardware errors             | hyp errors           
-| hyp restart      | SHUTDOWN REIPL                               | hyp restart          
-| hyp service      | install z/VM service                         | hyp service         
-| hyp shutdown     | SHUTDOWN                                     | hyp shutdown      
-| hyp verify       | performs consistency checks (delete?)        | ? needed ?     
-| image create     | clone a Linux                                | image create <hostname> <distro> 
-| image delete     | purge a Linux                                | image delete <hostname> 
-| image network    | manage interfaces (v2.0?)                    | ? future ?       
-| image set        | add/rm CPU/memory                            | image set <userid> <'cpus'|'memory'> <qty> 
-| image start      | XAUTOLOG a Linux                             | image start <userid> <lpar> 
-| image stop       | SIGNAL SHUTDOWN a Linux                      | image stop <userid> <lpar> 
-| image stopall    | SIGNAL SHUTDOWN all Linux VMs                | ? iterate through 'image stops' ?   
-| disk copy        | copy a disk from one image to another        | disk copy <userid1> <vaddr1> <userid2> <vaddr2>   
-| disk create      | create a new disk                            | disk create <userid> <vaddr>                 
-| disk delete      | delete an existing disk                      | disk delete <userid> <vaddr>                 
-| disk share       | share a disk from one image to another       | disk share <userid1> <vaddr1> <userid2> <vaddr2>
-| query active     | display active Linuxes (no CMS)              | query  
-| query all        | invoke all other query subcommands           | query                  
-| query disks      | display Linux image DASD utilization         | query                  
-| query errors     | report on hardware errors                    | query                  
-| query image      | display configuration of a Linux image       | query                  
-| query level      | QUERY CPLEVEL                                | query                  
-| query network    | QUERY VSWITCH DETAILS                        | query                  
-| query paging     | QUERY ALLOC PAGE                             | query                  
-| query performance| display current CPU, paging and I/O util'zn  | query              
-| query shared     | display Linux images that share disks        | query            
-| query volumes    | display image and paging DASD volumes        | query                 
+| Command          | Description                           | VIFCMS call      
+|------------------|---------------------------------------|------------------
+| hyp collect      | report problem determination info     | hyp collect          
+| hyp disk         | add paging or image disk space        | hyp disk <'add'|'del'> <'image'|'paging'> <rdev> 
+| hyp errors       | create report on hardware errors      | hyp errors           
+| hyp restart      | SHUTDOWN REIPL                        | hyp restart          
+| hyp service      | install z/VM service                  | hyp service         
+| hyp shutdown     | SHUTDOWN                              | hyp shutdown      
+| hyp verify       | do consistency checks (delete?)       | ? needed ?     
+| image create     | clone a Linux                         | image create <hostname> <distro> 
+| image delete     | purge a Linux                         | image delete <hostname> 
+| image network    | manage interfaces (v2.0?)             | ? future ?       
+| image set        | add/rm CPU/memory                     | image set <userid> <'cpus'|'memory'> <qty> 
+| image start      | XAUTOLOG a Linux                      | image start <userid> <lpar> 
+| image stop       | SIGNAL SHUTDOWN a Linux               | image stop <userid> <lpar> 
+| image stopall    | SIGNAL SHUTDOWN all Linux VMs         | ? iterate through 'image stops' ?   
+| disk copy        | copy disk from one image to another   | disk copy <userid1> <vaddr1> <userid2> <vaddr2>   
+| disk create      | create a new disk                     | disk create <userid> <vaddr>                 
+| disk delete      | delete an existing disk               | disk delete <userid> <vaddr>                 
+| disk share       | share disk from one image to another  | disk share <userid1> <vaddr1> <userid2> <vaddr2>
+| query active     | display active Linuxes                |        
+| query all        | invoke all other query subcommands    |                        
+| query disks      | display Linux image DASD utilization  | query disks            
+| query errors     | report on hardware errors             |                   
+| query image      | display Linux image configuration     | query image <userid>                  
+| query level      | QUERY CPLEVEL                         |                   
+| query network    | QUERY VSWITCH DETAILS                 |                   
+| query paging     | QUERY ALLOC PAGE                      | query paging                  
+| query performance| display CPU, paging and I/O util'zn   | query performance              
+| query shared     | display Linux images that share disks | query shared           
+| query volumes    | display image and paging DASD volumes | query volumes                
 
-```
-vif on Linux       Description
-------------       -----------
-hyp collect        report problem determination info        VIFCMS
-hyp disk           add paging or image disk space
-hyp errors         create report on hardware errors
-hyp restart        SHUTDOWN REIPL 
-hyp service        install z/VM service 
-hyp shutdown       SHUTDOWN 
-hyp verify         performs consistency checks (delete?) 
-
-image create       clone a Linux    
-image delete       purge a Linux 
-image network      manage interfaces (v2.0?)
-image set          add/rm CPU/memory
-image start        XAUTOLOG 
-image stop         SIGNAL SHUTDOWN 
-image stopall      SIGNAL SHUTDOWN all Linux VMs
-
-disk copy          FLASHCOPY userid1 vaddr1 userid2 vaddr2
-disk create        DIRM AMD or VMSECURE equiv 
-disk delete        DIRM DMD or VMSECURE equiv           
-disk share         DIRM add LINK statement
-
-query active       display active Linuxes (no CMS)
-query all          invoke all other query subcommands
-query disks        display Linux image DASD utilization
-query errors       report on hardware errors
-query image        display configuration of a Linux image
-query level        QUERY CPLEVEL
-query network      QUERY VSWITCH DETAILS
-query paging       QUERY ALLOC PAGE 
-query performance  display current CPU, paging and I/O utilization
-query  shared      display Linux images that share disks
-query volumes      display image and paging DASD volumes
 ```
 
 # Preparing for installation 
