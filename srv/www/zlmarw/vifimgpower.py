@@ -37,15 +37,8 @@ class Vif_img_set:
   def create_page(self):                   # make the HTML page
     zlma_buttons = Zlma_buttons("using-vif-image") # add navigation buttons
     print(f'<h2>{self.title}</h2>')
-
-    html = '<table>'
-    html += "<tr><td><pre>"                # start row, cell, preformatted text
-    html += f"TODO: gather args to call 'vif image {self.sub_cmd}' \n"
-    html += "      Args: IMAGE SET image STOrage size|IMAGE SET image CPUs number\n"
-    html += "</pre></td></tr></table>\n" # end cell, row and table
-
     html = "<table id='zlma-table'>\n<tr>" # start table then add headers
-    html += "<th>Host name</th><th>LPAR</th><th>User ID</th><th>IP address</th><th>CPUs</th><th>Memory</th><th>Status</th>"
+    html += "<th>Host name</th><th>LPAR</th><th>User ID</th><th>IP address</th><th>CPUs</th><th>GB memory</th><th>Status</th>"
     if self.sub_cmd != "stopall":          # need an 8th column
       html += "<th>Manage</th>"
     html += "</tr>\n"
@@ -68,7 +61,7 @@ class Vif_img_set:
             lpar = cell
             html += f"<td>{cell}</td>\n"
           case 3:                          # user ID
-            userid = cell
+            user_id = cell
             html += f"<td>{cell}</td>\n"
           case 4:                          # IP address 
             ip_addr = cell
@@ -90,27 +83,29 @@ class Vif_img_set:
           html += f"<td><form action='/zlmarw/vifcmd.py' accept-charset='utf-8'>\n"
           html += f"<input type='hidden' name='cmd' value='image'>\n"
           html += f"<input type='hidden' name='sub_cmd' value='{self.sub_cmd}'>\n"
-          html += f"<input type='hidden' name='arg1' value='{userid}'>\n"
-          html += f"<input type='hidden' name='lpar' value='{lpar}'>\n"
+          html += f"<input type='hidden' name='arg1' value='{user_id}'>\n"
+          html += f"<input type='hidden' name='arg2' value='{lpar}'>\n"
           html += f"<button class='button green-button'>Start</button></form></td>\n"
         elif self.sub_cmd == "stop" and status == "up":
           html += f"<td><form action='/zlmarw/vifcmd.py' accept-charset='utf-8'>\n"
           html += f"<input type='hidden' name='cmd' value='image'>\n"
           html += f"<input type='hidden' name='sub_cmd' value='{self.sub_cmd}'>\n"
-          html += f"<input type='hidden' name='arg1' value='{userid}'>\n"
-          html += f"<input type='hidden' name='lpar' value='{lpar}'>\n"
+          html += f"<input type='hidden' name='arg1' value='{user_id}'>\n"
+          html += f"<input type='hidden' name='arg2' value='{lpar}'>\n"
           html += f"<button class='button green-button'>Stop</button></form></td>\n"
         else:                              # no action needed
           html += f"<td></td>\n"
       html += "</tr>\n"                    # end row
     html += "</table>"
     if self.sub_cmd == 'stopall':          # ask "are you sure"
-      html += "<h2>Are you sure?</h2>"
+      html = "<h2>Are you sure?</h2>"
+      html += "<table><tr><td>"            # start table, row and cell
       html += f"<td><form action='/zlmarw/vifcmd.py' accept-charset='utf-8'>\n"
       html += f"<input type='hidden' name='cmd' value='image'>\n"
       html += f"<input type='hidden' name='sub_cmd' value='stopall'>\n"
-      html += f"<input type='hidden' name='lpar' value='{lpar}'>\n"
-      html += f"<button class='button green-button'>Stop</button></form></td>\n"
+      html += f"<input type='hidden' name='arg1' value='{lpar}'>\n"
+      html += f"<button class='button green-button'>Stop all</button></form></td>\n"
+      html += "</pre></td></tr></table>\n" # end cell, row and table
     html += "</body></html>"
     print(html)
 

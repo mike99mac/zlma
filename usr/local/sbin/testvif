@@ -13,8 +13,8 @@ function oneTest
   local args="$@"
   let tests=$tests+1
   printf "%-3s %-30s\n" "$tests)" "Running: vif $args ..." | tee -a $outFile 2>&1
-  vif $args | tee -a $outFile 2>&1
-  rc=$?
+  (vif $args; echo $? > /tmp/rc) | tee -a $outFile 2>&1 # capture rc before pipe
+  rc=`cat /tmp/rc`
   if [ "$rc" = 0 ]; then
     let successes=$successes+1
   else
@@ -38,10 +38,9 @@ function allTests
   oneTest help image
   oneTest help query
   oneTest hypervisor collect
-  oneTest hypervisor disk 
+  oneTest hypervisor disk add image 1234
+  oneTest hypervisor disk add paging abcd
   oneTest hypervisor errors
-  oneTest hypervisor export
-  oneTest hypervisor import
   oneTest hypervisor restart
   oneTest hypervisor service
   oneTest hypervisor shutdown
@@ -85,5 +84,5 @@ tests=0                                    # total tests
 allTests
 echo 
 echo "testvif: $successes of $tests tests were successful in $SECONDS seconds"
-# echo "output is in $outFile"
+echo "output is in $outFile"
 echo

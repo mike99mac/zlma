@@ -9,7 +9,6 @@ from urllib.parse import parse_qs
 sys.path.append('/srv/www/zlma')
 from zlma_buttons import Zlma_buttons
 sys.path.append('/usr/local/sbin')
-# from zlma_conf import Zlma_conf
 from zlma_srvrs import Zlma_srvrs
 
 class Vif_img_set:                         # get arguments to call the 'vif image set' command 
@@ -29,14 +28,13 @@ class Vif_img_set:                         # get arguments to call the 'vif imag
     print(f'<h2>{self.title}</h2>')
     html = "<table id='zlma-table'><tr>\n" # start table then add headers
     html += "<th>Host name</th><th>LPAR</th><th>User ID</th><th>IP address</th><th>CPUs</th>\n"
-    html += "<th>Set</th><th>Memory</th><th>Set</th>"
+    html += "<th>Set</th><th>GB memory</th><th>Set</th>"
     cmd = "/usr/local/sbin/zlma webdata"   # get all s390x servers
     try:
       proc = subprocess.run(cmd, shell=True, capture_output=True, text=True)
     except Exception as e:
       print(f"search_cmdb(): Exception calling zlma: {e}")
       exit(3)
-    rc = proc.returncode
     row_list = proc.stdout.splitlines()
     for next_row in row_list:
       list_row = next_row.split(",")
@@ -60,15 +58,15 @@ class Vif_img_set:                         # get arguments to call the 'vif imag
             html += f"<input type='hidden' name='host_name' value='{host_name}'>\n"
             html += f"<input type='hidden' name='lpar' value='{lpar}'>\n"
             html += f"<input type='hidden' name='user_id' value='{user_id}'>\n"
-            html += f"<input type='hidden' name='cpus' value='{cpus}'>\n"
+            html += f"<input type='hidden' name='cpus' value='{cell}'>\n"
             html += "<button class='button green-button'>CPUs</button></form></td>\n"
           case 6:                          # memory - add button to modify it
             html += f"<td>&nbsp;{cell} GB</td>\n"
-            html += "<td><form action='/zlmarw/vifsetmemory.py' accept-charset='utf-8'>\n"
+            html += "<td><form action='/zlmarw/vifdoset.py' accept-charset='utf-8'>\n"
             html += f"<input type='hidden' name='host_name' value='{host_name}'>\n"
             html += f"<input type='hidden' name='lpar' value='{lpar}'>\n"
-            html += f"<input type='hidden' name='userri' value='{user_id}'>\n"
-            html += f"<input type='hidden' name='memory' value='{memory}'>\n"
+            html += f"<input type='hidden' name='user_id' value='{user_id}'>\n"
+            html += f"<input type='hidden' name='memory' value='{cell}'>\n"
             html += "<button class='button green-button'>memory</button></form></td>\n"
           case _:                         
             html += f"<td>{cell}</td>\n"

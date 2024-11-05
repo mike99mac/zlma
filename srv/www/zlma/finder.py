@@ -1,4 +1,5 @@
 #!/srv/venv/bin/python3
+import os 
 import subprocess
 import sys
 sys.path.append('/srv/www/zlma')

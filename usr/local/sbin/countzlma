@@ -3,8 +3,11 @@
 # countzlma - count lines of the zlma code
 # 
 SBN="/usr/local/sbin"
+ZRO="/srv/www/zlma"
 ZRW="/srv/www/zlmarw"
-python="/srv/www/zlma/finder.py /srv/www/zlma/restapi.py $SBN/zlma $SBN/zlma_conf.py $SBN/vif"
+python="$ZRO/finder.py $ZRO/home.py $ZRO/restapi.py $ZRO/zlma_buttons.py $SBN/zlma $SBN/zlma_conf.py \
+  $SBN/zlma_srvrs.py $SBN/vif $ZRW/vifcmd.py $ZRW/vifdisk.py $ZRW/vifdiskcmd.py $ZRW/vifdoset.py $ZRW/vifhypdisk.py \
+  $ZRW/vifimgcreate.py $ZRW/vifimgdelete.py $ZRW/vifimgpower.py  $ZRW/vifimgset.py $ZRW/vif.py" 
 javascript="/srv/www/zlma/bootstable.js"
 bash="$HOME/zlmainfo $SBN/test* $SBN/spoolcons $SBN/cpcommand $SBN/consfuncs $SBN/qprivclas \
   $ZRW/one* $ZRW/consolez $ZRW/searchcons $ZRW/cpcmds $ZRW/consuifuncs"

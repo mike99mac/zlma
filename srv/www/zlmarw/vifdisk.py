@@ -18,22 +18,22 @@ class Vif_disk:
     query_string = os.environ.get('QUERY_STRING', '') # get env var
     query_params = parse_qs(query_string)  # parse query string
     self.sub_cmd = query_params.get('sub_cmd', [''])[0]
-    self.title = "zlma vif disk {self.sub_cmd}"
+    self.title = f"zlma vif disk {self.sub_cmd}"
 
-    print('Content-Type: text/html')       # start the HTML page
+    print("Content-Type: text/html")       # start the HTML page
     print()
-    print('<!DOCTYPE html>')
-    print(f'<html><head><title>zlma vif disk {self.sub_cmd}</title>')
+    print("<!DOCTYPE html>")
+    print(f"<html><head><title>{self.title}</title>")
     print('<link rel="icon" type="image/png" href="/zlma.ico">')
     print('<link rel="stylesheet" href="/zlma.css">')
-    print('</head><body>')
+    print("</head><body>")
 
   def create_page(self):                   # make the page body
     zlma_buttons = Zlma_buttons("using-vif-disk") # add navigation buttons
-    print(f'<h2>{self.title}</h2>')
+    print(f"<h2>{self.title}</h2>")
     html = "<table id='zlma-table'><tr>"   # start table then add headers
     html += "<th>Host name</th><th>LPAR</th><th>User ID</th><th>IP address</th>"
-    html += "<th>CPUs</th><th>Memory</th><th>&nbsp;</th>"
+    html += "<th>CPUs</th><th>GB memory</th><th>&nbsp;</th>"
   
     cmd = "/usr/local/sbin/zlma webdata"   # get all s390x servers
     try:
@@ -53,13 +53,14 @@ class Vif_disk:
         if cell_num == 2:                  # LPAR column
           lpar = cell
         if cell_num == 3:                  # user ID column
-          userid = cell
+          user_id = cell
 
       # add a "Do it" button in the last column
-      html += f"<td><form action='/zlmarw/vifdisk{self.sub_cmd}.py' accept-charset='utf-8'>\n"
+      html += f"<td><form action='/zlmarw/vifdiskcmd.py' accept-charset='utf-8'>\n"
+      html += f"<input type='hidden' name='sub_cmd' value='{self.sub_cmd}'>\n"
       html += f"<input type='hidden' name='lpar' value='{lpar}'>\n"
-      html += f"<input type='hidden' name='user_d' value='{userid}'>\n"
-      html += f"<button class='button green-button'>{self.sub_cmd} disk</button></form></td>\n"
+      html += f"<input type='hidden' name='user_id' value='{user_id}'>\n"
+      html += f"<button class='button green-button'>{self.sub_cmd.capitalize()} disk</button></form></td>\n"
       html += "</tr>\n"
     html += "</table>"
     html += "</body></html>"               # end page
