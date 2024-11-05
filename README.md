@@ -1,24 +1,6 @@
 # z/VM and Linux Modern Administration 
 z/VM and Linux Modern Administration (**zlma**, pronounced "zelma") enables Linux servers running under the z/VM hypervisor on IBM Mainframes to be managed in a more modern fashion. 
 
-## Components
-It consists of these main components:
-- A relational database 
-  - Containing pertinent up-to-date data about Linux servers on z
-- Web browser interfaces
-  - ``Commands`` - run z/VM commands 
-  - ``Consoles`` - view z/VM console data 
-  - ``Finder`` - search the configuration management database (CMDB) 
-  - ``VIF`` - The Virtual Image Facility abstracts z/VM function 
-- Linux line commands
-  - ``zlma`` - manage DB of zLinux data 
-  - ``vif`` - manage many aspects of z/VM
-  - console related commands such as ``spoolcons`` and ``lscons`` 
-- Virtual Image Facility (VIF)
-  - An abstraction of all z/VM function and administration
-- A RESTful API 
-  - So other apps can get to the data
-
 ## Goals
 Zlma strives to attain these goals:
 
@@ -47,6 +29,24 @@ Zlma strives to attain these goals:
 - To be **secure**:
   - Cheyenne is going to help me with this :)) Web-facing Linux user IDs only have G priv class
   - Detailed log files with audit trail of all operations
+
+## Components
+It consists of these main components:
+- A relational database
+  - Containing pertinent up-to-date data about Linux servers on z
+- Web browser interfaces
+  - ``Commands`` - run z/VM commands
+  - ``Consoles`` - view z/VM console data
+  - ``Finder`` - search the configuration management database (CMDB)
+  - ``VIF`` - The Virtual Image Facility abstracts z/VM function
+- Linux line commands
+  - ``zlma`` - manage DB of zLinux data
+  - ``vif`` - manage many aspects of z/VM
+  - console related commands such as ``spoolcons`` and ``lscons``
+- Virtual Image Facility (VIF)
+  - An abstraction of all z/VM function and administration
+- A RESTful API
+  - So other apps can get to the data
 
 # Overview
 Following is a block diagram of zlma:
