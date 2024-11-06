@@ -24,7 +24,7 @@ class Zlma_home:
     zlma_buttons = Zlma_buttons("using-zlma") # add navigation buttons
     print(f'<h2>{self.title}</h2>')
     html = "<table id='zlma-table'><tr><td>"  # start table then add headers
-    html += "<p><i>z/VM and Linux Modern Administration</i> (<b>zlma</b>) enables Linux servers on z/VM to be managed in a more modern fashion.</p>\n" 
+    html += '<p><b><span style="font-size: 1.2em;">z/VM and Linux Modern Administration</span></b> (<b>zlma</b>) enables Linux servers on z/VM to be managed in a more modern fashion.</p>\n'
     html += "<p>Navigation is simple - use the 5-button menu at the top of each page (see above):</p>\n" 
     html += '<ul><li><span style="color:green"><b>Commands</b></span> - run z/VM comands</li>\n' 
     html += '<li><span style="color:green"><b>Consoles</b></span> - View and manage z/VM console data</li>\n' 

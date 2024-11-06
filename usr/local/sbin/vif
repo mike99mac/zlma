@@ -311,7 +311,7 @@ class Vif:
   def handle_hyp_disk(self, args: str):
     cmd = f"VIFCMS hyp {args}"
     self.log.debug(f"handle_hyp_disk(): user: {self.conf.user} cmd: {cmd}") 
-    print(f"handle_hyp_disk() call: '{cmd}'")
+    print(f"call: '{cmd}'")
 
   def handle_hyp_errors(self):
     cmd = f"VIFCMS hyp errors"
@@ -389,21 +389,21 @@ class Vif:
   def handle_image_create(self, args):
     args = ' '.join(args)                  # convert dictionary to string
     self.log.debug(f"handle_image_create(): user: {self.conf.user} args {args} clone Linux")
-    print(f"call 'VIFCMS image create {args}' => clone a Linux")
+    print(f"call: 'VIFCMS image create {args}' => clone a Linux")
 
   def handle_image_delete(self, image):
     self.log.debug(f"handle_image_delete(): user: {self.conf.user} ")
-    print(f"call 'VIFCMS image delete {image}' => delete Linux but no PURGE just yet")
+    print(f"call: 'VIFCMS image delete {image}' => delete Linux but no PURGE just yet")
 
   def handle_image_network(self, args):
     args = ' '.join(args)                  # convert dictionary to string
     self.log.debug(f"handle_image_network(): user: {self.conf.user} add/delete network adapters - args: {args}'")
-    print(f"call 'VIFCMS image network {args}' => add OSA triplet - need VSWITCH name as an arg?")
+    print(f"call: 'VIFCMS image network {args}' => add OSA triplet - need VSWITCH name as an arg?")
 
   def handle_image_set(self, args):
     args = ' '.join(args)                  # convert dictionary to string
     self.log.debug(f"handle_image_set(): user: {self.conf.user} update user directory - args: {args}")
-    print(f"call 'VIFCMS image set {args}'")
+    print(f"call: 'VIFCMS image set {args}'")
 
   def handle_image_start(self, args):
     cmd = f"VIFCMS image start {' '.join(args)}"
@@ -416,7 +416,7 @@ class Vif:
     print(f"call: '{cmd}'")
 
   def handle_image_stopall(self):
-    cmd = f"VIFCMS stopall"
+    cmd = f"VIFCMS image stopall"
     self.log.debug(f"handle_image_stopall(): user: {self.conf.user} SIGNAL SHUTDOWN to all user IDs running Linux'")
     print(f"call: '{cmd}' => better: loop through all images and call 'image stop' on them")
 
@@ -449,25 +449,25 @@ class Vif:
   # 'vif disk' command handlers
   def handle_disk_copy(self, args):
     args = ' '.join(args)                  # convert dictionary to string
-    cmd = f"VIFCMS copy disk {args}"
+    cmd = f"VIFCMS disk copy {args}"
     self.log.debug(f"handle_disk_copy(): user: {self.conf.user} cmd: {cmd}")
     print(f"call: '{cmd}'")
 
   def handle_disk_create(self, args):
     args = ' '.join(args)                  # convert dictionary to string
-    cmd = f"VIFCMS create disk {args}"
+    cmd = f"VIFCMS disk create {args}"
     self.log.debug(f"handle_disk_create(): user: {self.conf.user} cmd: {cmd}")
     print(f"call: '{cmd}'")
 
   def handle_disk_delete(self, args):
     args = ' '.join(args)                  # convert dictionary to string
-    cmd = f"VIFCMS delete disk {args}"
+    cmd = f"VIFCMS disk delete {args}"
     self.log.debug(f"handle_disk_delete(): user: {self.conf.user} cmd: {cmd}")
     print(f"call: '{cmd}'")
 
   def handle_disk_share(self, args):
     args = ' '.join(args)                  # convert dictionary to string
-    cmd = f"VIFCMS copy share {args}"
+    cmd = f"VIFCMS disk share {args}"
     self.log.debug(f"handle_disk_share(): user: {self.conf.user} cmd: {cmd}")
     print(f"call: '{cmd}'")
 
