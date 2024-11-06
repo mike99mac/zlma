@@ -2,11 +2,13 @@
 z/VM and Linux Modern Administration (**zlma**, pronounced "zelma") is a new piece of free software
 
 <b>What is it?</b>
-It enbles Linux servers running under the z/VM hypervisor on IBM Mainframes to be managed in a more modern fashion. 
+
+    It enbles Linux servers running under the z/VM hypervisor on IBM Mainframes to be managed in a more modern fashion. 
 The interfaces from the 1970s must be replaced.
 
 <b>Why do this?</b>
-z/VM on the mainframe is dying. It must be reinvented if it is to continue.
+
+    z/VM on the mainframe is dying. It must be reinvented if it is to continue.
 
 ## Goals
 Zlma strives to be modern, centralized, simple, well-architected and secure:
