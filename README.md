@@ -73,7 +73,36 @@ Following is a block diagram of zlma:
 - Finish vif pages to gather parameters, example: vif image set => choose memory/CPUs
 - "Chunkify" console data to work in say 20000 lines with "More" and # of chunks 
 - Create certificates and switch from http: to https:
-- Write equivalent of SMAPI to support DirMaint and VMSECURE - cheat sheet :
+- Write equivalent of SMAPI to support DirMaint and VMSECURE - output from ``testvif`` script:
+
+```
+call: 'VIFCMS hyp collect' => return problem determination data to /var/log/zlma/problem.report.<timestamp>
+call: 'VIFCMS hyp disk add image 1234'
+call: 'VIFCMS hyp disk add paging abcd'
+call: 'VIFCMS hyp errors' => return hardware errors /var/log/zlma/error.report.<timestamp>
+call: 'VIFCMS hyp restart' => SHUTDOWN REIPL
+call: 'VIFCMS hyp service' => z/VM Dvlpmnt needs to enable this to modernize z/VM
+call: 'VIFCMS hyp shutdown' => SHUTDOWN
+call: 'VIFCMS hyp verify' => perform z/VM consistency checks
+call: 'VIFCMS image create linux1' => clone a Linux
+call: 'VIFCMS image delete linux1' => delete Linux but no PURGE just yet
+call: 'VIFCMS image network linux1 add 360' => add OSA triplet - need VSWITCH name as an arg?
+call: 'VIFCMS image set linux1 storage 8'
+call: 'VIFCMS image set linux1 cpus 4'
+call: 'VIFCMS image start linux1'
+call: 'VIFCMS image stop linux1'
+call: 'VIFCMS image stopall' => better: loop through all images and call 'image stop' on them
+call: 'VIFCMS disk copy linux1 150 linux2 150'
+call: 'VIFCMS disk copy linux1 150 to linux2 150'
+call: 'VIFCMS disk create linux1 150 2G'
+call: 'VIFCMS disk delete linux1 150'
+call: 'VIFCMS disk share linux1 151 linux2 151'
+call: 'VIFCMS disk share linux1 151 with linux2 151'
+call: 'VIFCMS query errors' => write errors to /var/log/zlma/errors.report.<timestamp>
+call: 'VIFCMS query paging'
+```
+
+Cheat sheet maintained manually:
 
 ```
 | Command          | Description                           | VIFCMS call      
