@@ -102,40 +102,19 @@ call: 'VIFCMS query errors' => write errors to /var/log/zlma/errors.report.<time
 call: 'VIFCMS query paging'
 ```
 
-Cheat sheet maintained manually:
+HOW TO DO UPDATE USER DIRECTORY LIKE THIS?:
 
 ```
-| Command          | Description                           | VIFCMS call      
-|------------------|---------------------------------------|------------------
-| hyp collect      | report problem determination info     | hyp collect          
-| hyp disk         | add paging or image disk space        | hyp disk <'add'|'del'> <'image'|'paging'> <rdev> 
-| hyp errors       | create report on hardware errors      | hyp errors           
-| hyp restart      | SHUTDOWN REIPL                        | hyp restart          
-| hyp service      | install z/VM service                  | hyp service         
-| hyp shutdown     | SHUTDOWN                              | hyp shutdown      
-| hyp verify       | do consistency checks (delete?)       | ? needed ?     
-| image create     | clone a Linux                         | image create <hostname> <distro> 
-| image delete     | purge a Linux                         | image delete <hostname> 
-| image network    | manage interfaces (v2.0?)             | ? future ?       
-| image set        | add/rm CPU/memory                     | image set <userid> <'cpus'|'memory'> <qty> 
-| image start      | XAUTOLOG a Linux                      | image start <userid> <lpar> 
-| image stop       | SIGNAL SHUTDOWN a Linux               | image stop <userid> <lpar> 
-| image stopall    | SIGNAL SHUTDOWN all Linux VMs         | ? iterate through 'image stops' ?   
-| disk copy        | copy disk from one image to another   | disk copy <userid1> <vaddr1> <userid2> <vaddr2>   
-| disk create      | create a new disk                     | disk create <userid> <vaddr>                 
-| disk delete      | delete an existing disk               | disk delete <userid> <vaddr>                 
-| disk share       | share disk from one image to another  | disk share <userid1> <vaddr1> <userid2> <vaddr2>
-| query active     | display active Linuxes                |        
-| query all        | invoke all other query subcommands    |                        
-| query disks      | display Linux image DASD utilization  | query disks            
-| query errors     | report on hardware errors             |                   
-| query image      | display Linux image configuration     | query image <userid>                  
-| query level      | QUERY CPLEVEL                         |                   
-| query network    | QUERY VSWITCH DETAILS                 |                   
-| query paging     | QUERY ALLOC PAGE                      | query paging                  
-| query performance| display CPU, paging and I/O util'zn   | query performance              
-| query shared     | display Linux images that share disks | query shared           
-| query volumes    | display image and paging DASD volumes | query volumes                
+if self.conf.dir_mgmt == "dirmaint":
+  self.dir_entry = self.dirm_get(userid)
+  self.dir_entry = self.mod_dir_entry()
+  self.dirm_replace(self.dir_entry)
+elif self.conf.dir_mgmt == "vmsecure":
+  self.dir_entry = self.vmsecure_get(userid)
+  self.dir_entry = self.mod_dir_entry()
+  self.vmsecure_replace(self.dir_entry)
+else:
+  print("no directory maintenance product set")
 
 ```
 
