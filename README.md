@@ -102,7 +102,7 @@ call: 'VIFCMS query errors' => write errors to /var/log/zlma/errors.report.<time
 call: 'VIFCMS query paging'
 ```
 
-HOW TO DO UPDATE USER DIRECTORY LIKE THIS?:
+HOW TO UPDATE USER DIRECTORY LIKE THIS?:
 
 ```
 if self.conf.dir_mgmt == "dirmaint":
