@@ -7,7 +7,7 @@ Software that enbles Linux servers running under z/VM to be managed in a more mo
 
 <b>Why do this?</b>
 
-z/VM on the mainframe is dying. It must be reinvented if it is to continue.  There must be alternatives to  interfaces designed in the 1970s.
+z/VM needs reinvention if it is to continue.  There must be alternatives to  interfaces designed in the 1970s.
 
 <b>Status</b>
 
