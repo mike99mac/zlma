@@ -18,7 +18,7 @@ select
   when cmd = "QUERY" then
     result = query_cmd(sub_cmd, args)
   otherwise do
-    say "Unexpected VIFCMS command: HYP" sub_cmd
+    say "Unexpected VIFCMS command: " cmd
     exit 1
   end
 end
