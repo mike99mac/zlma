@@ -618,5 +618,62 @@ TODO: describe
 ### Using vif query
 TODO: describe 
 
+## Lines of code
+The script ``countzlma`` counts the lines of code.  Here is the output as of November 2024:
+
+```
+$ countzlma
+
+Lines of code in zlma:
+
+Bash:
+   57 /home/mikemac/zlmainfo
+   29 /usr/local/sbin/testrestapi
+   88 /usr/local/sbin/testvif
+  693 /usr/local/sbin/spoolcons
+  171 /usr/local/sbin/cpcommand
+  146 /usr/local/sbin/consfuncs
+  109 /usr/local/sbin/qprivclas
+   89 /srv/www/zlmarw/onecons
+  155 /srv/www/zlmarw/onelpar
+  106 /srv/www/zlmarw/consolez
+  169 /srv/www/zlmarw/searchcons
+  190 /srv/www/zlmarw/cpcmds
+  201 /srv/www/zlmarw/consuifuncs
+ 2203 total
+
+Python:
+   142 /srv/www/zlma/finder.py
+    41 /srv/www/zlma/home.py
+   332 /srv/www/zlma/restapi.py
+    33 /srv/www/zlma/zlma_buttons.py
+   446 /usr/local/sbin/zlma
+    39 /usr/local/sbin/zlma_conf.py
+    36 /usr/local/sbin/zlma_srvrs.py
+   644 /usr/local/sbin/vif
+    66 /srv/www/zlmarw/vifcmd.py
+    72 /srv/www/zlmarw/vifdisk.py
+   105 /srv/www/zlmarw/vifdiskcmd.py
+    79 /srv/www/zlmarw/vifdoset.py
+    54 /srv/www/zlmarw/vifhypdisk.py
+    50 /srv/www/zlmarw/vifimgcreate.py
+    70 /srv/www/zlmarw/vifimgdelete.py
+   115 /srv/www/zlmarw/vifimgpower.py
+    80 /srv/www/zlmarw/vifimgset.py
+   114 /srv/www/zlmarw/vif.py
+  2518 total
+
+Javascript:
+172 /srv/www/zlma/bootstable.js
+
+CSS:
+102 /srv/www/zlma/zlma.css
+
+REXX:
+282 /home/mikemac/zlma/vifcms.exec
+
+5277 total
+```
+
 # Colophon
 Zelma is a feminine given name that originated in the late 19th century in the United States. It's believed to be a variant of the German name Selma, which is derived from the Old Norse word "selmr," meaning "protection" or "shelter."
