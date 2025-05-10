@@ -65,7 +65,8 @@ It consists of these main components:
 # Overview
 Following is a block diagram of zlma:
 
-![](zlma-block-diagram.png) 
+![Blank diagram](https://github.com/user-attachments/assets/72e455e1-9365-4d5e-ba72-aca09bc03eb9)
+
 
 **zlma block diagram**
 
