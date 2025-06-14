@@ -361,6 +361,11 @@ Group www-data
 TODO: install on z-graf1 and show Apache config file
 ```
 
+- Create the httpasswd for the site
+```
+sudo htpasswd -c /srv/www/zlmarw/.htpasswd yourusername
+```
+
 # Using zlma
 The following sections describe the line command, the Web interface and the RESTful API.
 

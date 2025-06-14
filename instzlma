@@ -64,9 +64,17 @@ function checkBase
   : SOURCE: ${BASH_SOURCE}
   : STACK:  ${FUNCNAME[@]}
 
-  if [ ! -f /proc/sysinfo ]; then          # not zLinux
-    echo "ERROR: /proc/sysinfo not found - not running on s390x?" 
-    exit 1
+  if [ -f /proc/sysinfo ]; then            # Running on s390x (mainframe)
+    echo "Detected s390x (mainframe) architecture"
+  else                                      # Check if Intel/AMD Linux
+    arch=$(uname -m)
+    if [[ "$arch" == "x86_64" || "$arch" == "i386" || "$arch" == "i686" ]]; then
+      echo "Detected Intel/AMD Linux architecture: $arch"
+    else
+      echo "ERROR: Unsupported architecture: $arch"
+      echo "This installer supports s390x (mainframe) and x86_64 (Intel/AMD) only"
+      exit 1
+    fi
   fi
   if [ ! -d $HOME/zlma ]; then
     echo 'ERROR: zlma repo not found under $HOME' 
@@ -200,7 +208,7 @@ function instPackages
 
   which apt >/dev/null 2>&1
   if [ $? = 0 ]; then                      # use apt and assume Debian-based
-    cmd="sudo apt install -y apache2 cifs-utils cmake curl gcc git jq locate make libmariadb-dev mariadb-server net-tools pandoc python3 python3-dev python3-pip python3.12-venv"
+    cmd="sudo apt install -y apache2 cifs-utils cmake curl gcc git jq locate make libmariadb-dev mariadb-server net-tools pandoc python3 python3-dev python3-pip "
     runCmd $cmd
 
     echo | tee -a $outFile
