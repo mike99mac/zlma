@@ -195,7 +195,7 @@ def parseArgs(args):
                     break
         i += 1
     
-    # Set defaults for spoolcons
+    # Set defaults for spoolcons - import needed variables
     if cmdCalled == "spoolcons":
         if not tgtUserID:
             from consfuncs import thisUserID
@@ -325,11 +325,9 @@ def checkUserID():
     """
     source_file, stack = _get_debug_info()
     
-    # Check if user ID exists
+    # Check if user ID exists using CPcmd function
     try:
-        result = subprocess.run(["sudo", "vmcp", "QUERY", tgtUserID], 
-                              capture_output=True, text=True, timeout=30)
-        rc = result.returncode
+        rc = CPcmd("QUERY", tgtUserID)  # Use CPcmd function like original bash
         
         if rc == 0:
             verboseMsg(f"user ID {tgtUserID} is logged on")
@@ -382,8 +380,9 @@ def getLocalConsole():
     except:
         last_spool_id = ""
     
-    # Spool console to this user
-    spool_cmd = f"{vmcpCmd} FOR {tgtUserID} CMD SPOOL CONS TO {thisUser} CLOSE"
+    # Spool console to this user - use thisUserID from consfuncs
+    from consfuncs import thisUserID
+    spool_cmd = f"{vmcpCmd} FOR {tgtUserID} CMD SPOOL CONS TO {thisUserID} CLOSE"
     verboseMsg(f"getting console data on {tgtSysID} with: {spool_cmd}")
     
     try:
