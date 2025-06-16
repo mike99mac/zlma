@@ -12,11 +12,11 @@ class Zlma_buttons:
     self.yellow="style=\"background-color:#FFDB4D\""
 
     self.html = '<br><table align=center border="0" cellpadding="0" cellspacing="0"><tr>\n' # start a table
-    self.html += "<td><form action='/zlmarw/cpcmds' accept-charset=utf-8>"
+    self.html += "<td><form action='/zlmarw/cpcmds.py' accept-charset=utf-8>"
     self.html += f"<button class=button {self.green}>Commands</button>&nbsp; "
     self.html += "</form></td>\n"
 
-    self.html += "<td><form action='/zlmarw/consolez' accept-charset=utf-8>"
+    self.html += "<td><form action='/zlmarw/consolez.py' accept-charset=utf-8>"
     self.html += f"<button class=button {self.green}>Consoles</button>&nbsp; "
     self.html += "</form></td>\n" 
 
