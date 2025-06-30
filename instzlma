@@ -289,39 +289,32 @@ function copyFiles
  }                                         # copyFiles()
 
 #+--------------------------------------------------------------------------+
-function mkSymlinks 
-# Create symlinks for additional console scripts
-#+--------------------------------------------------------------------------+
- {
-  : SOURCE: ${BASH_SOURCE}
-  : STACK:  ${FUNCNAME[@]}
-
+function mkSymlinks() {
   echo | tee -a $outFile
   echo "Step 7): Creating symbolic links ..." | tee -a $outFile
 
   cd /usr/local/sbin
-  if [ ! -h catcons ]; then                # symlink does not exist
-    runCmd sudo ln -s spoolcons catcons
+  if [ ! -h catcons ]; then
+    runCmd sudo ln -s spoolcons catcons    # Point to Python version
   else
-    echo "  symlink catcons already exists - skipping"	  
+    echo "  symlink catcons already exists - skipping"    
   fi
   if [ ! -h grepcons ]; then
-    runCmd sudo ln -s spoolcons grepcons 
+    runCmd sudo ln -s spoolcons grepcons   # Point to Python version
   else
-    echo "  symlink spoolcons already exists - skipping"	  
+    echo "  symlink grepcons already exists - skipping"    
   fi
   if [ ! -h lscons ]; then
-    runCmd sudo ln -s spoolcons lscons 
+    runCmd sudo ln -s spoolcons lscons     # Point to Python version
   else
-    echo "  symlink lscons already exists - skipping"	  
+    echo "  symlink lscons already exists - skipping"    
   fi
   if [ ! -h rmcons ]; then
-    runCmd sudo ln -s spoolcons rmcons 
+    runCmd sudo ln -s spoolcons rmcons     # Point to Python version
   else
-    echo "  symlink rmcons already exists - skipping"	  
+    echo "  symlink rmcons already exists - skipping"    
   fi
-}                                          # mkSymlinks() 
-
+}
 #+--------------------------------------------------------------------------+
 function mkVenv
 # Make a virtual environment under /srv/venv/ 
