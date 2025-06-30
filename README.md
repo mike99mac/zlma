@@ -135,6 +135,14 @@ Details on it are outside the scope of this document, howerver, there is a scrip
 
 Once SSH access is set up, the solution can be installed. 
 
+## Forwarding a port from the server using ngrok
+
+
+- can refer this documentation to set it in new server https://dashboard.ngrok.com/get-started/setup/linux
+
+- as for feilong we can do 
+```ngrok http --url=slowly-evolved-polliwog.ngrok-free.app 8080```
+
 ## Update your system
 If this is a fresh install of Linux, it is best to update your system. To do so, perform the following steps:
 
